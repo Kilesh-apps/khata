@@ -26,8 +26,9 @@
 }}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;margin:0}
+html{background:var(--bg)}
 body{background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system,"SF Pro Text",Roboto,"Noto Sans","Noto Sans Devanagari","Segoe UI",sans-serif;
-  font-variant-numeric:tabular-nums;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px);overscroll-behavior:none}
+  font-variant-numeric:tabular-nums;overflow-wrap:anywhere;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px);overscroll-behavior:none}
 body.veil main,body.veil #sheet{visibility:hidden}
 button,input,select,textarea{font:inherit;color:inherit}
 button{background:none;border:0;padding:0;cursor:pointer;touch-action:manipulation;text-align:inherit}
@@ -52,7 +53,9 @@ p{margin:0}
 .seg{display:flex;background:var(--soft);border-radius:12px;padding:3px;gap:3px}
 .seg button{flex:1;height:38px;border-radius:9px;font-weight:550;font-size:15px;color:var(--muted);text-align:center;padding:0 8px;white-space:nowrap}
 .seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
-.top .seg{flex:1;max-width:330px}
+.top .seg{flex:1;max-width:330px;min-width:0}
+.seg button{min-width:0}
+@media (max-width:370px){.amount .cur{font-size:18px}.ghost{padding:0 9px;font-size:13px}.seg button{font-size:13.5px;padding:0 4px}.top .icon{width:38px}.view{padding-left:12px;padding-right:12px}.grid{gap:6px}.tile{font-size:12px;padding-left:2px;padding-right:2px}}
 
 /* add */
 .add{display:flex;flex-direction:column;min-height:100%;padding-bottom:12px}
@@ -60,7 +63,14 @@ p{margin:0}
 .status.warn{background:var(--warn-soft);color:var(--warn)}
 .status.danger{background:var(--danger-soft);color:var(--danger)}
 .amount-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 0 0}
-.amount{display:flex;align-items:baseline;gap:8px;min-width:0;overflow:hidden}
+.amount{display:flex;align-items:baseline;gap:8px;min-width:0;flex:1;overflow:hidden}
+.amount-row>div:last-child{flex:none}
+.amount .num.long{font-size:clamp(30px,9.5vw,44px)}
+.amount .num.xlong{font-size:clamp(24px,7.5vw,34px)}
+.amount,.amount *,.r,.stat b,.big,.mini b{overflow-wrap:normal;word-break:normal;white-space:nowrap}
+.kv>span:last-child{overflow-wrap:normal;word-break:normal}
+.stat{min-width:0;overflow:hidden}.stat b{overflow:hidden;text-overflow:ellipsis}.stat b.s1{font-size:17px}.stat b.s2{font-size:15px}
+.tile{overflow-wrap:normal;hyphens:auto;-webkit-hyphens:auto}.tile span{word-break:normal}
 .amount .cur{font-size:22px;color:var(--muted);font-weight:500}
 .amount .num{font-size:clamp(46px,14vw,64px);font-weight:350;letter-spacing:-.03em;line-height:1.05;white-space:nowrap}
 .amount .num.zero{color:var(--muted);opacity:.45}
@@ -70,6 +80,7 @@ p{margin:0}
 .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
 .tile{min-height:52px;border-radius:12px;background:var(--surface);border:1.5px solid transparent;padding:8px 6px 7px;font-size:13px;font-weight:500;line-height:1.2;
   display:flex;flex-direction:column;gap:5px;align-items:center;justify-content:center;text-align:center;overflow:hidden}
+.tile span{word-break:normal;overflow-wrap:break-word;max-width:100%;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .tile i{width:22px;height:5px;border-radius:3px;flex:none}
 .tile.on{border-color:var(--ink);background:var(--soft)}
 .tile.more{color:var(--muted)}
@@ -103,7 +114,11 @@ label.sel{cursor:text}
 .keys{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:auto;padding-top:12px}
 .keys button{height:clamp(46px,6.6vh,58px);font-size:24px;border-radius:12px;background:var(--key);text-align:center}
 .keys button:active{background:var(--soft)}
-.add.has-fuel .keys{gap:5px;padding-top:8px}.add.has-fuel .keys button{height:clamp(40px,5.4vh,50px)}
+.add.has-fuel .keys{gap:5px;padding-top:8px}.add.has-fuel .keys button{height:clamp(38px,5.2vh,50px)}.add.has-fuel .tile{min-height:46px;padding:6px 4px}.add.has-fuel .note{height:40px;margin-top:8px}.add.has-fuel .grid{margin-top:8px}
+@media (max-height:800px){.add .top{min-height:50px}.amount-row{margin-top:6px}.amount .num{font-size:clamp(40px,12vw,52px)}.note{height:40px;margin-top:8px}.grid{margin-top:8px}.tile{min-height:46px;padding:6px 4px}
+  .selects{margin-top:8px}.sel{height:44px}.keys{gap:5px;padding-top:8px}.keys button{height:clamp(40px,5.6vh,52px)}.save{height:50px;margin-top:6px}.status{padding:7px 12px;font-size:13.5px}}
+@media (max-width:370px){.wide-only{display:none}}
+@media (max-width:340px){.tile{font-size:11px;letter-spacing:-.01em}}
 .keys .clear{font-size:15px;font-weight:600;color:var(--muted)}
 .save{height:54px;border-radius:14px;background:var(--accent);color:#fff;font-weight:650;font-size:16px;margin-top:8px;width:100%;text-align:center}
 @media (prefers-color-scheme:dark){.save{color:#0E1A14}}
@@ -126,7 +141,9 @@ label.sel{cursor:text}
 .bar-t i.over{background:var(--danger)}.bar-t i.mid{background:var(--warn)}
 .tools{display:flex;gap:8px;margin-top:12px}
 .tools input,.tools select{flex:1;min-width:0;height:44px;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:0 12px;font-size:15px}
-.filter{display:inline-flex;align-items:center;gap:8px;margin-top:10px;height:34px;padding:0 12px;border-radius:17px;background:var(--accent-soft);color:var(--accent);font-size:14px;font-weight:550}
+.pills{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:4px}
+.tbtn{height:44px;flex:none;padding:0 14px}.tbtn.on{border-color:var(--accent);color:var(--accent)}
+.filter{display:inline-flex;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;align-items:center;gap:8px;margin-top:6px;height:34px;padding:0 12px;border-radius:17px;background:var(--accent-soft);color:var(--accent);font-size:14px;font-weight:550}
 .empty{padding:28px 8px;color:var(--muted);text-align:center;line-height:1.5}
 .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 .btn{height:46px;padding:0 16px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-weight:550;font-size:15px;text-align:center}
@@ -147,6 +164,8 @@ label.sel{cursor:text}
 /* charts */
 .donut-wrap{display:flex;gap:16px;align-items:center}
 .donut{flex:none;width:140px;height:140px}
+@media (max-width:370px){.donut{width:112px;height:112px}.donut-wrap{gap:10px}}
+.legend button span:last-child{flex:none}
 .legend{flex:1;min-width:0}
 .legend button{display:flex;align-items:center;gap:8px;width:100%;padding:5px 0;font-size:14px}
 .legend button span:nth-child(2){flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -173,7 +192,10 @@ label.sel{cursor:text}
 #sheet{position:fixed;inset:0;z-index:20}
 .scrim{position:absolute;inset:0;background:rgba(0,0,0,.42)}
 .panel{position:absolute;left:0;right:0;bottom:0;max-height:90vh;overflow-y:auto;background:var(--bg);border-radius:20px 20px 0 0;padding:10px 16px calc(20px + env(safe-area-inset-bottom,0px));max-width:560px;margin:0 auto}
-.panel:before{content:"";display:block;width:40px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 12px}
+.grab{position:sticky;top:-10px;margin:-10px -16px 2px;padding:12px 0 14px;background:var(--bg);z-index:3;touch-action:none;cursor:grab;border-radius:20px 20px 0 0}
+.grab:after{content:"";display:block;width:44px;height:5px;border-radius:3px;background:var(--muted);opacity:.55;margin:0 auto}
+.panel.dragging{transition:none}.panel.settle{transition:transform .22s ease-out}
+.scrim{transition:opacity .2s}
 .panel label{display:block;font-size:13px;color:var(--muted);margin-top:14px;font-weight:500}
 .panel label input,.panel label select,.panel label textarea{display:block;width:100%;margin-top:5px;height:48px;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:0 14px;font-size:16px;color:var(--ink);font-weight:400}
 .panel label textarea{height:120px;padding:12px 14px;resize:vertical}
@@ -190,7 +212,9 @@ label.sel{cursor:text}
 .big{font-size:34px;font-weight:350;letter-spacing:-.02em;margin:6px 0 2px}
 .kv{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
 .kv:last-child{border-bottom:0}
-.kv span:first-child{color:var(--muted)}
+.kv>span:first-child{color:var(--muted);min-width:0}
+.kv>span:last-child{text-align:right;flex:none;max-width:62%}
+.kv{gap:12px}
 .help{font-size:13px;color:var(--muted);margin-top:10px;line-height:1.5}
 .lbl{font-size:13px;color:var(--muted);font-weight:500;margin-top:16px}
 
@@ -257,7 +281,7 @@ const SEED_INC=[['salary','Salary'],['side','Side income'],['refund','Refunds'],
 let S=null,cryptoKey=null,meta=safeJSON(localStorage.getItem(K_META))||{};
 let view='add',built=false;
 let A=blankAdd('exp');
-let H={off:0,mode:'overview',q:'',acc:'',cat:''};
+let H={off:0,mode:'overview',q:'',range:'period',from:'',to:'',sort:'new',f:{types:[],cats:[],accs:[],methods:[],min:'',max:'',photo:false,split:false}};
 let G={open:null};
 
 function safeJSON(s){try{return s?JSON.parse(s):null}catch{return null}}
@@ -279,8 +303,9 @@ const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const nf=new Intl.NumberFormat('en-IN',{maximumFractionDigits:2});
 const toP=v=>{const n=parseFloat(String(v??'').replace(/[,\s]/g,''));return isFinite(n)?Math.round(n*100):0};
-function money(p,o={}){if(S&&S.set.hide&&o.hide!==false) return 'Rs ••••';return(p<0?'−':(o.sign&&p>0?'+':''))+'Rs '+nf.format(Math.abs(p)/100)}
+function money(p,o={}){if(S&&S.set.hide&&o.hide!==false) return 'Rs\u00a0••••';return(p<0?'−':(o.sign&&p>0?'+':''))+'Rs\u00a0'+nf.format(Math.abs(p)/100)}
 const short=p=>{if(S&&S.set.hide) return '••';const v=Math.abs(p)/100;return v>=1e5?(v/1e5).toFixed(v>=1e6?0:1).replace(/\.0$/,'')+'L':v>=1e3?(v/1e3).toFixed(v>=1e4?0:1).replace(/\.0$/,'')+'k':String(Math.round(v))};
+const sz=t=>t.length>17?'s2':t.length>13?'s1':'';
 const sum=(a,f=x=>x.amt)=>a.reduce((s,t)=>s+f(t),0);
 const pad=n=>String(n).padStart(2,'0');
 const ds=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
@@ -407,8 +432,8 @@ async function encrypt(key,obj){const iv=crypto.getRandomValues(new Uint8Array(1
 async function decrypt(key,e){const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(e.iv)},key,unb64(e.ct));return JSON.parse(new TextDecoder().decode(pt))}
 const snapshot=()=>{const s=JSON.parse(JSON.stringify(S));s.set.hide=false;return s};
 function persist(){
-  if(!S) return;const snap=snapshot();
-  saving=saving.then(async()=>{try{if(cryptoKey) localStorage.setItem(K_ENC,JSON.stringify(await encrypt(cryptoKey,snap)));else localStorage.setItem(K_PLAIN,JSON.stringify(snap))}
+  if(!S) return;const snap=snapshot(),key=cryptoKey,locked=!!meta.locked;
+  saving=saving.then(async()=>{try{if(key) localStorage.setItem(K_ENC,JSON.stringify(await encrypt(key,snap)));else if(!locked) localStorage.setItem(K_PLAIN,JSON.stringify(snap))}
     catch(e){toast('Could not save on this phone: '+e.message)}});
 }
 
@@ -427,8 +452,34 @@ actions.toastClose=hideToast;
   const end=e=>{if(x0==null) return;const dx=e.clientX-x0,dy=e.clientY-y0;x0=null;
     if(Math.abs(dx)>50||dy>30||(Math.abs(dx)<6&&Math.abs(dy)<6)) hideToast();else{t.style.transform='';t.style.opacity='';toastT=setTimeout(hideToast,1500)}};
   t.addEventListener('pointerup',end);t.addEventListener('pointercancel',end);})();
-function sheet(html,mount){const s=$('#sheet');s.innerHTML=`<div class="scrim" data-act="close"></div><div class="panel" role="dialog" aria-modal="true">${html}</div>`;s.hidden=false;mount&&mount(s.querySelector('.panel'))}
-actions.close=()=>{const s=$('#sheet');s.hidden=true;s.innerHTML=''};
+let sheetHist=false,ignorePop=false;
+function sheet(html,mount){const s=$('#sheet');
+  s.innerHTML=`<div class="scrim" data-act="close"></div><div class="panel" role="dialog" aria-modal="true"><div class="grab" data-act="noop" aria-label="Drag down to close"></div>${html}</div>`;s.hidden=false;
+  const p=s.querySelector('.panel');dragToClose(p,s.querySelector('.scrim'));
+  if(!sheetHist){try{history.pushState({sheet:1},'');sheetHist=true}catch{}}
+  mount&&mount(p)}
+function closeSheet(){const s=$('#sheet');s.hidden=true;s.innerHTML=''}
+actions.close=()=>{closeSheet();if(sheetHist) setTimeout(()=>{if($('#sheet').hidden&&sheetHist){sheetHist=false;ignorePop=true;history.back()}},0)};
+actions.noop=()=>{};
+window.addEventListener('popstate',()=>{if(ignorePop){ignorePop=false;return}if(sheetHist){sheetHist=false;closeSheet()}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#sheet').hidden) actions.close()});
+function dragToClose(p,scrim){
+  let y0=null,t0=0,dy=0,fromGrab=false,active=false;
+  const start=(y,target)=>{fromGrab=!!target.closest('.grab');if(!fromGrab&&p.scrollTop>0) return;if(target.closest('textarea,select')&&!fromGrab) return;y0=y;t0=Date.now();dy=0;active=false};
+  const move=(y,e)=>{if(y0==null) return;dy=y-y0;
+    if(!active){if(dy>8&&(fromGrab||p.scrollTop<=0)){active=true;p.classList.add('dragging')}else if(dy<-4&&!fromGrab){y0=null;return}else return}
+    if(e.cancelable) e.preventDefault();const d=Math.max(0,dy);p.style.transform=`translateY(${d}px)`;scrim.style.opacity=String(Math.max(.15,1-d/400))};
+  const end=()=>{if(y0==null) return;const v=dy/Math.max(1,Date.now()-t0);y0=null;p.classList.remove('dragging');if(!active) return;active=false;
+    if(dy>110||v>.6){p.classList.add('settle');p.style.transform=`translateY(${p.offsetHeight}px)`;scrim.style.opacity='0';setTimeout(actions.close,200)}
+    else{p.classList.add('settle');p.style.transform='';scrim.style.opacity='';setTimeout(()=>p.classList.remove('settle'),230)}};
+  p.addEventListener('touchstart',e=>start(e.touches[0].clientY,e.target),{passive:true});
+  p.addEventListener('touchmove',e=>move(e.touches[0].clientY,e),{passive:false});
+  p.addEventListener('touchend',end);p.addEventListener('touchcancel',end);
+  const g=p.querySelector('.grab');
+  g.addEventListener('pointerdown',e=>{if(e.pointerType==='touch') return;start(e.clientY,g);g.setPointerCapture(e.pointerId)});
+  g.addEventListener('pointermove',e=>{if(e.pointerType!=='touch') move(e.clientY,e)});
+  g.addEventListener('pointerup',e=>{if(e.pointerType!=='touch') end()});
+}
 const opt=(v,l,sel)=>`<option value="${esc(v)}"${v===sel?' selected':''}>${esc(l)}</option>`;
 const accOpts=(sel,f=()=>true)=>activeAccs().filter(f).map(a=>opt(a.id,a.name,sel)).join('');
 const bar=(v,max,w=.85)=>{const r=max?v/max:0;return`<div class="bar-t"><i class="${r>1?'over':r>w?'mid':''}" style="width:${Math.min(100,r*100).toFixed(1)}%"></i></div>`};
@@ -453,7 +504,7 @@ function buildAdd(){
     <div style="display:flex"><button class="icon" data-act="hide" id="btn-hide" aria-label="Hide amounts"></button><button class="icon" data-act="settings" aria-label="Settings">${I.gear}</button></div>
   </div>
   <div id="add-status"></div>
-  <div class="amount-row"><div class="amount" id="amt" aria-live="polite"></div><div style="display:flex;gap:6px"><button class="ghost" data-act="addPhoto" aria-label="Attach a bill photo"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-5px"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg> <span id="ph-n"></span></button><button class="ghost" data-act="paste">Paste SMS</button></div></div>
+  <div class="amount-row"><div class="amount" id="amt" aria-live="polite"></div><div style="display:flex;gap:6px"><button class="ghost" data-act="addPhoto" aria-label="Attach a bill photo"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-5px"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg> <span id="ph-n"></span></button><button class="ghost" data-act="paste" aria-label="Paste SMS"><span class="wide-only">Paste </span>SMS</button></div></div>
   <input id="note" class="note" placeholder="What was it for? (optional)" autocomplete="off" enterkeyhint="done">
   <div id="add-pick"></div>
   <div class="selects" id="add-selects"></div>
@@ -468,7 +519,7 @@ function buildAdd(){
   built=true;
 }
 function fmtTyped(s){const[i,d]=s.split('.');return nf.format(Number(i||0))+(d!==undefined?'.'+d:'')}
-function updateAmt(){$('#amt').innerHTML=`<span class="cur">Rs</span><span class="num${A.amt?'':' zero'}">${A.amt?fmtTyped(A.amt):'0'}</span>`}
+function updateAmt(){$('#amt').innerHTML=`<span class="cur">Rs</span><span class="num${A.amt?'':' zero'}${fmtTyped(A.amt||'0').length>10?' xlong':fmtTyped(A.amt||'0').length>7?' long':''}">${A.amt?fmtTyped(A.amt):'0'}</span>`}
 function ensureDefaults(){
   const accs=activeAccs();
   if(!A.acc||!acc(A.acc)||acc(A.acc).archived){const l=S.set.lastAcc[A.t];A.acc=l&&acc(l)&&!acc(l).archived?l:(byUse(accs,usage(A.t,'acc'))[0]||{}).id||null}
@@ -688,13 +739,13 @@ function monthsSvg(k){
 /* ================= HISTORY ================= */
 actions.hOff=d=>{H.off=Math.min(0,H.off+Number(d.d));renderHistory()};
 actions.hMode=d=>{H.mode=d.v;renderHistory()};
-actions.hCat=d=>{H.cat=d.id;H.mode='entries';renderHistory()};
-actions.hCatClear=()=>{H.cat='';renderHistory()};
+actions.hCat=d=>{H.f.cats=[d.id];H.mode='entries';renderHistory()};
 function renderHistory(){
-  const p=period(H.off),it=items(p),sp=it.filter(x=>x.t==='exp'),spent=sum(sp,x=>x.share),inc=sum(it.filter(x=>x.t==='inc'));
-  let h=`<div class="top"><button class="icon" data-act="hOff" data-d="-1" aria-label="Previous month">‹</button><h1 style="font-size:18px">${esc(p.label)}</h1>
-    <button class="icon" data-act="hOff" data-d="1" ${H.off>=0?'disabled':''} aria-label="Next month">›</button></div>
-  <div class="stats"><div class="stat"><small>Spent</small><b>${money(spent)}</b></div><div class="stat"><small>Income</small><b class="${inc?'good':''}">${money(inc)}</b></div></div>
+  const p=H.mode==='entries'?rangeOf():period(H.off),it=items(p),sp=it.filter(x=>x.t==='exp'),spent=sum(sp,x=>x.share),inc=sum(it.filter(x=>x.t==='inc'));
+  const navOff=H.mode==='entries'&&H.range!=='period';
+  let h=`<div class="top"><button class="icon" data-act="hOff" data-d="-1" aria-label="Previous month" ${navOff?'disabled':''}>‹</button><h1 style="font-size:18px;text-align:center;min-width:0">${esc(p.label)}</h1>
+    <button class="icon" data-act="hOff" data-d="1" ${H.off>=0||navOff?'disabled':''} aria-label="Next month">›</button></div>
+  <div class="stats"><div class="stat"><small>Spent</small><b class="${sz(money(spent))}">${money(spent)}</b></div><div class="stat"><small>Income</small><b class="${inc?'good ':''}${sz(money(inc))}">${money(inc)}</b></div></div>
   <div class="seg" style="margin-top:12px"><button data-act="hMode" data-v="overview" aria-pressed="${H.mode==='overview'}">Overview</button><button data-act="hMode" data-v="insights" aria-pressed="${H.mode==='insights'}">Insights</button><button data-act="hMode" data-v="entries" aria-pressed="${H.mode==='entries'}">Entries</button></div>`;
   if(H.mode==='insights'){$('#v-history').innerHTML=h+insightsHtml(p);return}
   if(H.mode==='overview'){
@@ -716,10 +767,18 @@ function renderHistory(){
     h+=`<div class="card"><h3>Last 6 months</h3>${monthsSvg(6)}</div>`;
     $('#v-history').innerHTML=h;return;
   }
-  h+=`<div class="tools"><input id="h-q" type="search" placeholder="Search" value="${esc(H.q)}" autocomplete="off"><select id="h-acc" aria-label="Account"><option value="">All accounts</option>${S.accounts.map(a=>opt(a.id,a.name,H.acc)).join('')}</select></div>
-  ${H.cat?`<button class="filter" data-act="hCatClear">${esc(cat(H.cat)?.name||'Category')} ✕</button>`:''}<div id="h-list"></div>`;
+  const nf_=filterCount();
+  h+=`<div class="tools"><input id="h-q" type="search" placeholder="Search notes, shops, people" value="${esc(H.q)}" autocomplete="off">
+    <button class="btn tbtn${nf_?' on':''}" data-act="hFilter">Filter${nf_?` (${nf_})`:''}</button></div>
+  <div class="tools"><select id="h-sort" aria-label="Sort">${[['new','Newest first'],['old','Oldest first'],['high','Biggest amount'],['low','Smallest amount'],['cat','By category']].map(([v,l])=>opt(v,l,H.sort)).join('')}</select>
+    <select id="h-range" aria-label="Date range">${[['period','One month'],['all','All time'],['custom','Pick dates']].map(([v,l])=>opt(v,l,H.range)).join('')}</select></div>
+  ${H.range==='custom'?`<div class="tools"><input type="date" id="h-from" value="${H.from}" aria-label="From"><input type="date" id="h-to" value="${H.to}" aria-label="To"></div>`:''}
+  <div class="pills">${filterPills()}</div><p class="small muted" id="h-sum" style="margin-top:8px"></p><div id="h-list"></div>`;
   $('#v-history').innerHTML=h;
-  $('#h-q').addEventListener('input',e=>{H.q=e.target.value;renderHList()});$('#h-acc').addEventListener('change',e=>{H.acc=e.target.value;renderHList()});
+  $('#h-q').addEventListener('input',e=>{H.q=e.target.value;renderHList()});
+  $('#h-sort').addEventListener('change',e=>{H.sort=e.target.value;renderHList()});
+  $('#h-range').addEventListener('change',e=>{H.range=e.target.value;if(H.range==='custom'&&!H.from){const q=period(H.off);H.from=q.start;H.to=q.end<today()?q.end:today()}renderHistory()});
+  if($('#h-from')){const upd=()=>{H.from=$('#h-from').value;H.to=$('#h-to').value;if(H.from&&H.to&&H.from>H.to){const t=H.from;H.from=H.to;H.to=t}renderHistory()};$('#h-from').addEventListener('change',upd);$('#h-to').addEventListener('change',upd)}
   renderHList();
 }
 function itemTitle(x){
@@ -735,22 +794,75 @@ function itemSub(x){
   if(x.t==='xfer') return METHODS[x.method]||'';
   return`${acc(x.acc)?.name||'?'}${x.method?', '+METHODS[x.method]:''}`;
 }
-function renderHList(){
-  const p=period(H.off),q=H.q.trim().toLowerCase();let it=items(p);
-  if(H.acc) it=it.filter(x=>x.acc===H.acc||x.to===H.acc);if(H.cat) it=it.filter(x=>x.cat===H.cat);
-  if(q) it=it.filter(x=>((x.note||'')+' '+itemTitle(x)+' '+itemSub(x)).toLowerCase().includes(q));
-  it.sort((a,b)=>b.date.localeCompare(a.date)||b.ts-a.ts);
-  if(!it.length){$('#h-list').innerHTML=`<p class="empty">${q||H.acc||H.cat?'Nothing matches.':'No entries yet. Add one from the Add tab.'}</p>`;return}
-  let h='',cur=null;
-  for(const x of it){
-    if(x.date!==cur){cur=x.date;const dt=sum(it.filter(y=>y.date===cur&&y.t==='exp'),y=>y.share);h+=`${h?'</div>':''}<div class="day"><span>${fmtDay(cur)}</span><span>${dt?money(dt):''}</span></div><div class="card" style="margin-top:0;padding:2px 14px">`}
-    const amt=x.t==='exp'?money(-x.share,{sign:true}):x.t==='inc'?money(x.amt,{sign:true}):x.t==='adj'?money(x.amt,{sign:true}):x.k==='gp'?money(x.from==='me'?-x.amt:x.amt,{sign:true}):money(x.amt);
-    const color=x.t==='exp'||x.t==='inc'?catColor(x.cat):'var(--line)';
-    h+=`<button class="row" data-act="itemEdit" data-k="${x.k}" data-id="${x.id}"><div class="l"><i class="dot" style="background:${color}"></i><div><p class="t">${esc(x.note||itemTitle(x))}${(x.k==='tx'?S.tx.find(t=>t.id===x.id):x.k==='gb'?S.gbills.find(t=>t.id===x.id):{})?.photos?.length?CLIP:''}</p><p class="sub">${x.note?esc(itemTitle(x))+', ':''}${esc(itemSub(x))}</p></div></div>
-      <div class="r ${x.t==='inc'||(x.k==='gp'&&x.to==='me')?'good':''}">${amt}</div></button>`;
-  }
-  $('#h-list').innerHTML=h+'</div>';
+function rangeOf(){
+  if(H.range==='all') return{start:'0000-01-01',end:'9999-12-31',label:'All time'};
+  if(H.range==='custom'&&H.from&&H.to) return{start:H.from,end:H.to,label:fmtD(H.from)+' '+H.from.slice(0,4)+' to '+fmtD(H.to)+' '+H.to.slice(0,4)};
+  return period(H.off);
 }
+const TYPES={exp:'Expense',inc:'Income',xfer:'Transfer',settle:'Settle-up',adj:'Correction'};
+function filterCount(){const f=H.f;return f.types.length+f.cats.length+f.accs.length+f.methods.length+(f.min!==''?1:0)+(f.max!==''?1:0)+(f.photo?1:0)+(f.split?1:0)}
+function filterPills(){const f=H.f,p=[];
+  f.types.forEach(v=>p.push(['types',v,TYPES[v]]));f.cats.forEach(v=>p.push(['cats',v,cat(v)?.name||'Category']));f.accs.forEach(v=>p.push(['accs',v,acc(v)?.name||'Account']));
+  f.methods.forEach(v=>p.push(['methods',v,METHODS[v]||v]));if(f.min!=='') p.push(['min','','From Rs '+f.min]);if(f.max!=='') p.push(['max','','Up to Rs '+f.max]);
+  if(f.photo) p.push(['photo','','Has photo']);if(f.split) p.push(['split','','Split bills']);
+  return p.map(([k,v,l])=>`<button class="filter" data-act="hPillOff" data-k="${k}" data-v="${esc(v)}" aria-label="Remove filter ${esc(l)}">${esc(l)} ✕</button>`).join('')+(p.length>1?'<button class="link" data-act="hClear" style="margin-left:4px">Clear all</button>':'');}
+actions.hPillOff=d=>{const f=H.f;if(Array.isArray(f[d.k])) f[d.k]=f[d.k].filter(x=>x!==d.v);else f[d.k]=typeof f[d.k]==='boolean'?false:'';renderHistory()};
+actions.hClear=()=>{H.f={types:[],cats:[],accs:[],methods:[],min:'',max:'',photo:false,split:false};H.q='';renderHistory()};
+const hasPhoto=x=>!!((x.k==='tx'?S.tx.find(t=>t.id===x.id):x.k==='gb'?S.gbills.find(t=>t.id===x.id):null)?.photos?.length);
+const shownAmt=x=>x.t==='exp'?x.share||x.amt:x.amt;
+function filteredItems(){
+  const f=H.f,q=H.q.trim().toLowerCase();let it=items(rangeOf());
+  if(f.types.length) it=it.filter(x=>f.types.includes(x.t));
+  if(f.cats.length) it=it.filter(x=>f.cats.includes(x.cat));
+  if(f.accs.length) it=it.filter(x=>f.accs.includes(x.acc)||f.accs.includes(x.to));
+  if(f.methods.length) it=it.filter(x=>f.methods.includes(x.method));
+  const mn=toP(f.min),mx=toP(f.max);
+  if(f.min!=='') it=it.filter(x=>Math.abs(shownAmt(x))>=mn);if(f.max!=='') it=it.filter(x=>Math.abs(shownAmt(x))<=mx);
+  if(f.photo) it=it.filter(hasPhoto);if(f.split) it=it.filter(x=>x.k==='gb');
+  if(q) it=it.filter(x=>((x.note||'')+' '+itemTitle(x)+' '+itemSub(x)).toLowerCase().includes(q));
+  const by={new:(a,b)=>b.date.localeCompare(a.date)||b.ts-a.ts,old:(a,b)=>a.date.localeCompare(b.date)||a.ts-b.ts,
+    high:(a,b)=>Math.abs(shownAmt(b))-Math.abs(shownAmt(a))||b.date.localeCompare(a.date),low:(a,b)=>Math.abs(shownAmt(a))-Math.abs(shownAmt(b))||b.date.localeCompare(a.date),
+    cat:(a,b)=>itemTitle(a).localeCompare(itemTitle(b))||b.date.localeCompare(a.date)}[H.sort]||((a,b)=>0);
+  return it.sort(by);
+}
+function itemRow(x,withDate){
+  const amt=x.t==='exp'?money(-x.share,{sign:true}):x.t==='inc'?money(x.amt,{sign:true}):x.t==='adj'?money(x.amt,{sign:true}):x.k==='gp'?money(x.from==='me'?-x.amt:x.amt,{sign:true}):money(x.amt);
+  const color=x.t==='exp'||x.t==='inc'?catColor(x.cat):'var(--line)';
+  return`<button class="row" data-act="itemEdit" data-k="${x.k}" data-id="${x.id}"><div class="l"><i class="dot" style="background:${color}"></i><div><p class="t">${esc(x.note||itemTitle(x))}${hasPhoto(x)?CLIP:''}</p><p class="sub t">${withDate?fmtD(x.date)+' '+x.date.slice(2,4)+', ':''}${x.note?esc(itemTitle(x))+', ':''}${esc(itemSub(x))}</p></div></div>
+    <div class="r ${x.t==='inc'||(x.k==='gp'&&x.to==='me')?'good':''}">${amt}</div></button>`;
+}
+function renderHList(){
+  const it=filteredItems(),sp=sum(it.filter(x=>x.t==='exp'),x=>x.share),inc=sum(it.filter(x=>x.t==='inc'));
+  $('#h-sum').textContent=it.length?`${it.length} ${it.length===1?'entry':'entries'}${sp?`, ${money(sp)} spent`:''}${inc?`, ${money(inc)} in`:''}`:'';
+  if(!it.length){$('#h-list').innerHTML=`<p class="empty">${H.q||filterCount()?'Nothing matches. Try removing a filter.':'No entries in this range yet.'}</p>`;return}
+  const LIM=300,more=it.length>LIM,show_=it.slice(0,LIM);let h='';
+  if(H.sort==='new'||H.sort==='old'){let cur=null;
+    for(const x of show_){if(x.date!==cur){cur=x.date;const dt=sum(it.filter(y=>y.date===cur&&y.t==='exp'),y=>y.share);h+=`${h?'</div>':''}<div class="day"><span>${fmtDay(cur)} ${cur.slice(0,4)!==today().slice(0,4)?cur.slice(0,4):''}</span><span>${dt?money(dt):''}</span></div><div class="card" style="margin-top:0;padding:2px 14px">`}
+      h+=itemRow(x,false)}
+    h+='</div>';
+  }else h=`<div class="card" style="padding:2px 14px">${show_.map(x=>itemRow(x,true)).join('')}</div>`;
+  if(more) h+=`<p class="help" style="text-align:center">Showing the first ${LIM}. Narrow the filters to see the rest.</p>`;
+  $('#h-list').innerHTML=h;
+}
+actions.hFilter=()=>{
+  const f=JSON.parse(JSON.stringify(H.f)),draw=()=>{
+    const ch=(k,v,l)=>`<button class="opt${f[k].includes(v)?' on':''}" data-act="hfT" data-k="${k}" data-v="${esc(v)}">${esc(l)}</button>`;
+    sheet(`<h2>Filter entries</h2>
+    <p class="lbl">Type</p><div class="opts">${Object.entries(TYPES).map(([v,l])=>ch('types',v,l)).join('')}</div>
+    <p class="lbl">Category</p><div class="opts">${S.cats.filter(c=>!c.hidden||f.cats.includes(c.id)).map(c=>ch('cats',c.id,c.name)).join('')}</div>
+    <p class="lbl">Account</p><div class="opts">${S.accounts.map(a=>ch('accs',a.id,a.name)).join('')}</div>
+    <p class="lbl">Paid with</p><div class="opts">${Object.entries(METHODS).map(([v,l])=>ch('methods',v,l)).join('')}</div>
+    <div class="grid2"><label>Amount from (Rs)<input id="hf-min" inputmode="decimal" value="${esc(f.min)}"></label><label>Up to (Rs)<input id="hf-max" inputmode="decimal" value="${esc(f.max)}"></label></div>
+    <div class="opts" style="margin-top:14px"><button class="opt${f.photo?' on':''}" data-act="hfB" data-k="photo">Has bill photo</button><button class="opt${f.split?' on':''}" data-act="hfB" data-k="split">Split bills only</button></div>
+    <div class="btns"><button class="btn" data-act="hfClear">Clear</button><button class="btn primary grow" data-act="hfGo">Show results</button></div>`,
+    p=>{p.querySelector('#hf-min').addEventListener('input',e=>f.min=e.target.value.trim());p.querySelector('#hf-max').addEventListener('input',e=>f.max=e.target.value.trim())});
+  };
+  actions.hfT=d=>{const a=f[d.k];const i=a.indexOf(d.v);i>=0?a.splice(i,1):a.push(d.v);const y=$('.panel').scrollTop;draw();$('.panel').scrollTop=y};
+  actions.hfB=d=>{f[d.k]=!f[d.k];const y=$('.panel').scrollTop;draw();$('.panel').scrollTop=y};
+  actions.hfClear=()=>{Object.assign(f,{types:[],cats:[],accs:[],methods:[],min:'',max:'',photo:false,split:false});draw()};
+  actions.hfGo=()=>{H.f=f;H.mode='entries';actions.close();renderHistory()};
+  draw();
+};
 actions.itemEdit=d=>{const lt=d.k==='tx'&&S.tx.find(t=>t.id===d.id);if(lt&&lt.vlog&&S.vlogs.some(v=>v.id===lt.vlog)){actions.vlogEdit({id:lt.vlog});return}if(d.k==='tx') txEdit(d.id);else if(d.k==='gb') gbillEdit(d.id);else gpayEdit(d.id)};
 function txEdit(id){
   const t=S.tx.find(x=>x.id===id);if(!t) return;PH={list:t.photos||(t.photos=[]),redraw:()=>{const keep={a:$('#f-amt')?.value,n:$('#f-note')?.value};txEdit(id);if(keep.a!=null){$('#f-amt').value=keep.a;$('#f-note').value=keep.n}}};setTimeout(()=>hydrate($('#sheet')));
@@ -880,7 +992,7 @@ function renderAccounts(){
   const b=balances(),accs=activeAccs(),mon=accs.filter(a=>!isCredit(a)),cr=accs.filter(isCredit);
   const have=mon.reduce((s,a)=>s+b[a.id],0),owe=cr.reduce((s,a)=>s+Math.max(0,-b[a.id]),0),friends=myGroupNet();
   let h=`<div class="top"><h1>Accounts</h1><button class="link" data-act="accEdit">Add account</button></div>
-  <div class="stats"><div class="stat"><small>You have</small><b>${money(have)}</b></div><div class="stat"><small>Owed on cards</small><b class="${owe?'danger':''}">${money(owe)}</b></div></div>
+  <div class="stats"><div class="stat"><small>You have</small><b class="${sz(money(have))}">${money(have)}</b></div><div class="stat"><small>Owed on cards</small><b class="${owe?'danger ':''}${sz(money(owe))}">${money(owe)}</b></div></div>
   ${friends?`<p class="help">${friends>0?`Friends also owe you ${money(friends)}.`:`You also owe friends ${money(-friends)}.`}</p>`:''}`;
   h+=alerts().filter(a=>a.go==='accounts').map(a=>`<div class="status ${a.cls}" style="margin-top:10px">${esc(a.text)}</div>`).join('');
   h+=`<div class="btns"><button class="btn grow" data-act="startXfer">Move money</button><button class="btn grow" data-act="startAtm">ATM withdrawal</button></div>`;
@@ -912,7 +1024,7 @@ actions.accOpen=d=>{
 };
 actions.payCard=d=>{const a=acc(d.id),c=cardStatus(a);A=blankAdd('xfer');A.to=a.id;A.amt=String((c.remaining>0?c.remaining:c.owed)/100);
   A.acc=(byUse(activeAccs().filter(x=>x.kind==='bank'||x.kind==='wallet'),usage('xfer','acc'))[0]||{}).id||null;A.method='bank';actions.close();show('add')};
-actions.accTx=d=>{H.acc=d.id;H.mode='entries';H.q='';H.cat='';actions.close();show('history')};
+actions.accTx=d=>{H.f={types:[],cats:[],accs:[d.id],methods:[],min:'',max:'',photo:false,split:false};H.mode='entries';H.q='';actions.close();show('history')};
 actions.reconcile=d=>{const a=acc(d.id),b=balances()[a.id];
   sheet(`<h2>Fix balance</h2><p class="help">Enter ${isCredit(a)?'what you owe on':'what is in'} ${esc(a.name)} right now, as your bank app shows it. Khata adds a correction for the difference.</p>
   <label>${isCredit(a)?'Amount owed':'Balance'}<input id="f-amt" inputmode="decimal" value="${(isCredit(a)?-b:b)/100}"></label>
@@ -1187,7 +1299,7 @@ actions.entryPhoto=d=>{if(!PH) return;addPhotosTo(PH.list,!!d.cam).then(n=>{if(n
 
 /* ================= vehicles ================= */
 const VKIND={bike:'Bike',scooter:'Scooter',car:'Car',other:'Other'};
-let GA={open:null};
+let GA={open:null,type:'all',sort:'new'};
 const vehicle=id=>S.vehicles.find(v=>v.id===id);
 function ensureVehCat(){let c=cat('vehicle');if(!c){c={id:'vehicle',name:'Vehicle service',kind:'exp',budget:0,color:'#5C6B7A'};S.cats.push(c)}return c.id}
 function vlogsOf(id){return S.vlogs.filter(l=>l.veh===id).sort((a,b)=>a.date.localeCompare(b.date)||(a.odo??0)-(b.odo??0)||a.ts-b.ts)}
@@ -1233,7 +1345,7 @@ function renderGarage(){
   if(arch.length) h+=`<p class="lbl">Archived</p><div class="card" style="padding:2px 16px">${arch.map(x=>`<button class="row" data-act="vehOpen" data-id="${x.id}"><span class="muted">${esc(x.name)}</span></button>`).join('')}</div>`;
   $('#v-garage').innerHTML=h;
 }
-actions.vehOpen=d=>{GA.open=d.id;renderGarage();$('#main').scrollTop=0};
+actions.vehOpen=d=>{GA.open=d.id;GA.type='all';GA.sort='new';renderGarage();$('#main').scrollTop=0};
 actions.vehBack=()=>{GA.open=null;renderGarage()};
 function renderVehicle(v){
   const st=vehStats(v),sl=serviceLine(v,st);
@@ -1255,13 +1367,17 @@ function renderVehicle(v){
     <p class="help">From Rs ${Math.round(r0.rate)} to Rs ${Math.round(r1.rate)} a litre, ${ch>=0?'up':'down'} ${Math.abs(Math.round(ch*100))}%.</p></div>`}
   if(months.some(m=>m.f||m.s)) h+=`<div class="card"><h3>Running cost by month</h3>${barsSvg(months.map(m=>m.f),months.map(m=>m.l),{v2:months.map(m=>m.s)})}
     <div class="key"><span><i class="dot" style="background:var(--accent)"></i>Fuel</span><span><i class="dot" style="background:#C2912E"></i>Service and other</span></div></div>`;
-  const logs=[...st.logs].reverse();
-  h+=`<div class="card" style="padding:12px 16px 2px"><h3>Log</h3>${logs.length?logs.map(l=>{const f=st.fills.find(x=>x.id===l.id);
-    const title=l.type==='fuel'?`Fuel${l.litres?', '+l.litres+' L':''}`:l.type==='service'?`Service${l.no?' '+ord(l.no):''}`:(l.note||'Other');
-    const sub=[fmtD(l.date)+' '+parseD(l.date).getFullYear(),l.odo!=null?(l.approx?'about ':'')+km(l.odo):'',l.rate?'Rs '+l.rate+'/L':'',f&&f.kml?f.kml.toFixed(1)+' km/l':'',l.type!=='other'&&l.note?l.note:''].filter(Boolean).join(', ');
+  let logs=[...st.logs].reverse();if(GA.type!=='all') logs=logs.filter(l=>l.type===GA.type);
+  if(GA.sort==='old') logs.reverse();else if(GA.sort==='cost') logs.sort((a,b)=>(b.total||0)-(a.total||0));else if(GA.sort==='kml') logs.sort((a,b)=>((st.fills.find(x=>x.id===b.id)||{}).kml||0)-((st.fills.find(x=>x.id===a.id)||{}).kml||0));
+  h+=`<div class="card" style="padding:12px 16px 2px"><h3>Log</h3>
+  <div class="seg" style="margin-bottom:8px">${[['all','All'],['fuel','Fuel'],['service','Service'],['other','Other']].map(([v,l])=>`<button data-act="gaType" data-v="${v}" aria-pressed="${GA.type===v}">${l}</button>`).join('')}</div>
+  <div class="tools" style="margin:0 0 4px"><select id="ga-sort" aria-label="Sort log">${[['new','Newest first'],['old','Oldest first'],['cost','Most expensive'],['kml','Best mileage']].map(([v,l])=>opt(v,l,GA.sort)).join('')}</select></div>${logs.length?logs.map(l=>{const f=st.fills.find(x=>x.id===l.id);
+    const title=l.type==='fuel'?`Fuel${l.litres?', '+(+(+l.litres).toFixed(2))+' L':''}`:l.type==='service'?`Service${l.no?' '+ord(l.no):''}`:(l.note||'Other');
+    const sub=[fmtD(l.date)+' '+parseD(l.date).getFullYear(),l.odo!=null?(l.approx?'about ':'')+km(l.odo):'',l.rate?'Rs '+(+(+l.rate).toFixed(2))+'/L':'',f&&f.kml?f.kml.toFixed(1)+' km/l':'',l.type!=='other'&&l.note?l.note:''].filter(Boolean).join(', ');
     return`<button class="row" data-act="vlogEdit" data-id="${l.id}"><div class="l"><i class="dot" style="background:${l.type==='fuel'?'var(--accent)':l.type==='service'?'#C2912E':'#5C6B7A'}"></i><div><p class="t">${esc(title)}${l.photos&&l.photos.length?CLIP:''}</p><p class="sub">${esc(sub)}</p></div></div><div class="r">${l.total?money(l.total):''}</div></button>`}).join(''):'<p class="muted" style="padding-bottom:12px">Nothing logged yet.</p>'}</div>`;
-  $('#v-garage').innerHTML=h;
+  $('#v-garage').innerHTML=h;const gs=$('#ga-sort');if(gs) gs.addEventListener('change',e=>{GA.sort=e.target.value;const y=$('#main').scrollTop;renderGarage();$('#main').scrollTop=y});
 }
+actions.gaType=d=>{GA.type=d.v;const y=$('#main').scrollTop;renderGarage();$('#main').scrollTop=y};
 actions.vehEdit=d=>{
   const v=d.id?vehicle(d.id):{kind:'bike'};
   sheet(`<h2>${d.id?'Edit vehicle':'Add vehicle'}</h2><div class="grid2"><label>Name<input id="f-vname" value="${esc(v.name||'')}" placeholder="Bike, Car"></label><label>Type<select id="f-vkind">${Object.entries(VKIND).map(([k,l])=>opt(k,l,v.kind)).join('')}</select></label></div>
@@ -1330,7 +1446,7 @@ actions.vlSave=()=>{
 function linkVlogTx(x,accId){
   let tx=x.tx&&S.tx.find(t=>t.id===x.tx);const v=vehicle(x.veh);
   if(accId&&x.total){
-    const note=x.type==='fuel'?`${v.name} fuel${x.litres?', '+x.litres+' L':''}`:`${v.name} ${x.type==='service'?'service':''} ${x.note||''}`.replace(/\s+/g,' ').trim();
+    const note=x.type==='fuel'?`${v.name} fuel${x.litres?', '+(+(+x.litres).toFixed(2))+' L':''}`:`${v.name} ${x.type==='service'?'service':''} ${x.note||''}`.replace(/\s+/g,' ').trim();
     if(!tx){tx={id:uid(),t:'exp',ts:Date.now(),vlog:x.id};S.tx.push(tx);x.tx=tx.id}
     Object.assign(tx,{amt:x.total,acc:accId,cat:x.type==='fuel'?'fuel':ensureVehCat(),date:x.date,method:defaultMethod(acc(accId),'exp'),note,photos:(x.photos||[]).slice()});
     S.set.lastAcc.exp=accId;

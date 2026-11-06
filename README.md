@@ -16,7 +16,7 @@ A personal money ledger. Static PWA on GitHub Pages. No server, no database, no 
 |---|---|
 | `index.html` | The whole app. Data lives in `localStorage` on the phone. |
 | `xlsx.js` | Builds the Excel export (formulas, charts, hidden backup sheet) and reads it back for restore. No libraries. |
-| `sw.js` | Caches the app for offline use. **Bump `CACHE` (`khata-v4` → `khata-v5`) on every update.** |
+| `sw.js` | Caches the app for offline use. **Bump `CACHE` (`khata-v7` → `khata-v8`) on every update.** |
 | `manifest.webmanifest` | Install info, home-screen shortcuts, and the Android share target for bank SMS. |
 | `icon-*.png` | App icons. |
 
