@@ -17,7 +17,8 @@ A personal money ledger. Static PWA on GitHub Pages. No server, no database. The
 | `index.html` | The whole app. Data lives in `localStorage` on the phone. |
 | `xlsx.js` | Builds the Excel export (formulas, charts, hidden backup sheet) and reads it back for restore. No libraries. |
 | `tesseract*.js`, `eng.traineddata.gz` | Offline bill reader (tesseract.js 7, Apache-2.0, see `LICENSE-tesseract.md`). Kept next to `index.html` (no folders) so they can be uploaded from a phone. |
-| `sw.js` | Caches the app for offline use. **Bump `CACHE` (`khata-v17` → `khata-v18`) on every update.** |
+| `Code.gs` | Apps Script for the optional Google Sheets sync. Not used by the app itself. |
+| `sw.js` | Caches the app for offline use. **Bump `CACHE` (`khata-v19` → `khata-v20`) on every update.** |
 | `manifest.webmanifest` | Install info, home-screen shortcuts, and the Android share target for bank SMS. |
 | `icon-*.png` | App icons. |
 
@@ -51,6 +52,13 @@ A personal money ledger. Static PWA on GitHub Pages. No server, no database. The
 - Fuel on the Add screen: choose Fuel and a vehicle row appears (ODO, litres). One save logs both.
 - Import from Diarium: Word (.docx) export. Reads Petrol / Servicing / Bike / Car tags, ODO, Rate, Litres, Total price, and attached photos. Journal entries are skipped.
 
+## Safety rules
+
+- No erase option on the lock screen. Erase everything (Settings) needs the app PIN or fingerprint (or the amounts PIN when there is no lock) and typing ERASE.
+- Changing the PIN, turning the lock off and restoring from a file also need the current PIN or fingerprint.
+- Five wrong PINs on the lock screen start a wait (30 s, doubling each miss, up to 1 hour).
+- Closing a popup only ever steps back over the popup's own history entry, so it can't leave the app.
+
 ## Fingerprint unlock
 
 - Settings → Privacy → Unlock with fingerprint (needs PIN lock on). Uses the WebAuthn PRF extension: the fingerprint check returns a secret only this phone's authenticator can produce; that secret encrypts a copy of the PIN in `khata.meta`. Unlocking decrypts the PIN and opens the data as usual.
@@ -68,6 +76,14 @@ A personal money ledger. Static PWA on GitHub Pages. No server, no database. The
 - **AI (optional):** Settings → Reading bills → turn on, paste an Anthropic API key. The bill photo is sent to `api.anthropic.com` directly from the phone. The key is stored on the phone (encrypted when a PIN is set) and stripped from every backup and Excel file.
 - Results are always suggestions: pick the total, or open **Split by items**, tick who had each item; tax, service charge and discount are shared in proportion.
 - CSP allows `'wasm-unsafe-eval'` (needed for the OCR engine) and `connect-src https://api.anthropic.com` (only used when AI reading is on).
+
+## Google Sheets sync (optional)
+
+- `Code.gs` goes into the sheet's Apps Script (Deploy → Web app, Execute as Me, access Anyone). Paste the `/exec` link in Settings → Google Sheet.
+- Readable tabs: Entries, Monthly, Budgets, Groups, Fuel, Service. Same redaction as Excel: never bank, wallet or cash balances; income only if switched on.
+- Hidden tab: the full backup, encrypted on the phone with the PIN (PIN lock is required). Bill photos are not synced.
+- Auto sync about 20 seconds after a change, when leaving the app, and every 6 hours while open, only while online. The first phone to connect locks the sheet with a recovery code; a new phone needs that code (Settings → Google Sheet → Set up) to restore.
+- CSP allows `script.google.com` and `script.googleusercontent.com` for this.
 
 ## Excel export
 

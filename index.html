@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com; manifest-src 'self'; worker-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com https://script.google.com https://script.googleusercontent.com; manifest-src 'self'; worker-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#111513">
@@ -189,6 +189,7 @@ label.sel{cursor:text}
 .cday .dn{font-size:13px;font-weight:600;line-height:1}.cday .da{font-size:10px;line-height:1;opacity:.9;white-space:nowrap;overflow:hidden;max-width:100%}
 .cday.fut{opacity:.4}.cday.today{box-shadow:inset 0 0 0 2px var(--ink)}.cday.sel{outline:2px solid var(--accent);outline-offset:1px}
 .cday .inc{position:absolute;top:4px;right:4px;width:6px;height:6px;border-radius:50%;background:#C2912E}
+.gs-help{margin-top:12px}.gs-help summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14px;padding:6px 0}.gs-help ol{padding-left:18px;margin:6px 0}.gs-help li{margin:4px 0}
 .pills{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:4px}
 .tbtn{height:44px;flex:none;padding:0 14px}.tbtn.on{border-color:var(--accent);color:var(--accent)}
 .filter{display:inline-flex;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;align-items:center;gap:8px;margin-top:6px;height:34px;padding:0 12px;border-radius:17px;background:var(--accent-soft);color:var(--accent);font-size:14px;font-weight:550}
@@ -300,7 +301,7 @@ main{padding-bottom:22px}
   <p id="lock-err" class="danger"></p>
   <button class="btn primary full" data-act="unlock">Unlock</button>
   <button class="btn full" id="lock-bio" data-act="bioUnlock" style="margin-top:10px" hidden>Use fingerprint</button>
-  <p class="help">Forgot it? The data is encrypted and can't be recovered. <button class="link" data-act="wipeFromLock">Erase and start over</button></p>
+  <p class="help">Forgot your PIN? It can’t be reset or recovered. Keep a backup file somewhere safe.</p>
 </div></div>
 
 <main id="main">
@@ -498,10 +499,10 @@ async function decrypt(key,e){const pt=await crypto.subtle.decrypt({name:'AES-GC
 const snapshot=()=>{const s=JSON.parse(JSON.stringify(S));s.set.hide=false;return s};
 /* Excel never carries money-account balances: opening balances are zeroed and balance corrections dropped */
 const excelSnapshot=()=>{const s=exportSnapshot();const money=new Set(s.accounts.filter(a=>a.kind!=='credit'&&a.kind!=='vcc').map(a=>a.id));
-  s.accounts.forEach(a=>{if(money.has(a.id)) a.open=0});s.tx=s.tx.filter(t=>!(t.t==='adj'&&money.has(t.acc)));s.noBalances=true;if(!S.set.excelIncome){s.tx=s.tx.filter(t=>t.t!=='inc');s.noIncome=true}return s};
+  s.accounts.forEach(a=>{if(money.has(a.id)) a.open=0});if(s.set&&s.set.gs) s.set.gs={url:s.set.gs.url,auto:s.set.gs.auto};s.tx=s.tx.filter(t=>!(t.t==='adj'&&money.has(t.acc)));s.noBalances=true;if(!S.set.excelIncome){s.tx=s.tx.filter(t=>t.t!=='inc');s.noIncome=true}return s};
 const exportSnapshot=()=>{const s=snapshot();if(s.set.ai) s.set.ai.key='';return s};
 function persist(){
-  if(!S) return;const snap=snapshot(),key=cryptoKey,locked=!!meta.locked;
+  if(!S||WIPING) return;if(typeof gsDirty==='function') gsDirty();const snap=snapshot(),key=cryptoKey,locked=!!meta.locked;
   saving=saving.then(async()=>{try{if(key) localStorage.setItem(K_ENC,JSON.stringify(await encrypt(key,snap)));else if(!locked) localStorage.setItem(K_PLAIN,JSON.stringify(snap))}
     catch(e){toast('Could not save on this phone: '+e.message)}});
 }
@@ -521,16 +522,17 @@ actions.toastClose=hideToast;
   const end=e=>{if(x0==null) return;const dx=e.clientX-x0,dy=e.clientY-y0;x0=null;
     if(Math.abs(dx)>50||dy>30||(Math.abs(dx)<6&&Math.abs(dy)<6)) hideToast();else{t.style.transform='';t.style.opacity='';toastT=setTimeout(hideToast,1500)}};
   t.addEventListener('pointerup',end);t.addEventListener('pointercancel',end);})();
-let sheetHist=false,ignorePop=false;
+let ignorePop=false;const onSheetEntry=()=>!!(history.state&&history.state.sheet);
 function sheet(html,mount){const s=$('#sheet');
   s.innerHTML=`<div class="scrim" data-act="close"></div><div class="panel" role="dialog" aria-modal="true"><div class="grab" data-act="noop" aria-label="Drag down to close"></div>${html}</div>`;s.hidden=false;
   const p=s.querySelector('.panel');dragToClose(p,s.querySelector('.scrim'));
-  if(!sheetHist){try{history.pushState({sheet:1},'');sheetHist=true}catch{}}
+  if(!onSheetEntry()){try{history.pushState({sheet:1},'')}catch{}}
   mount&&mount(p)}
 function closeSheet(){const s=$('#sheet');s.hidden=true;s.innerHTML=''}
-actions.close=()=>{closeSheet();if(sheetHist) setTimeout(()=>{if($('#sheet').hidden&&sheetHist){sheetHist=false;ignorePop=true;history.back()}},0)};
+/* only ever step back over our own popup entry, so closing a popup can never leave the app */
+actions.close=()=>{closeSheet();setTimeout(()=>{if($('#sheet').hidden&&onSheetEntry()&&!ignorePop){ignorePop=true;history.back()}},0)};
 actions.noop=()=>{};
-window.addEventListener('popstate',()=>{if(ignorePop){ignorePop=false;return}if(sheetHist){sheetHist=false;closeSheet()}});
+window.addEventListener('popstate',()=>{if(ignorePop){ignorePop=false;return}if(!$('#sheet').hidden&&!onSheetEntry()) closeSheet()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#sheet').hidden) actions.close()});
 function dragToClose(p,scrim){
   let y0=null,t0=0,dy=0,fromGrab=false,active=false;
@@ -1276,6 +1278,7 @@ function renderSettings(){
     <div class="srow"><span>Always hide amounts<small>Hidden every time you open or come back to the app. Tap the eye to show them.</small></span><label class="switch"><input type="checkbox" id="f-hideopen" ${S.set.hideOnOpen?'checked':''} aria-label="Always hide amounts"><i></i></label></div>
     <div class="srow"><span>To show amounts, ask for<small>${guardSummary()}</small></span><select id="f-guard" class="ssel">${[['off','Nothing'],['pin','PIN'],['bio','Fingerprint or face']].map(([v,l])=>opt(v,l,guard().mode)).join('')}</select></div>
     <p class="help">Your entries stay on this phone. Khata only goes online to download the bill reader once, and to send a bill photo to Claude if you turn that on.</p></div>
+  <div class="card" id="gs-card">${gsCardHtml()}</div>
   <div id="bill-set" class="card"><h3>Reading bills</h3><p class="muted small">Checking…</p></div>
   <div class="card"><h3>Month</h3><div class="srow" style="border:0"><span>Month starts on<small>Use your salary day to budget payday to payday.</small></span><select id="f-start" class="ssel">${Array.from({length:28},(_,i)=>opt(String(i+1),ord(i+1),String(S.set.startDay))).join('')}</select></div></div>
   <div class="card"><h3>Data</h3><div class="srow"><span>Entries on this phone</span><span>${nf.format(n)}</span></div><div class="srow" style="border:0"><span>Storage used</span><span id="f-store">…</span></div>
@@ -1289,15 +1292,17 @@ function renderSettings(){
   if($('#f-autolock')) $('#f-autolock').addEventListener('change',e=>{S.set.autolock=+e.target.value;save()});
   if($('#f-bioun')) $('#f-bioun').addEventListener('change',e=>{e.target.checked?bioUnlockSetup():bioUnlockOff()});
   if(navigator.storage&&navigator.storage.estimate) navigator.storage.estimate().then(e=>{const el=$('#f-store');if(el) el.textContent=(e.usage/1048576).toFixed(1)+' MB'}).catch(()=>{});
+  gsWire();
   billSettingsHtml().then(h=>{const el=$('#bill-set');if(!el) return;el.outerHTML=h;
     const c=$('#f-aion');if(!c) return;
     c.addEventListener('change',()=>{aiSet().on=c.checked;$('#ai-box').hidden=!c.checked;save()});
     $('#f-aikey').addEventListener('change',e=>{aiSet().key=e.target.value.trim();save();toast(aiSet().key?'API key saved on this phone.':'API key removed.')});
     $('#f-aimodel').addEventListener('change',e=>{aiSet().model=e.target.value;save()})});
 }
-const APP_VERSION='v17';
+const APP_VERSION='v19';
 actions.settingsSave=()=>{if($('#f-aion')){const ai=aiSet();ai.on=$('#f-aion').checked;ai.key=($('#f-aikey').value||'').trim();ai.model=$('#f-aimodel').value}const sd=parseInt($('#f-start').value);S.set.startDay=sd>=1&&sd<=28?sd:1;S.set.hideOnOpen=$('#f-hideopen').checked;if($('#f-autolock')) S.set.autolock=Number($('#f-autolock').value);persist();actions.close();render()};
-actions.lockSet=()=>{if(!window.crypto||!crypto.subtle){toast('Encryption needs the app opened over https.');return}
+actions.lockSet=async()=>{if(!window.crypto||!crypto.subtle){toast('Encryption needs the app opened over https.');return}
+  if(meta.locked&&!(await requireAuth('Change PIN'))) return;
   sheet(`<h2>${meta.locked?'Change PIN':'Set a PIN'}</h2><p class="help">Your data is encrypted with this. A short PIN keeps out someone who picks up your phone. Against someone who copies the phone's data, only a long passphrase holds up. There's no recovery: forget it and the data is gone unless you have a backup.</p>
   <label>PIN or passphrase<input id="f-p1" type="password" autocomplete="new-password"></label><label>Again<input id="f-p2" type="password" autocomplete="new-password"></label><p class="danger small" id="f-perr"></p>
   <div class="btns"><button class="btn primary grow" data-act="lockSave">Save and encrypt</button></div>`,p=>p.querySelector('input').focus())};
@@ -1306,20 +1311,34 @@ actions.lockSave=async()=>{const a=$('#f-p1').value,b=$('#f-p2').value,err=$('#f
   const oldMeta=meta;err.textContent='Encrypting…';const salt=crypto.getRandomValues(new Uint8Array(16)),oldKey=cryptoKey;cryptoKey=await deriveKey(a,salt);await rekeyPhotos(oldKey,cryptoKey);
   meta={locked:true,salt:b64(salt),numeric:/^\d+$/.test(a)};localStorage.setItem(K_META,JSON.stringify(meta));persist();await saving;localStorage.removeItem(K_PLAIN);
   const hadBio=!!oldMeta.bio;actions.close();render();toast(hadBio?'New PIN saved. Turn fingerprint unlock on again in Settings.':'Locked with your PIN. Data is now encrypted.')};
-actions.lockOff=async()=>{if(!confirm('Turn off the lock? Your data will be stored unencrypted on this phone.')) return;
+actions.lockOff=async()=>{if(!(await requireAuth('Turn off the lock'))) return;if(!confirm('Turn off the lock? Your data will be stored unencrypted on this phone.')) return;
   if(guard().mode!=='off'&&!guard().pinHash){toast('Amounts still need a PIN. Set one for that.');if(!(await setGuardPin())) return}
   await rekeyPhotos(cryptoKey,null);cryptoKey=null;meta={};localStorage.setItem(K_META,'{}');persist();await saving;localStorage.removeItem(K_ENC);actions.close();render();toast('Lock turned off.')};
 actions.lockNow=()=>showLock();
 function showLock(msg){if(S) persist();S=null;cryptoKey=null;actions.close();if(typeof forgetPhotoURLs==='function'){forgetPhotoURLs();actions.viewerClose()}
   ['add','history','groups','garage','accounts','plan','settings'].forEach(v=>$('#v-'+v).innerHTML='');built=false;
-  const inp=$('#lock-in');inp.value='';inp.setAttribute('inputmode',meta.numeric?'numeric':'text');$('#lock-err').textContent=msg||'';$('#lock').hidden=false;const lb=$('#lock-bio');lb.hidden=!meta.bio;if(meta.bio&&!msg) setTimeout(()=>actions.bioUnlock(),300);else setTimeout(()=>inp.focus(),60)}
-actions.unlock=async()=>{const p=$('#lock-in').value;if(!p) return;$('#lock-err').textContent='Unlocking…';
-  try{const key=await deriveKey(p,unb64(meta.salt));S=await decrypt(key,JSON.parse(localStorage.getItem(K_ENC)));cryptoKey=key;migrate();start()}
-  catch{$('#lock-err').textContent='Wrong PIN or passphrase.';$('#lock-in').select()}};
+  const inp=$('#lock-in');inp.value='';inp.setAttribute('inputmode',meta.numeric?'numeric':'text');$('#lock-err').textContent=msg||'';$('#lock').hidden=false;if(lockWait()>0) showWait();const lb=$('#lock-bio');lb.hidden=!meta.bio;if(meta.bio&&!msg) setTimeout(()=>actions.bioUnlock(),300);else setTimeout(()=>inp.focus(),60)}
+/* wrong-PIN throttle: after 5 misses, wait 30 s, doubling each miss (max 1 hour) */
+const lockWait=()=>Math.max(0,(meta.waitUntil||0)-Date.now());
+function saveMeta(){localStorage.setItem(K_META,JSON.stringify(meta))}
+function noteFail(){meta.fails=(meta.fails||0)+1;if(meta.fails>=5) meta.waitUntil=Date.now()+Math.min(3600e3,30e3*2**(meta.fails-5));saveMeta()}
+function clearFails(){if(meta.fails||meta.waitUntil){delete meta.fails;delete meta.waitUntil;saveMeta()}}
+let waitTimer=null;
+function showWait(){clearInterval(waitTimer);const tick=()=>{const w=lockWait(),b=document.querySelector('[data-act=unlock]');if(!b) return;
+  if(w>0){b.disabled=true;$('#lock-err').textContent=`Too many wrong tries. Try again in ${w>=60e3?Math.ceil(w/60e3)+' min':Math.ceil(w/1000)+' s'}.`}else{b.disabled=false;clearInterval(waitTimer);if(/Too many/.test($('#lock-err').textContent)) $('#lock-err').textContent=''}};tick();waitTimer=setInterval(tick,1000)}
+actions.unlock=async()=>{const p=$('#lock-in').value;if(!p) return;if(lockWait()>0){showWait();return}$('#lock-err').textContent='Unlocking…';
+  try{const key=await deriveKey(p,unb64(meta.salt));S=await decrypt(key,JSON.parse(localStorage.getItem(K_ENC)));cryptoKey=key;clearFails();migrate();start()}
+  catch{noteFail();if(lockWait()>0) showWait();else{const left=5-(meta.fails||0);$('#lock-err').textContent='Wrong PIN or passphrase.'+(left>0&&left<3?` ${left} more ${left===1?'try':'tries'} before a wait.`:'')}$('#lock-in').select()}};
 $('#lock-in').addEventListener('keydown',e=>{if(e.key==='Enter') actions.unlock()});
-actions.wipeFromLock=()=>{if(confirm('Erase all Khata data on this phone? This can\u2019t be undone.')&&confirm('Really erase everything?')) wipeAll()};
-actions.wipe=()=>{if(confirm('Erase all Khata data on this phone? Save a backup first if you might want it.')&&confirm('Really erase everything?')) wipeAll()};
-function wipeAll(){[K_PLAIN,K_ENC,K_META].forEach(k=>localStorage.removeItem(k));const r=indexedDB.deleteDatabase('khata');r.onsuccess=r.onerror=r.onblocked=()=>location.reload();setTimeout(()=>location.reload(),1500)}
+actions.wipe=async()=>{
+  if(!(await requireAuth('Erase everything'))) return;
+  sheet(`<h2>Erase everything?</h2><p class="help">This deletes every entry, account, group, vehicle log and bill photo on this phone. It can\u2019t be undone. Save a backup file first if you might want any of it.</p>
+  <label>Type ERASE to confirm<input id="w-conf" autocomplete="off" autocapitalize="characters"></label>
+  <div class="btns"><button class="btn" data-act="close">Cancel</button><button class="btn danger grow" data-act="wipeGo">Erase everything</button></div>`,p=>p.querySelector('input').focus());
+};
+actions.wipeGo=()=>{if(($('#w-conf').value||'').trim().toUpperCase()!=='ERASE'){toast('Type ERASE to confirm.');return}wipeAll()};
+let WIPING=false;
+function wipeAll(){WIPING=true;S=null;cryptoKey=null;saving.then(()=>{[K_PLAIN,K_ENC,K_META].forEach(k=>localStorage.removeItem(k));Object.keys(localStorage).filter(k=>k.startsWith('khata.')).forEach(k=>localStorage.removeItem(k));const del=()=>{const r=indexedDB.deleteDatabase('khata');r.onsuccess=r.onerror=()=>location.reload();setTimeout(()=>location.reload(),3000)};(typeof IDB!=='undefined'&&IDB.p?IDB.p.then(db=>db.close()).catch(()=>{}):Promise.resolve()).then(del)})}
 async function shareOrDownload(blob,name){
   const file=new File([blob],name,{type:blob.type});
   if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:name});return true}catch(e){if(e.name==='AbortError') return false}}
@@ -1378,14 +1397,18 @@ $('#file-in').addEventListener('change',async e=>{
     catch(err){toast(err.message.includes('Khata')?err.message:'Couldn\u2019t read that Excel file.');return}
   }
   let p;try{p=JSON.parse(new TextDecoder().decode(buf))}catch{toast('That file isn\u2019t a Khata backup.');return}
-  if(p.app!=='khata'){toast('That file isn\u2019t a Khata backup.');return}
+  importPayload(p);
+});
+function importPayload(p){
+  if(!p||p.app!=='khata'){toast('That isn\u2019t a Khata backup.');return}
   if(!p.enc) return restore(p.data);
   sheet(`<h2>Open encrypted backup</h2><p class="help">Enter the PIN or passphrase that was set when this backup was made.</p><label>PIN or passphrase<input id="f-bp" type="password"></label><p class="danger small" id="f-berr"></p>
   <div class="btns"><button class="btn primary grow" data-act="importGo">Restore</button></div>`,pp=>pp.querySelector('input').focus());
-  actions.importGo=async()=>{$('#f-berr').textContent='Opening…';try{const key=await deriveKey($('#f-bp').value,unb64(p.salt));restore(await decrypt(key,p))}catch{$('#f-berr').textContent='Wrong PIN or passphrase for this backup.'}};
-});
+  actions.importGo=async()=>{$('#f-berr').textContent='Opening…';let d;try{const key=await deriveKey($('#f-bp').value,unb64(p.salt));d=await decrypt(key,p)}catch{$('#f-berr').textContent='Wrong PIN or passphrase for this backup.';return}actions.close();restore(d)};
+}
 async function restore(data){
   if(!data||!Array.isArray(data.tx)){toast('That backup looks damaged.');return}
+  if(!(await requireAuth('Replace your data'))) return;
   const n=data.tx.length+(data.gbills||[]).length+(data.vlogs||[]).length,ph=data.photos||{};delete data.photos;
   if(!confirm(`Replace everything on this phone with this backup (${n} entries${Object.keys(ph).length?', '+Object.keys(ph).length+' photos':''})?`)) return;
   const fileNoInc=!!data.noIncome,noIncFile=fileNoInc&&!(S&&S.tx.some(t=>t.t==='inc'));delete data.noIncome;
@@ -1992,6 +2015,25 @@ async function prfGet(credId,salt){
   if(!r||!r.results||!r.results.first) throw new Error('nprf');
   return new Uint8Array(r.results.first);
 }
+/* Ask whoever is holding the phone to prove it's you before anything destructive */
+async function requireAuth(title){
+  if(meta.locked) return askAppAuth(title);
+  if(S&&guard().mode!=='off') return askGuard(title);
+  return true;
+}
+function askAppAuth(title){return new Promise(res=>{
+  let done=false;const fin=v=>{if(done) return;done=true;actions.close();res(v)};
+  sheet(`<h2>${esc(title)}</h2><p class="help">Confirm it\u2019s you first.</p>${meta.bio?'<div class="btns"><button class="btn primary grow" data-act="aaBio">Use fingerprint</button></div>':''}
+  <label>App PIN<input id="aa-pin" type="password" inputmode="${meta.numeric?'numeric':'text'}" autocomplete="current-password"></label><p class="danger small" id="aa-err"></p>
+  <div class="btns"><button class="btn" data-act="aaNo">Cancel</button><button class="btn ${meta.bio?'':'primary '}grow" data-act="aaGo">Confirm</button></div>`,
+  p=>{const i=p.querySelector('#aa-pin');i.addEventListener('keydown',e=>{if(e.key==='Enter') actions.aaGo()});if(!meta.bio) i.focus()});
+  actions.aaNo=()=>fin(false);
+  actions.aaBio=async()=>{try{await prfGet(meta.bio.credId,unb64(meta.bio.salt));fin(true)}catch{toast('Fingerprint didn\u2019t work. Use your PIN.')}};
+  actions.aaGo=async()=>{const v=$('#aa-pin').value;if(!v) return;if(lockWait()>0){$('#aa-err').textContent='Too many wrong tries. Wait a bit.';return}
+    $('#aa-err').textContent='Checking…';try{const key=await deriveKey(v,unb64(meta.salt));await decrypt(key,JSON.parse(localStorage.getItem(K_ENC)));clearFails();fin(true)}
+    catch{noteFail();$('#aa-err').textContent=lockWait()>0?'Too many wrong tries. Wait a bit.':'Wrong PIN.';$('#aa-pin').select()}};
+  if(meta.bio) setTimeout(()=>actions.aaBio(),250);
+})}
 function askAppPin(title){return new Promise(res=>{
   sheet(`<h2>${esc(title)}</h2><p class="help">Type your app PIN once so Khata can link it to your fingerprint.</p><label>App PIN<input id="b-pin" type="password" inputmode="${meta.numeric?'numeric':'text'}" autocomplete="current-password"></label><p class="danger small" id="b-err"></p>
   <div class="btns"><button class="btn" data-act="bNo">Cancel</button><button class="btn primary grow" data-act="bGo">Continue</button></div>`,p=>p.querySelector('input').focus());
@@ -2026,6 +2068,87 @@ actions.bioUnlock=async()=>{
   catch(e){$('#lock-err').textContent=e&&e.name==='NotAllowedError'?'Fingerprint didn\u2019t unlock. Tap \u201cUse fingerprint\u201d to try again, or type your PIN.':'Fingerprint isn\u2019t working right now. Type your PIN.';setTimeout(()=>$('#lock-in').focus(),60)}
   finally{bioBusy=false}
 };
+
+/* ================= Google Sheets sync (readable tabs + encrypted full backup) ================= */
+function gs(){return S.set.gs||(S.set.gs={url:'',secret:'',auto:true,last:0,dirty:false,error:''})}
+const gsValid=u=>/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(u||'');
+function gsSecret(){const g=gs();if(!g.secret){g.secret=b64(crypto.getRandomValues(new Uint8Array(24))).replace(/[+/=]/g,c=>({'+':'-','/':'_','=':''}[c]))}return g.secret}
+let gsTimer=null,gsBusy=false;
+function gsDirty(){const g=S.set.gs;if(!g||!gsValid(g.url)) return;g.dirty=true;if(g.auto) gsSchedule(20000)}
+function gsSchedule(ms){clearTimeout(gsTimer);gsTimer=setTimeout(()=>gsPush(false),ms)}
+function gsTabs(){
+  const m=excelModel(),T={};
+  T.Entries=[['Date','Type','Category','Account','To / with','Amount (Rs)','My share (Rs)','Paid with','Group','Note']].concat(m.entries.map(e=>[e.date,e.type,e.cat||'',e.acc||'',e.to||'',e.amt,e.share==null?'':e.share,e.method||'',e.group||'',e.note||'']));
+  T.Monthly=[m.noIncome?['Month','Spent (Rs)']:['Month','Spent (Rs)','Income (Rs)','Saved (Rs)']].concat(m.months.map(x=>m.noIncome?[x.label,x.spent]:[x.label,x.spent,x.income,Math.round((x.income-x.spent)*100)/100]));
+  T.Budgets=[['Category','Budget (Rs)','Spent this period (Rs)','Left (Rs)']].concat(m.cats.map(c=>[c.name,c.budget||'',c.spent,c.budget?Math.round((c.budget-c.spent)*100)/100:'']));
+  T.Groups=[['Group','Person','Paid for bills','Their share','Settled','Balance (+ is owed)']].concat(m.groups.flatMap(g=>g.rows.map(r=>[g.name,r.person,r.paid,r.share,r.settled,Math.round((r.paid-r.share+r.settled)*100)/100])));
+  T.Fuel=[['Vehicle','Date','ODO (km)','Litres','Rate (Rs/L)','Total (Rs)','Km per litre','Note']].concat((m.fuel||[]).map(f=>[f.veh,f.date,f.odo??'',f.litres??'',f.rate??'',f.total??'',f.kml??'',f.note||'']));
+  T.Service=[['Vehicle','Date','ODO (km)','Type','Cost (Rs)','Service no.','Note']].concat((m.service||[]).map(x=>[x.veh,x.date,x.odo??'',x.type,x.cost??'',x.no||'',x.note||'']));
+  return T;
+}
+async function gsPayload(){
+  if(!cryptoKey||!meta.locked) throw new Error('Turn on PIN lock first, so the backup in your sheet is encrypted.');
+  const enc=await encrypt(cryptoKey,exportSnapshot());
+  return JSON.stringify({secret:gsSecret(),tabs:gsTabs(),backup:JSON.stringify({app:'khata',v:3,enc:true,salt:meta.salt,...enc})});
+}
+async function gsPush(manual){
+  const g=S&&S.set.gs;if(!g||!gsValid(g.url)){if(manual) toast('Paste your sheet\u2019s web-app link first.');return}
+  if(!navigator.onLine){if(manual) toast('You\u2019re offline. Khata will sync when you\u2019re back online.');return}
+  if(gsBusy) return;gsBusy=true;if(manual) gsStatus('Syncing…');
+  try{
+    const body=await gsPayload(),ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),45000);
+    const res=await fetch(g.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body,signal:ctl.signal});clearTimeout(t);
+    const j=await res.json().catch(()=>null);
+    if(!j||!j.ok) throw new Error((j&&j.error)||'The sheet didn\u2019t answer properly. Check the link, and that access is set to \u201cAnyone\u201d.');
+    g.last=Date.now();g.dirty=false;g.error='';
+    if(manual) toast('Synced to your Google Sheet.');
+  }catch(e){g.error=e&&e.name==='AbortError'?'The sheet took too long to answer. Will try again.':(e&&e.message)||'Sync failed.';if(manual) toast(g.error)}
+  finally{gsBusy=false;const keep=g.dirty;persistQuiet();g.dirty=keep;gsStatus()}
+}
+function persistQuiet(){const f=window.gsDirty;window.gsDirty=null;try{persist()}finally{window.gsDirty=f}}
+function gsStatus(msg){const el=$('#gs-status');if(!el) return;const g=gs();
+  el.className='small '+(msg?'muted':g.error?'warn':'muted');
+  el.textContent=msg||(!gsValid(g.url)?'Not connected.':g.error?'Last sync failed: '+g.error:g.last?`Synced ${agoText(g.last)}${g.dirty?'. Newer changes are waiting.':'.'}`:'Connected. Not synced yet.')}
+const agoText=t=>{const m=Math.round((Date.now()-t)/60000);return m<1?'just now':m<60?m+' min ago':m<1440?Math.round(m/60)+' h ago':Math.round(m/1440)+' days ago'};
+function gsCardHtml(){const g=gs();
+  return`<h3>Google Sheet</h3><p id="gs-status" class="small muted"></p>
+  ${meta.locked?'':'<p class="help warn">Set a PIN lock first. The full backup is encrypted with it before it leaves your phone.</p>'}
+  <label class="flabel">Sheet\u2019s web-app link<input id="gs-url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://script.google.com/macros/s/…/exec" value="${esc(g.url)}"></label>
+  <div class="srow"><span>Sync automatically<small>About 20 seconds after a change, while the app is open and online.</small></span><label class="switch"><input type="checkbox" id="gs-auto" ${g.auto?'checked':''} aria-label="Sync automatically"><i></i></label></div>
+  <div class="btns"><button class="btn primary grow" data-act="gsNow" ${meta.locked?'':'disabled'}>Sync now</button><button class="btn grow" data-act="gsRestore">Restore from sheet</button></div>
+  <details class="gs-help"><summary>Set up (once, about 3 minutes)</summary><ol class="help">
+    <li>Create a new Google Sheet, then open Extensions → Apps Script.</li>
+    <li>Delete what\u2019s there and paste the script: <button class="link" data-act="gsCopyScript">Copy the script</button></li>
+    <li>Save, then Deploy → New deployment → type: Web app. Execute as: Me. Who has access: Anyone. Deploy and allow access.</li>
+    <li>Copy the Web app link (ends in /exec) and paste it above, then tap Sync now.</li></ol>
+    <p class="help">The sheet gets readable tabs (spending, monthly totals, budgets, groups, fuel, service; never bank balances, income only if you included it) and one hidden tab with your full backup, encrypted with your PIN. Bill photos stay on the phone.</p>
+    <p class="lbl">Recovery code</p><p class="help" style="margin-top:4px">Only this code can read the backup from the sheet. Save it somewhere safe; a new phone needs it.</p>
+    <div class="btns"><button class="btn grow" data-act="gsShowCode">Show recovery code</button><button class="btn grow" data-act="gsUseCode">Use a code from another phone</button></div></details>`;
+}
+function gsWire(){const u=$('#gs-url');if(!u) return;gsStatus();
+  u.addEventListener('change',()=>{const v=u.value.trim(),g=gs();
+    if(v&&!gsValid(v)){gsStatus(/\/dev\/?$/.test(v)?'That\u2019s the test (/dev) link. Copy the Web app link that ends in /exec.':'That doesn\u2019t look like a web-app link. It should start https://script.google.com/macros/s/ and end in /exec.');return}
+    g.url=v;g.error='';g.dirty=!!v;persistQuiet();gsStatus()});
+  $('#gs-auto').addEventListener('change',e=>{gs().auto=e.target.checked;persistQuiet();if(e.target.checked&&gs().dirty) gsSchedule(1500)})}
+actions.gsNow=()=>{const u=$('#gs-url');if(u) u.dispatchEvent(new Event('change'));gsPush(true)};
+actions.gsCopyScript=async()=>{try{const t=await (await fetch('Code.gs',{cache:'no-store'})).text();await navigator.clipboard.writeText(t);toast('Script copied. Paste it in Apps Script.')}catch{toast('Couldn\u2019t copy. Open Code.gs from the GitHub repo and copy it from there.')}};
+actions.gsShowCode=async()=>{if(!(await requireAuth('Show recovery code'))) return;const c=gsSecret();persistQuiet();
+  sheet(`<h2>Recovery code</h2><p class="help">Anyone with this code and your sheet link can download the encrypted backup. They still need your PIN to open it.</p><label>Code<input readonly value="${esc(c)}" onfocus="this.select()"></label>
+  <div class="btns"><button class="btn primary grow" data-act="gsCopyCode">Copy</button><button class="btn grow" data-act="close">Done</button></div>`);
+  actions.gsCopyCode=async()=>{try{await navigator.clipboard.writeText(c);toast('Copied.')}catch{toast('Long-press the code to copy it.')}}};
+actions.gsUseCode=()=>{sheet(`<h2>Use a recovery code</h2><p class="help">Paste the code from your old phone. This phone will then sync to that sheet, and you can restore from it.</p><label>Recovery code<input id="gs-code" autocomplete="off" spellcheck="false"></label>
+  <div class="btns"><button class="btn" data-act="close">Cancel</button><button class="btn primary grow" data-act="gsCodeSave">Use this code</button></div>`,p=>p.querySelector('input').focus());
+  actions.gsCodeSave=()=>{const v=$('#gs-code').value.trim();if(v.length<24){toast('That code looks too short.');return}gs().secret=v;gs().error='';persistQuiet();actions.close();renderSettings();toast('Code saved. Now tap Restore from sheet.')}};
+actions.gsRestore=async()=>{const g=gs(),u=$('#gs-url');if(u&&u.value.trim()!==g.url) u.dispatchEvent(new Event('change'));
+  if(!gsValid(g.url)){toast('Paste your sheet\u2019s web-app link first.');return}if(!g.secret){toast('Enter the recovery code first (Set up → Use a code from another phone).');return}
+  if(!navigator.onLine){toast('Restoring needs internet.');return}gsStatus('Fetching your backup…');
+  try{const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),30000);
+    const j=await (await fetch(g.url+'?secret='+encodeURIComponent(g.secret),{signal:ctl.signal})).json();clearTimeout(t);
+    if(!j.ok) throw new Error(j.error||'No backup found.');gsStatus();importPayload(JSON.parse(j.backup))}
+  catch(e){gsStatus('Couldn\u2019t restore: '+((e&&e.name==='AbortError')?'the sheet took too long.':(e&&e.message)||'unknown error'))}};
+window.addEventListener('online',()=>{if(S&&S.set.gs&&S.set.gs.dirty&&S.set.gs.auto) gsSchedule(3000)});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&S&&S.set.gs&&S.set.gs.dirty&&S.set.gs.auto&&gsValid(S.set.gs.url)&&navigator.onLine) gsPush(false)});
+setInterval(()=>{if(S&&S.set.gs&&S.set.gs.auto&&gsValid(S.set.gs.url)&&(S.set.gs.dirty||Date.now()-(S.set.gs.last||0)>6*3600e3)&&!gsBusy&&navigator.onLine&&!document.hidden){S.set.gs.dirty=true;gsPush(false)}},60000);
 
 boot();gcPhotos();
 </script>
