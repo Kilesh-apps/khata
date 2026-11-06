@@ -1,5 +1,5 @@
 // Bump CACHE on every update (khata-v11 -> khata-v12), or installed phones keep the old version.
-const CACHE='khata-v11';
+const CACHE='khata-v16';
 const OCR_CACHE='khata-ocr-v2'; // bill reader files (~7 MB), downloaded on first use, kept across app updates
 const FILES=['./','./index.html','./xlsx.js','./manifest.webmanifest','./icon-192.png','./icon-512.png','./icon-192-maskable.png','./icon-512-maskable.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)).then(()=>self.skipWaiting()))});

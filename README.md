@@ -17,7 +17,7 @@ A personal money ledger. Static PWA on GitHub Pages. No server, no database. The
 | `index.html` | The whole app. Data lives in `localStorage` on the phone. |
 | `xlsx.js` | Builds the Excel export (formulas, charts, hidden backup sheet) and reads it back for restore. No libraries. |
 | `tesseract*.js`, `eng.traineddata.gz` | Offline bill reader (tesseract.js 7, Apache-2.0, see `LICENSE-tesseract.md`). Kept next to `index.html` (no folders) so they can be uploaded from a phone. |
-| `sw.js` | Caches the app for offline use. **Bump `CACHE` (`khata-v11` → `khata-v12`) on every update.** |
+| `sw.js` | Caches the app for offline use. **Bump `CACHE` (`khata-v16` → `khata-v17`) on every update.** |
 | `manifest.webmanifest` | Install info, home-screen shortcuts, and the Android share target for bank SMS. |
 | `icon-*.png` | App icons. |
 
@@ -66,7 +66,7 @@ A personal money ledger. Static PWA on GitHub Pages. No server, no database. The
 
 ## Excel export
 
-Sheets: Summary (totals, category table with budgets, three charts), Entries, Monthly, Accounts, Groups, Vehicles (mileage and rate charts), Fuel, Service, and a hidden `_khata` sheet holding the full backup. Change the period dates on Summary and the totals recalculate. Restore accepts this file even after Excel re-saves it. It is **not encrypted**.
+Sheets: Summary (totals, category table with budgets, three charts), Entries, Monthly, Accounts, Groups, Vehicles (mileage and rate charts), Fuel, Service, and a hidden `_khata` sheet holding the full backup. Change the period dates on Summary and the totals recalculate. Restore accepts this file even after Excel re-saves it. It is **not encrypted**, so it never contains bank, wallet or cash balances, and leaves out income unless Settings → Include income in Excel is on: opening balances are zeroed and balance corrections dropped (restoring on the same phone keeps the balances already there; on a new phone, set them with Fix balance).
 
 ## Fast entry
 

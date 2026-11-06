@@ -6,8 +6,8 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com; manifest-src 'self'; worker-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex">
-<meta name="theme-color" content="#EDEFEB" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#121614" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#111513">
+<script>(()=>{const m=matchMedia("(prefers-color-scheme: dark)"),t=document.querySelector("meta[name=theme-color]"),f=()=>t.content=m.matches?"#111513":"#EDEFEB";f();m.addEventListener("change",f)})()</script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Khata</title>
 <link rel="manifest" href="manifest.webmanifest">
@@ -181,6 +181,14 @@ label.sel{cursor:text}
 .ssel{height:40px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:0 10px;font-size:14px;max-width:55%}
 .flabel{display:block;font-size:13px;color:var(--muted);margin-top:12px;font-weight:500}
 .flabel input,.flabel select{display:block;width:100%;margin-top:5px;height:46px;border:1px solid var(--line);border-radius:12px;background:var(--bg);padding:0 12px;font-size:16px;color:var(--ink)}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.cw{text-align:center;font-size:11px;color:var(--muted);padding-bottom:2px}
+.cday{position:relative;aspect-ratio:1/1.08;border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-width:0;
+  background:color-mix(in srgb,var(--accent) calc(var(--lvl)*62%),var(--soft))}
+.cday.over{background:color-mix(in srgb,var(--danger) calc(25% + var(--lvl)*40%),var(--soft))}
+.cday .dn{font-size:13px;font-weight:600;line-height:1}.cday .da{font-size:10px;line-height:1;opacity:.9;white-space:nowrap;overflow:hidden;max-width:100%}
+.cday.fut{opacity:.4}.cday.today{box-shadow:inset 0 0 0 2px var(--ink)}.cday.sel{outline:2px solid var(--accent);outline-offset:1px}
+.cday .inc{position:absolute;top:4px;right:4px;width:6px;height:6px;border-radius:50%;background:#C2912E}
 .pills{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:4px}
 .tbtn{height:44px;flex:none;padding:0 14px}.tbtn.on{border-color:var(--accent);color:var(--accent)}
 .filter{display:inline-flex;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;align-items:center;gap:8px;margin-top:6px;height:34px;padding:0 12px;border-radius:17px;background:var(--accent-soft);color:var(--accent);font-size:14px;font-weight:550}
@@ -228,7 +236,7 @@ label.sel{cursor:text}
 .tabs svg{width:24px;height:24px}
 .tabs button[aria-current="page"]{color:var(--accent)}
 .tabs .fab{flex:0 0 76px;position:relative;justify-content:flex-start}
-.fab span{transition:transform .15s,background .2s,opacity .2s}.fab.wait span{background:var(--muted);opacity:.55}
+
 .savehint{display:block;width:100%;margin-top:6px;height:22px;line-height:22px;text-align:center;font-size:14px;font-weight:650;color:var(--accent)}.savehint.wait{color:var(--muted);font-weight:500}
 .srow .btn{white-space:nowrap;flex:none;height:40px}
 .fab span{position:absolute;top:-14px;left:50%;transform:translateX(-50%);width:60px;height:60px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;
@@ -236,7 +244,11 @@ label.sel{cursor:text}
 @media (prefers-color-scheme:dark){.fab span{color:#0E1A14}}
 .fab svg{width:28px;height:28px}
 .fab:active span{transform:translateX(-50%) scale(.93)}
-.fab[aria-current="page"] span{box-shadow:0 0 0 6px var(--bg),0 0 0 8px var(--accent-soft),0 4px 14px rgba(0,0,0,.28)}
+.fab span{transition:transform .18s,background .2s,color .2s,box-shadow .2s}
+.fab.wait span{background:var(--surface);color:var(--muted);box-shadow:0 0 0 6px var(--bg),inset 0 0 0 2px var(--line)}
+.fab.pop span{animation:fabpop .32s ease-out}
+@keyframes fabpop{0%{transform:translateX(-50%) scale(.85)}60%{transform:translateX(-50%) scale(1.08)}100%{transform:translateX(-50%) scale(1)}}
+@media (prefers-reduced-motion:reduce){.fab.pop span{animation:none}}
 main{padding-bottom:22px}
 
 /* sheet */
@@ -332,7 +344,7 @@ const SEED_INC=[['salary','Salary'],['side','Side income'],['refund','Refunds'],
 let S=null,cryptoKey=null,meta=safeJSON(localStorage.getItem(K_META))||{};
 let view='add',built=false;
 let A=blankAdd('exp');
-let H={off:0,mode:'overview',q:'',range:'period',from:'',to:'',sort:'new',f:{types:[],cats:[],accs:[],methods:[],min:'',max:'',photo:false,split:false}};
+let H={day:null,off:0,mode:'overview',q:'',range:'period',from:'',to:'',sort:'new',f:{types:[],cats:[],accs:[],methods:[],min:'',max:'',photo:false,split:false}};
 let G={open:null};
 
 function safeJSON(s){try{return s?JSON.parse(s):null}catch{return null}}
@@ -345,7 +357,7 @@ function migrate(){
   for(const k of ['accounts','cats','tx','bills','quick','groups','gbills','gpays','vehicles','vlogs']) if(!Array.isArray(S[k])) S[k]=f[k];
   S.set=Object.assign(f.set,S.set||{});if(!S.set.lastAcc) S.set.lastAcc={};
   S.cats.forEach((c,i)=>{if(!c.color) c.color=PAL[i%PAL.length]});
-  if(S.set.hideOnOpen) S.set.hide=true;S.v=2;
+  if(S.set.hideOnOpen||(S.set.guard&&S.set.guard.mode!=='off')) S.set.hide=true;S.v=2;
 }
 
 /* ================= utils ================= */
@@ -483,6 +495,9 @@ async function deriveKey(pass,salt){const base=await crypto.subtle.importKey('ra
 async function encrypt(key,obj){const iv=crypto.getRandomValues(new Uint8Array(12));const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,new TextEncoder().encode(JSON.stringify(obj)));return{iv:b64(iv),ct:b64(new Uint8Array(ct))}}
 async function decrypt(key,e){const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(e.iv)},key,unb64(e.ct));return JSON.parse(new TextDecoder().decode(pt))}
 const snapshot=()=>{const s=JSON.parse(JSON.stringify(S));s.set.hide=false;return s};
+/* Excel never carries money-account balances: opening balances are zeroed and balance corrections dropped */
+const excelSnapshot=()=>{const s=exportSnapshot();const money=new Set(s.accounts.filter(a=>a.kind!=='credit'&&a.kind!=='vcc').map(a=>a.id));
+  s.accounts.forEach(a=>{if(money.has(a.id)) a.open=0});s.tx=s.tx.filter(t=>!(t.t==='adj'&&money.has(t.acc)));s.noBalances=true;if(!S.set.excelIncome){s.tx=s.tx.filter(t=>t.t!=='inc');s.noIncome=true}return s};
 const exportSnapshot=()=>{const s=snapshot();if(s.set.ai) s.set.ai.key='';return s};
 function persist(){
   if(!S) return;const snap=snapshot(),key=cryptoKey,locked=!!meta.locked;
@@ -554,6 +569,7 @@ function show(v){hideToast();view=v;document.querySelectorAll('.view').forEach(s
 function render(){if(!S) return;BALC=new Map();try{({add:updateAdd,history:renderHistory,groups:renderGroups,garage:renderGarage,accounts:renderAccounts,plan:renderPlan,settings:renderSettings})[view]();hydrate($('#v-'+view))}finally{BALC=null}}
 
 /* ================= ADD ================= */
+const eyeBtn=()=>`<button class="icon" data-act="hide" aria-label="${S.set.hide?'Show':'Hide'} amounts">${S.set.hide?I.eyeOff:I.eye}</button>`;
 const CAT_ICONS={"food": "M7 3v8M4.5 3v4a2.5 2.5 0 0 0 5 0V3M7 11v10M17 21V3c-2.5 1-4 4-4 7.5 0 1.7 1 2.5 2.5 2.5H17", "groc": "M3 4h2.2l2.3 11h10.3L20 7.5H6.3M10 20.2h.01M17 20.2h.01", "trans": "M6 17V6.5A3.5 3.5 0 0 1 9.5 3h5A3.5 3.5 0 0 1 18 6.5V17M6 11.5h12M6 17h12M8 17v3M16 17v3M8.5 14.5h.01M15.5 14.5h.01", "fuel": "M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M3 21h12M7 8h4M14 10h2a2 2 0 0 1 2 2v4a1.5 1.5 0 0 0 3 0V8l-3-3", "rent": "M3 11.5L12 4l9 7.5M5.5 10v10h13V10M10 20v-5.5h4V20", "util": "M13.5 2.5L5 13.5h6.5l-1 8 8.5-11h-6.5z", "net": "M8 3h8a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM11 18h2", "shop": "M5 8h14l-1.2 12.2a1 1 0 0 1-1 .8H7.2a1 1 0 0 1-1-.8zM9 10V6.5a3 3 0 0 1 6 0V10", "health": "M12 20s-7.5-4.6-9.2-9.3A4.6 4.6 0 0 1 12 7.3a4.6 4.6 0 0 1 9.2 3.4C19.5 15.4 12 20 12 20zM8.5 12h2l1-2 1.5 4 1-2h1.5", "family": "M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5M17 11a2.5 2.5 0 1 0 0-5M17.5 14.5c2.2.4 3.5 2.2 3.5 5", "out": "M7 3h10l-1.2 7.5a3.8 3.8 0 0 1-7.6 0zM12 14.5V20M8.5 21h7", "subs": "M17 2.5l3 3-3 3M4 11.5v-2a4 4 0 0 1 4-4h12M7 21.5l-3-3 3-3M20 12.5v2a4 4 0 0 1-4 4H4", "learn": "M4 19.5V5a2 2 0 0 1 2-2h14v15H6a2 2 0 0 0-2 2 2 2 0 0 0 2 2h14", "give": "M3.5 8.5h17v4h-17zM5 12.5V21h14v-8.5M12 8.5V21M12 8.5C10 4.5 6.5 4.6 6.5 6.6S9.5 8.5 12 8.5zM12 8.5c2-4 5.5-3.9 5.5-1.9S14.5 8.5 12 8.5z", "fees": "M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6M9 16h3", "other": "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM7.8 12h.01M12 12h.01M16.2 12h.01", "salary": "M3.5 7.5h16a1.5 1.5 0 0 1 1.5 1.5v9.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5V8M3.5 7.5L15 3.5v4M16.5 13.5h1.5", "side": "M3 7.5h18V20H3zM8.5 7.5V4.5h7v3M3 12.5h18", "refund": "M9 14.5L4 9.5l5-5M4 9.5h10.5a5.5 5.5 0 0 1 0 11H12", "gotgift": "M3.5 8.5h17v4h-17zM5 12.5V21h14v-8.5M12 8.5V21M12 8.5C10 4.5 6.5 4.6 6.5 6.6S9.5 8.5 12 8.5zM12 8.5c2-4 5.5-3.9 5.5-1.9S14.5 8.5 12 8.5z", "oinc": "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8v8M8 12h8", "vehicle": "M14.7 6.3a4 4 0 0 0-5.4 5.4L3.5 17.5a2 2 0 1 0 3 3l5.8-5.8a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z", "travel": "M10.5 13.5L3 11l1.5-1.5 8 .5 4.5-5a2.1 2.1 0 0 1 3 3l-5 4.5.5 8L14 22l-2.5-7.5L8 18v2.5L6.5 22 5 18l-4-1.5L2.5 15H5z", "pets": "M12 13c-3 0-5.5 3-5.5 5.2 0 1.6 1.4 2.3 3 2.3 1 0 1.7-.5 2.5-.5s1.5.5 2.5.5c1.6 0 3-.7 3-2.3C17.5 16 15 13 12 13zM6 11.5a2 2 0 1 0 0-.1M18 11.5a2 2 0 1 0 0-.1M9.2 7a2 2 0 1 0 0-.1M14.8 7a2 2 0 1 0 0-.1", "coffee": "M4 8.5h13v5.5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5zM17 10h1.5a2.5 2.5 0 0 1 0 5H17M8 2.5v2.5M12 2.5v2.5", "home": "M4 10.5L12 4l8 6.5V20H4zM9 20v-5h6v5", "baby": "M12 4a7.5 7.5 0 1 0 0 15 7.5 7.5 0 0 0 0-15zM9.3 11h.01M14.7 11h.01M9.8 14.5c1.3 1 3.1 1 4.4 0M12 4c0 1.5 1.5 2 1.5 2", "beauty": "M8 21h8M10 21V11h4v10M10 11l1-7h2l1 7", "invest": "M3 20h18M5 16l4.5-5 3.5 3 6-7M15 7h4v4", "bank": "M3 9.5L12 4l9 5.5M4.5 9.5v8M9 9.5v8M15 9.5v8M19.5 9.5v8M3 20.5h18"};
 const catIcon=c=>CAT_ICONS[(c&&c.icon)||(c&&CAT_ICONS[c.id]?c.id:'other')]||CAT_ICONS.other;
 const icoSvg=d=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
@@ -667,7 +683,8 @@ function saveState(){
 function updateSave(){const[ok,label]=saveState(),s=$('#save');s.classList.toggle('wait',!ok);s.textContent=ok?label.replace(/^Save /,'Ready to save ').replace(/^Move /,'Ready to move ')+'. Tap ✓':label;s.setAttribute('aria-disabled',!ok);fabState()}
 const FAB_PLUS='M12 5v14M5 12h14',FAB_OK='M5 12.5l4.5 4.5L19 7.5';
 function fabState(){const f=document.querySelector('.fab');if(!f) return;const onAdd=view==='add'&&S,ok=onAdd&&saveState()[0];
-  f.querySelector('path').setAttribute('d',onAdd?FAB_OK:FAB_PLUS);f.classList.toggle('wait',onAdd&&!ok);
+  f.querySelector('path').setAttribute('d',onAdd?FAB_OK:FAB_PLUS);const was=f.classList.contains('wait');f.classList.toggle('wait',onAdd&&!ok);
+  if(onAdd&&ok&&was){f.classList.remove('pop');void f.offsetWidth;f.classList.add('pop')}
   f.setAttribute('aria-label',onAdd?(ok?saveState()[1]:saveState()[1]+' first'):'Add an entry')}
 actions.fab=()=>{if(view==='add') actions.save();else show('add')};
 actions.cycleVeh=()=>{const vs=S.vehicles.filter(v=>!v.archived),i=vs.findIndex(v=>v.id===A.fuel.veh);A.fuel.veh=vs[(i+1)%vs.length].id;updateAdd()};
@@ -700,7 +717,7 @@ actions.setAcc=d=>{A[d.f]=d.id;if(d.f==='acc'){A.method=null;if(A.to===d.id) A.t
   actions.close();updateAdd()};
 actions.setMethod=d=>{A.method=d.m;updateAdd();actions.pickAccSheet({f:'acc'})};
 actions.useQuick=d=>{const q=S.quick.find(x=>x.id===d.id);if(!q) return;Object.assign(A,{t:'exp',amt:String(q.amt/100),cat:q.cat,acc:acc(q.acc)?q.acc:A.acc,method:q.method||null,note:q.label});updateAdd()};
-actions.hide=()=>{S.set.hide=!S.set.hide;render()};
+actions.hide=()=>{if(!S.set.hide){S.set.hide=true;render();return}revealAmounts()};
 actions.save=()=>{
   const[ok,why]=saveState();if(!ok){toast(why+'.');return}
   const amt=toP(A.amt),date=A.date||today(),ts=Date.now();let undo,label;
@@ -823,9 +840,10 @@ function renderHistory(){
   const p=H.mode==='entries'?rangeOf():period(H.off),it=items(p),sp=it.filter(x=>x.t==='exp'),spent=sum(sp,x=>x.share),inc=sum(it.filter(x=>x.t==='inc'));
   const navOff=H.mode==='entries'&&H.range!=='period';
   let h=`<div class="top"><button class="icon" data-act="hOff" data-d="-1" aria-label="Previous month" ${navOff?'disabled':''}>‹</button><h1 style="font-size:18px;text-align:center;min-width:0">${esc(p.label)}</h1>
-    <button class="icon" data-act="hOff" data-d="1" ${H.off>=0||navOff?'disabled':''} aria-label="Next month">›</button></div>
+    <div style="display:flex"><button class="icon" data-act="hOff" data-d="1" ${H.off>=0||navOff?'disabled':''} aria-label="Next month">›</button>${eyeBtn()}</div></div>
   <div class="stats"><div class="stat"><small>Spent</small><b class="${sz(money(spent))}">${money(spent)}</b></div><div class="stat"><small>Income</small><b class="${inc?'good ':''}${sz(money(inc))}">${money(inc)}</b></div></div>
-  <div class="seg" style="margin-top:12px"><button data-act="hMode" data-v="overview" aria-pressed="${H.mode==='overview'}">Overview</button><button data-act="hMode" data-v="insights" aria-pressed="${H.mode==='insights'}">Insights</button><button data-act="hMode" data-v="entries" aria-pressed="${H.mode==='entries'}">Entries</button></div>`;
+  <div class="seg" style="margin-top:12px"><button data-act="hMode" data-v="overview" aria-pressed="${H.mode==='overview'}">Overview</button><button data-act="hMode" data-v="insights" aria-pressed="${H.mode==='insights'}">Insights</button><button data-act="hMode" data-v="calendar" aria-pressed="${H.mode==='calendar'}">Calendar</button><button data-act="hMode" data-v="entries" aria-pressed="${H.mode==='entries'}">Entries</button></div>`;
+  if(H.mode==='calendar'){$('#v-history').innerHTML=h+calendarHtml(p);return}
   if(H.mode==='insights'){$('#v-history').innerHTML=h+insightsHtml(p);return}
   if(H.mode==='overview'){
     const by={};sp.forEach(x=>{if(x.share) by[x.cat]=(by[x.cat]||0)+x.share});
@@ -856,6 +874,27 @@ function renderHistory(){
   $('#h-q').addEventListener('input',e=>{H.q=e.target.value;renderHList()});
   renderHList();
 }
+function calendarHtml(p){
+  const days=diffDays(p.start,p.end)+1,td=today(),it=items(p),per={},inc={},cnt={};
+  it.forEach(x=>{if(x.t==='exp'&&x.share){per[x.date]=(per[x.date]||0)+x.share}if(x.t==='inc') inc[x.date]=(inc[x.date]||0)+x.amt;cnt[x.date]=(cnt[x.date]||0)+1});
+  const max=Math.max(1,...Object.values(per)),budget=S.cats.reduce((s,c)=>s+(c.kind==='exp'&&!c.hidden?c.budget||0:0),0),daily=budget?budget/days:0;
+  if(!H.day||H.day<p.start||H.day>p.end) H.day=td>=p.start&&td<=p.end?td:p.end;
+  const lead=parseD(p.start).getDay();let cells='';
+  for(let i=0;i<lead;i++) cells+='<span></span>';
+  for(let i=0;i<days;i++){const d=addDays(p.start,i),v=per[d]||0,fut=d>td,lvl=v?Math.max(.12,Math.min(1,v/max)):0,over=daily&&v>daily;
+    cells+=`<button class="cday${d===td?' today':''}${d===H.day?' sel':''}${fut?' fut':''}${over?' over':''}" data-act="hDay" data-d="${d}" style="--lvl:${lvl.toFixed(2)}" aria-label="${fmtDay(d)}${v?', '+money(v):''}">
+      <span class="dn">${parseD(d).getDate()}</span><span class="da">${v?short(v):''}</span>${inc[d]?'<i class="inc"></i>':''}</button>`}
+  const dayIt=it.filter(x=>x.date===H.day).sort((a,b)=>b.ts-a.ts),dsp=sum(dayIt.filter(x=>x.t==='exp'),x=>x.share);
+  const spentDays=Object.keys(per).length,noSpend=Math.max(0,Math.min(days,diffDays(p.start,td<p.end?td:p.end)+1)-spentDays);
+  return`<div class="card"><div class="cal">${['S','M','T','W','T','F','S'].map(w=>`<span class="cw">${w}</span>`).join('')}${cells}</div>
+    <div class="key" style="justify-content:space-between;flex-wrap:wrap"><span><i class="dot" style="background:var(--accent)"></i>Darker means more spent</span>${daily?'<span><i class="dot" style="background:var(--danger)"></i>Over daily budget</span>':''}<span><i class="dot" style="background:#C2912E"></i>Income</span></div>
+    ${noSpend>0&&p.start<=td?`<p class="help">${noSpend} no-spend day${noSpend===1?'':'s'} so far.</p>`:''}</div>
+  <div class="day"><span>${fmtDay(H.day)}</span><span>${dsp?money(dsp)+' spent':''}</span></div>
+  ${dayIt.length?`<div class="card" style="margin-top:0;padding:2px 14px">${dayIt.map(x=>itemRow(x,false)).join('')}</div>`:`<p class="empty" style="padding:16px 8px">Nothing on this day.</p>`}
+  <div class="btns"><button class="btn grow" data-act="hAddDay">Add an entry on ${fmtD(H.day)}</button></div>`;
+}
+actions.hDay=d=>{H.day=d.d;const y=$('#main').scrollTop;renderHistory();$('#main').scrollTop=y};
+actions.hAddDay=()=>{A=blankAdd('exp');A.date=H.day>today()?null:H.day;show('add')};
 function itemTitle(x){
   if(x.k==='gp'){const g=grp(x.group);return x.from==='me'?`You paid ${who(g,x.to)}`:`${who(g,x.from)} paid you`}
   if(x.t==='xfer') return`${acc(x.acc)?.name||'?'} to ${acc(x.to)?.name||'?'}`;
@@ -981,7 +1020,7 @@ function renderGroups(){
   const g=G.open&&grp(G.open);if(g) return renderGroup(g);
   const list=S.groups.filter(x=>!x.archived);
   const me=myGroupNet();
-  let h=`<div class="top"><h1>Groups</h1><button class="link" data-act="groupEdit">New group</button></div>`;
+  let h=`<div class="top"><h1>Groups</h1><div style="display:flex;align-items:center;gap:4px">${eyeBtn()}<button class="link" data-act="groupEdit">New group</button></div></div>`;
   if(!list.length) h+=`<div class="card"><p class="empty">Split bills with friends. Make one group per circle: trek friends, flatmates, office lunch. Each keeps its own balances and settle-up plan.</p><button class="btn primary full" data-act="groupEdit">Make your first group</button></div>`;
   else{
     h+=`<p class="lede">${me>0?`Friends owe you <b class="good">${money(me)}</b> in total.`:me<0?`You owe friends <b class="danger">${money(-me)}</b> in total.`:'You are settled up everywhere.'}</p>`;
@@ -1084,7 +1123,7 @@ actions.groupShare=async d=>{
 function renderAccounts(){
   const b=balances(),accs=activeAccs(),mon=accs.filter(a=>!isCredit(a)),cr=accs.filter(isCredit);
   const have=mon.reduce((s,a)=>s+b[a.id],0),owe=cr.reduce((s,a)=>s+Math.max(0,-b[a.id]),0),friends=myGroupNet();
-  let h=`<div class="top"><h1>Accounts</h1><button class="link" data-act="accEdit">Add account</button></div>
+  let h=`<div class="top"><h1>Accounts</h1><div style="display:flex;align-items:center;gap:4px"><button class="icon" data-act="hide" aria-label="${S.set.hide?'Show':'Hide'} amounts">${S.set.hide?I.eyeOff:I.eye}</button><button class="link" data-act="accEdit">Add account</button></div></div>
   <div class="stats"><div class="stat"><small>You have</small><b class="${sz(money(have))}">${money(have)}</b></div><div class="stat"><small>Owed on cards</small><b class="${owe?'danger ':''}${sz(money(owe))}">${money(owe)}</b></div></div>
   ${friends?`<p class="help">${friends>0?`Friends also owe you ${money(friends)}.`:`You also owe friends ${money(-friends)}.`}</p>`:''}`;
   h+=alerts().filter(a=>a.go==='accounts').map(a=>`<div class="status ${a.cls}" style="margin-top:10px">${esc(a.text)}</div>`).join('');
@@ -1158,7 +1197,7 @@ function renderPlan(){
   const p=period(0),sp=spends(p),by={};sp.forEach(x=>by[x.cat]=(by[x.cat]||0)+x.share);
   const bud=S.cats.filter(c=>c.kind==='exp'&&c.budget&&!c.hidden),total=sum(bud,c=>c.budget),spentB=sum(bud,c=>by[c.id]||0);
   const outside=Object.entries(by).filter(([k])=>!bud.some(c=>c.id===k)).reduce((s,[,v])=>s+v,0);
-  let h=`<div class="top"><h1>Plan</h1><span class="muted small">${esc(p.label)}</span></div>`;
+  let h=`<div class="top"><h1>Plan</h1><div style="display:flex;align-items:center;gap:6px"><span class="muted small">${esc(p.label)}</span>${eyeBtn()}</div></div>`;
   h+=`<div class="card"><h3>Budgets</h3>`;
   if(!bud.length) h+=`<p class="muted">Set a monthly limit for the categories you want to watch. Khata then shows what's left and a daily amount on the Add screen.</p>`;
   else{const left=total-spentB,days=diffDays(today(),p.end)+1;
@@ -1225,13 +1264,15 @@ function renderSettings(){
   <div class="card"><h3>Backup</h3>
     <p class="${stale?'warn':'muted'} small">${lb?`Last backup ${fmtD(lb)}, ${ago===0?'today':ago+' day'+(ago===1?'':'s')+' ago'}.`:'No backup yet.'} If this phone is lost or its browser data is cleared, a backup file is the only way back.</p>
     <div class="btns"><button class="btn primary grow" data-act="exportXlsx">Excel file</button><button class="btn grow" data-act="exportBackup">${meta.locked?'Encrypted file':'Backup file'}</button></div>
-    <p class="help">Excel has charts and every entry and can restore Khata, but not bill photos, and anyone who opens it can read it. The backup file includes photos${meta.locked?' and needs your PIN':''}.</p>
+    <p class="help">Excel has charts and your spending, and can restore Khata. It never includes bank balances${S.set.excelIncome?'':' or income'}, or bill photos, since anyone who opens it can read it. The backup file includes photos${meta.locked?' and needs your PIN':''}.</p>
+    <div class="srow" style="border:0"><span>Include income in Excel<small>Off keeps your salary and other income out of the Excel file.</small></span><label class="switch"><input type="checkbox" id="f-xinc" ${S.set.excelIncome?'checked':''} aria-label="Include income in Excel"><i></i></label></div>
     <div class="btns"><button class="btn grow" data-act="importBackup">Restore from a file</button></div></div>
   <div class="card"><h3>Privacy</h3>
     <div class="srow"><span>PIN lock<small>${meta.locked?'On. Your data is encrypted.':'Off'}</small></span>${meta.locked?'<button class="btn" data-act="lockNow">Lock now</button>':'<button class="btn primary" data-act="lockSet">Set a PIN</button>'}</div>
     ${meta.locked?`<div class="srow"><span>Lock again after leaving</span><select id="f-autolock" class="ssel">${[[0,'Immediately'],[1,'1 minute'],[5,'5 minutes'],[15,'15 minutes']].map(([v,l])=>opt(String(v),l,String(S.set.autolock))).join('')}</select></div>
       <div class="btns"><button class="btn grow" data-act="lockSet">Change PIN</button><button class="btn danger grow" data-act="lockOff">Turn lock off</button></div>`:''}
-    <div class="srow"><span>Hide amounts when the app opens</span><label class="switch"><input type="checkbox" id="f-hideopen" ${S.set.hideOnOpen?'checked':''} aria-label="Hide amounts when the app opens"><i></i></label></div>
+    <div class="srow"><span>Always hide amounts<small>Hidden every time you open or come back to the app. Tap the eye to show them.</small></span><label class="switch"><input type="checkbox" id="f-hideopen" ${S.set.hideOnOpen?'checked':''} aria-label="Always hide amounts"><i></i></label></div>
+    <div class="srow"><span>To show amounts, ask for<small>${guardSummary()}</small></span><select id="f-guard" class="ssel">${[['off','Nothing'],['pin','PIN'],['bio','Fingerprint or face']].map(([v,l])=>opt(v,l,guard().mode)).join('')}</select></div>
     <p class="help">Your entries stay on this phone. Khata only goes online to download the bill reader once, and to send a bill photo to Claude if you turn that on.</p></div>
   <div id="bill-set" class="card"><h3>Reading bills</h3><p class="muted small">Checking…</p></div>
   <div class="card"><h3>Month</h3><div class="srow" style="border:0"><span>Month starts on<small>Use your salary day to budget payday to payday.</small></span><select id="f-start" class="ssel">${Array.from({length:28},(_,i)=>opt(String(i+1),ord(i+1),String(S.set.startDay))).join('')}</select></div></div>
@@ -1239,7 +1280,9 @@ function renderSettings(){
     <div class="btns"><button class="btn danger grow" data-act="wipe">Erase everything</button></div></div>
   <p class="help" style="text-align:center">Khata, version ${APP_VERSION}</p>`;
   const save=()=>{persist();};
-  $('#f-hideopen').addEventListener('change',e=>{S.set.hideOnOpen=e.target.checked;save()});
+  $('#f-hideopen').addEventListener('change',e=>{S.set.hideOnOpen=e.target.checked;if(e.target.checked) S.set.hide=true;save();render()});
+  $('#f-guard').addEventListener('change',e=>setGuardMode(e.target.value));
+  $('#f-xinc').addEventListener('change',e=>{S.set.excelIncome=e.target.checked;save()});
   $('#f-start').addEventListener('change',e=>{S.set.startDay=+e.target.value;save();toast('Month now starts on the '+ord(+e.target.value)+'.')});
   if($('#f-autolock')) $('#f-autolock').addEventListener('change',e=>{S.set.autolock=+e.target.value;save()});
   if(navigator.storage&&navigator.storage.estimate) navigator.storage.estimate().then(e=>{const el=$('#f-store');if(el) el.textContent=(e.usage/1048576).toFixed(1)+' MB'}).catch(()=>{});
@@ -1249,7 +1292,7 @@ function renderSettings(){
     $('#f-aikey').addEventListener('change',e=>{aiSet().key=e.target.value.trim();save();toast(aiSet().key?'API key saved on this phone.':'API key removed.')});
     $('#f-aimodel').addEventListener('change',e=>{aiSet().model=e.target.value;save()})});
 }
-const APP_VERSION='v11';
+const APP_VERSION='v16';
 actions.settingsSave=()=>{if($('#f-aion')){const ai=aiSet();ai.on=$('#f-aion').checked;ai.key=($('#f-aikey').value||'').trim();ai.model=$('#f-aimodel').value}const sd=parseInt($('#f-start').value);S.set.startDay=sd>=1&&sd<=28?sd:1;S.set.hideOnOpen=$('#f-hideopen').checked;if($('#f-autolock')) S.set.autolock=Number($('#f-autolock').value);persist();actions.close();render()};
 actions.lockSet=()=>{if(!window.crypto||!crypto.subtle){toast('Encryption needs the app opened over https.');return}
   sheet(`<h2>${meta.locked?'Change PIN':'Set a PIN'}</h2><p class="help">Your data is encrypted with this. A short PIN keeps out someone who picks up your phone. Against someone who copies the phone's data, only a long passphrase holds up. There's no recovery: forget it and the data is gone unless you have a backup.</p>
@@ -1261,6 +1304,7 @@ actions.lockSave=async()=>{const a=$('#f-p1').value,b=$('#f-p2').value,err=$('#f
   meta={locked:true,salt:b64(salt),numeric:/^\d+$/.test(a)};localStorage.setItem(K_META,JSON.stringify(meta));persist();await saving;localStorage.removeItem(K_PLAIN);
   actions.close();render();toast('Locked with your PIN. Data is now encrypted.')};
 actions.lockOff=async()=>{if(!confirm('Turn off the lock? Your data will be stored unencrypted on this phone.')) return;
+  if(guard().mode!=='off'&&!guard().pinHash){toast('Amounts still need a PIN. Set one for that.');if(!(await setGuardPin())) return}
   await rekeyPhotos(cryptoKey,null);cryptoKey=null;meta={};localStorage.setItem(K_META,'{}');persist();await saving;localStorage.removeItem(K_ENC);actions.close();render();toast('Lock turned off.')};
 actions.lockNow=()=>showLock();
 function showLock(msg){if(S) persist();S=null;cryptoKey=null;actions.close();if(typeof forgetPhotoURLs==='function'){forgetPhotoURLs();actions.viewerClose()}
@@ -1278,7 +1322,7 @@ async function shareOrDownload(blob,name){
   if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:name});return true}catch(e){if(e.name==='AbortError') return false}}
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);return true;
 }
-actions.exportBackup=async()=>{persist();await saving;
+actions.exportBackup=async()=>{if(guard().mode!=='off'&&!(await askGuard('Save a backup'))) return;persist();await saving;
   const data=exportSnapshot(),photos={};for(const id of photoRefs()){const b=await photoBytes(id);if(b) photos[id]=b64(b)}data.photos=photos;
   const payload=cryptoKey?{app:'khata',v:3,enc:true,salt:meta.salt,...await encrypt(cryptoKey,data)}:{app:'khata',v:3,enc:false,data};
   if(await shareOrDownload(new Blob([JSON.stringify(payload)],{type:'application/json'}),`khata-backup-${today()}.json`)){S.set.lastBackup=today();persist();actions.close();render();toast(cryptoKey?'Saved an encrypted backup.':'Saved a backup file.')}};
@@ -1286,7 +1330,8 @@ actions.exportBackup=async()=>{persist();await saving;
 /* ----- Excel ----- */
 function excelModel(){
   const p=period(0),R=v=>Math.round(v)/100,catName=id=>cat(id)?.name||'Other',all=items();
-  const entries=[...all].sort((a,b)=>b.date.localeCompare(a.date)||b.ts-a.ts).map(x=>{const g=x.group&&grp(x.group);
+  const noInc=!S.set.excelIncome;
+  const entries=[...all].filter(x=>x.t!=='adj'&&!(noInc&&x.t==='inc')).sort((a,b)=>b.date.localeCompare(a.date)||b.ts-a.ts).map(x=>{const g=x.group&&grp(x.group);
     if(x.k==='gb') return{date:x.date,type:'Expense',cat:catName(x.cat),acc:x.payer==='me'?acc(x.acc)?.name:`Paid by ${who(g,x.payer)}`,to:`Split, ${Object.keys(S.gbills.find(b=>b.id===x.id).shares).length} people`,amt:R(x.amt),share:R(x.share),method:METHODS[x.method],group:g?.name,note:x.note};
     if(x.k==='gp') return{date:x.date,type:'Settle up',acc:acc(x.acc)?.name||'',to:x.from==='me'?`to ${who(g,x.to)}`:`from ${who(g,x.from)}`,amt:R(x.amt),share:null,method:'',group:g?.name,note:x.note};
     if(x.t==='exp') return{date:x.date,type:'Expense',cat:catName(x.cat),acc:acc(x.acc)?.name,amt:R(x.amt),share:R(x.amt),method:METHODS[x.method]||'',note:x.note};
@@ -1297,9 +1342,9 @@ function excelModel(){
   const cats=S.cats.filter(c=>c.kind==='exp').map(c=>({name:c.name,budget:R(c.budget||0),spent:R(byC[c.name]||0),color:c.color})).filter(c=>c.spent||c.budget);
   if(byC.Other&&!cats.some(c=>c.name==='Other')) cats.push({name:'Other',budget:0,spent:R(byC.Other),color:'#9AA59D'});
   cats.sort((a,b)=>b.spent-a.spent||b.budget-a.budget);
-  const months=[];for(let i=11;i>=0;i--){const q=period(-i),it=items(q);months.push({label:MON[parseD(q.start).getMonth()]+' '+parseD(q.start).getFullYear(),start:q.start,end:q.end,spent:R(sum(it.filter(x=>x.t==='exp'),x=>x.share)),income:R(sum(it.filter(x=>x.t==='inc')))})}
+  const months=[];for(let i=11;i>=0;i--){const q=period(-i),it=items(q);months.push({label:MON[parseD(q.start).getMonth()]+' '+parseD(q.start).getFullYear(),start:q.start,end:q.end,spent:R(sum(it.filter(x=>x.t==='exp'),x=>x.share)),income:noInc?0:R(sum(it.filter(x=>x.t==='inc')))})}
   const b=balances();
-  const accounts=activeAccs().map(a=>{const c=isCredit(a)?cardStatus(a):null;return{name:a.name,type:KINDS[a.kind].replace(' (eSewa, Khalti…)',''),kind:c?'Credit':'Money',balance:R(b[a.id]),limit:c&&a.limit?R(a.limit):0,owed:c?R(c.owed):0,stmtDay:a.stmtDay?ord(a.stmtDay):'',payBy:c&&c.remaining>0?fmtD(c.due):''}});
+  const accounts=activeAccs().map(a=>{const c=isCredit(a)?cardStatus(a):null;return{name:a.name,type:KINDS[a.kind].replace(' (eSewa, Khalti…)',''),kind:c?'Credit':'Money',limit:c&&a.limit?R(a.limit):0,owed:c?R(c.owed):0,stmtDay:a.stmtDay?ord(a.stmtDay):'',payBy:c&&c.remaining>0?fmtD(c.due):''}});
   const groups=S.groups.map(g=>{const st=groupStats(g),plan=settlePlan(groupNet(g));
     return{name:g.name,rows:Object.entries(st).map(([id,v])=>({person:who(g,id),paid:R(v.paid),share:R(v.share),settled:R(v.settled)})),settle:plan.map(s=>({from:who(g,s.from),to:who(g,s.to),amt:R(s.amt)}))}});
   const vs=S.vehicles.filter(v=>S.vlogs.some(l=>l.veh===v.id)).map(v=>({v,st:vehStats(v)})).sort((a,b)=>b.st.fills.length-a.st.fills.length);
@@ -1308,12 +1353,13 @@ function excelModel(){
     fuelCostKm:R(st.fills.filter((f,i)=>i>0&&f.km>0).reduce((s,f)=>s+(f.total||0),0))}));
   const fuel=vs.flatMap(({v,st})=>st.logs.filter(l=>l.type==='fuel').map(l=>{const f=st.fills.find(x=>x.id===l.id);return{veh:v.name,date:l.date,odo:l.odo,litres:l.litres,rate:l.rate,total:l.total?R(l.total):null,kml:f&&f.kml?Math.round(f.kml*100)/100:null,note:l.note,label:lab(l.date)}}));
   const service=vs.flatMap(({v,st})=>st.logs.filter(l=>l.type!=='fuel').map(l=>({veh:v.name,date:l.date,odo:l.odo,type:l.type==='service'?'Service':'Other',cost:l.total?R(l.total):null,no:l.no,note:l.note})));
-  return{vehicles,fuel,service,exportedLabel:fmtD(today())+' '+parseD(today()).getFullYear(),periodStart:p.start,periodEnd:p.end,cats,
+  const elapsed=Math.max(1,Math.min(diffDays(p.start,p.end),diffDays(p.start,today()))+1);
+  return{noIncome:noInc,perDay:Math.round(sum(sp,x=>x.share)/elapsed)/100,vehicles,fuel,service,exportedLabel:fmtD(today())+' '+parseD(today()).getFullYear(),periodStart:p.start,periodEnd:p.end,cats,
     methods:Object.entries(byM).sort((a,b)=>b[1]-a[1]).map(([name,v])=>({name,spent:R(v)})),months,entries,accounts,groups,
-    income:R(sum(items(p).filter(x=>x.t==='inc'))),have:accounts.filter(a=>a.kind==='Money').reduce((s,a)=>s+a.balance,0),owe:accounts.reduce((s,a)=>s+a.owed,0),friends:R(myGroupNet()),
-    backup:JSON.stringify({app:'khata',v:2,data:exportSnapshot()})};
+    income:noInc?0:R(sum(items(p).filter(x=>x.t==='inc'))),owe:accounts.reduce((s,a)=>s+a.owed,0),friends:R(myGroupNet()),
+    backup:JSON.stringify({app:'khata',v:2,data:excelSnapshot()})};
 }
-actions.exportXlsx=async()=>{
+actions.exportXlsx=async()=>{if(guard().mode!=='off'&&!(await askGuard('Save the Excel file'))) return;
   if(meta.locked&&!confirm('The Excel file is not encrypted. Anyone who opens it can read your finances. Continue?')) return;
   if(!window.KhataXlsx){toast('The Excel part of the app didn\u2019t load. Reopen Khata and try again.');return}
   persist();await saving;
@@ -1339,14 +1385,19 @@ async function restore(data){
   if(!data||!Array.isArray(data.tx)){toast('That backup looks damaged.');return}
   const n=data.tx.length+(data.gbills||[]).length+(data.vlogs||[]).length,ph=data.photos||{};delete data.photos;
   if(!confirm(`Replace everything on this phone with this backup (${n} entries${Object.keys(ph).length?', '+Object.keys(ph).length+' photos':''})?`)) return;
+  const fileNoInc=!!data.noIncome,noIncFile=fileNoInc&&!(S&&S.tx.some(t=>t.t==='inc'));delete data.noIncome;
   for(const[id,b] of Object.entries(ph)){try{await storePhoto(new Blob([unb64(b)]),id)}catch{}}
-  const keepAI=S&&S.set&&S.set.ai;S=data;migrate();if(keepAI&&keepAI.key) S.set.ai={...(S.set.ai||{}),key:keepAI.key,on:keepAI.on,model:(S.set.ai&&S.set.ai.model)||keepAI.model};persist();actions.close();show('add');toast('Restored from backup.'+(n&&!Object.keys(ph).length&&(data.vlogs||[]).some(l=>l.photos&&l.photos.length)?' Bill photos aren\u2019t in this file.':''));
+  let missingBal=false;
+  if(data.noBalances&&S){const cur=new Map(S.accounts.map(a=>[a.id,a])),curAdj=S.tx.filter(t=>t.t==='adj');
+    if(fileNoInc){const have=new Set(data.tx.map(t=>t.id));data.tx.push(...S.tx.filter(t=>t.t==='inc'&&!have.has(t.id)))}
+    data.accounts.forEach(a=>{const c=cur.get(a.id);if(a.kind==='credit'||a.kind==='vcc') return;if(c){a.open=c.open||0;data.tx.push(...curAdj.filter(t=>t.acc===a.id&&!data.tx.some(x=>x.id===t.id)))}else missingBal=true});delete data.noBalances}
+  const keepAI=S&&S.set&&S.set.ai;S=data;migrate();if(keepAI&&keepAI.key) S.set.ai={...(S.set.ai||{}),key:keepAI.key,on:keepAI.on,model:(S.set.ai&&S.set.ai.model)||keepAI.model};persist();actions.close();show('add');if(missingBal||noIncFile){toast('Restored. Excel files leave out '+(missingBal&&noIncFile?'bank balances and income':missingBal?'bank balances':'income')+(missingBal?', so set balances under Accounts, Fix balance.':'.'));return}toast('Restored from backup.'+(n&&!Object.keys(ph).length&&(data.vlogs||[]).some(l=>l.photos&&l.photos.length)?' Bill photos aren\u2019t in this file.':''));
 }
 
 /* ================= lifecycle ================= */
 let hiddenAt=0;
 document.addEventListener('visibilitychange',()=>{
-  if(document.hidden){hiddenAt=Date.now();document.body.classList.add('veil');if(S) persist();if(meta.locked&&S&&S.set.autolock===0) showLock()}
+  if(document.hidden){hiddenAt=Date.now();document.body.classList.add('veil');if(S){if(S.set.hideOnOpen||(S.set.guard&&S.set.guard.mode!=='off')) S.set.hide=true;persist()}if(meta.locked&&S&&S.set.autolock===0) showLock()}
   else{document.body.classList.remove('veil');if(meta.locked&&S&&Date.now()-hiddenAt>=(S.set.autolock??1)*60000) showLock();else if(S) render()}
 });
 function start(){$('#lock').hidden=true;A=blankAdd(A.t||'exp');buildAdd();applyIncoming();show('add');if(navigator.storage&&navigator.storage.persist) navigator.storage.persist().catch(()=>{})}
@@ -1452,7 +1503,7 @@ function serviceLine(v,st){
 function renderGarage(){
   const v=GA.open&&vehicle(GA.open);if(v) return renderVehicle(v);
   const list=S.vehicles.filter(x=>!x.archived);
-  let h=`<div class="top"><h1>Garage</h1><button class="link" data-act="vehEdit">Add vehicle</button></div>`;
+  let h=`<div class="top"><h1>Garage</h1><div style="display:flex;align-items:center;gap:4px">${eyeBtn()}<button class="link" data-act="vehEdit">Add vehicle</button></div></div>`;
   if(!list.length) h+=`<div class="card"><p class="empty">Log fuel fills, servicing and other costs for your bike or car. Khata works out mileage, cost per km and when the next service is due.</p>
     <div class="btns"><button class="btn primary grow" data-act="vehEdit">Add a vehicle</button><button class="btn grow" data-act="importDiarium">Import from Diarium</button></div></div>`;
   for(const x of list){const st=vehStats(x),sl=serviceLine(x,st);
@@ -1863,6 +1914,68 @@ async function billSettingsHtml(){
   <p class="help">The key stays on this phone${meta.locked?', encrypted with your PIN':' (set a PIN to encrypt it)'} and is never put in backups.</p></div></div>`;
 }
 actions.ocrDownload=async()=>{toast('Downloading the bill reader (about 7 MB)…');try{await loadOCR();toast('Bill reader is ready. It now works offline.');if(view==='settings') renderSettings()}catch(e){OCRW=null;toast(await ocrProblem(e))}};
+
+/* ================= hide amounts: PIN / biometric gate ================= */
+function guard(){return S.set.guard||(S.set.guard={mode:'off'})}
+function guardSummary(){const g=guard();if(g.mode==='bio') return 'Fingerprint or face, with your PIN as backup';if(g.mode==='pin') return meta.locked?'Your app PIN':'A PIN just for this';return 'Anyone holding the phone can tap the eye'}
+const bioSupported=async()=>{try{return !!(window.PublicKeyCredential&&await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable())}catch{return false}};
+async function pinHash(pin,salt){const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pin),'PBKDF2',false,['deriveBits']);
+  return b64(new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',salt,iterations:310000,hash:'SHA-256'},base,256)))}
+async function checkGuardPin(pin){
+  const g=guard();
+  if(meta.locked){try{const key=await deriveKey(pin,unb64(meta.salt));await decrypt(key,JSON.parse(localStorage.getItem(K_ENC)));return true}catch{return false}}
+  if(!g.pinHash) return false;return (await pinHash(pin,unb64(g.pinSalt)))===g.pinHash;
+}
+async function bioRegister(){
+  const cred=await navigator.credentials.create({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),rp:{name:'Khata',id:location.hostname},
+    user:{id:crypto.getRandomValues(new Uint8Array(16)),name:'khata-amounts',displayName:'Khata'},pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
+    authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required',residentKey:'discouraged'},timeout:60000,attestation:'none'}});
+  return b64(new Uint8Array(cred.rawId));
+}
+async function bioCheck(){
+  const g=guard();if(!g.credId) return false;
+  const a=await navigator.credentials.get({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),rpId:location.hostname,allowCredentials:[{type:'public-key',id:unb64(g.credId)}],userVerification:'required',timeout:60000}});
+  return !!(a&&a.response&&a.response.authenticatorData&&(new Uint8Array(a.response.authenticatorData)[32]&0x04));
+}
+async function setGuardMode(mode){
+  const g=guard(),back=()=>{if(view==='settings') renderSettings()};
+  if(mode==='off'){
+    if(g.mode!=='off'&&!(await askGuard('Turn off the check'))){back();return}
+    S.set.guard={mode:'off'};persist();back();toast('Amounts show with a tap again.');return}
+  if(!window.crypto||!crypto.subtle){toast('This needs the app opened over https.');back();return}
+  if(!meta.locked&&!g.pinHash){const ok=await setGuardPin();if(!ok){back();return}}
+  if(mode==='bio'){
+    if(!(await bioSupported())){toast('This phone has no fingerprint or face unlock the browser can use. Using PIN instead.');mode='pin'}
+    else{try{g.credId=await bioRegister()}catch(e){toast(e&&e.name==='NotAllowedError'?'Fingerprint setup was cancelled.':'Couldn\u2019t set up fingerprint: '+(e.message||e.name));back();return}}
+  }
+  g.mode=mode;S.set.hide=true;persist();back();render();toast(mode==='bio'?'Amounts now need your fingerprint or face.':'Amounts now need your PIN.');
+}
+function setGuardPin(){return new Promise(res=>{
+  sheet(`<h2>Set a PIN for amounts</h2><p class="help">You'll type this to show amounts, or as a backup when fingerprint doesn\u2019t work. It only hides numbers on screen; to encrypt your data too, use PIN lock instead.</p>
+  <label>PIN<input id="g-p1" type="password" inputmode="numeric" autocomplete="new-password"></label><label>Again<input id="g-p2" type="password" inputmode="numeric" autocomplete="new-password"></label>
+  <p class="danger small" id="g-err"></p><div class="btns"><button class="btn" data-act="gCancel">Cancel</button><button class="btn primary grow" data-act="gSave">Save PIN</button></div>`,p=>p.querySelector('input').focus());
+  actions.gCancel=()=>{actions.close();res(false)};
+  actions.gSave=async()=>{const a=$('#g-p1').value,b=$('#g-p2').value,err=$('#g-err');
+    if(a.length<4){err.textContent='Use at least 4 digits.';return}if(a!==b){err.textContent='The two entries don\u2019t match.';return}
+    const salt=crypto.getRandomValues(new Uint8Array(16));Object.assign(guard(),{pinSalt:b64(salt),pinHash:await pinHash(a,salt)});persist();actions.close();res(true)};
+})}
+function askGuard(title){return new Promise(async res=>{
+  const g=guard();let done=false;const finish=v=>{if(done) return;done=true;actions.close();res(v)};
+  const canBio=g.mode==='bio'&&g.credId&&await bioSupported(),hasPin=meta.locked||!!g.pinHash;
+  sheet(`<h2>${esc(title)}</h2>${canBio?'<div class="btns"><button class="btn primary grow" data-act="gBio">Use fingerprint or face</button></div>':''}
+  ${hasPin?`<label>${meta.locked?'App PIN':'PIN'}<input id="g-pin" type="password" inputmode="numeric" autocomplete="current-password"></label><p class="danger small" id="g-err"></p>
+  <div class="btns"><button class="btn" data-act="gNo">Cancel</button><button class="btn ${canBio?'':'primary '}grow" data-act="gPin">Show with PIN</button></div>`:'<div class="btns"><button class="btn grow" data-act="gNo">Cancel</button></div>'}`,
+  p=>{const i=p.querySelector('#g-pin');if(i){i.addEventListener('keydown',e=>{if(e.key==='Enter') actions.gPin()});if(!canBio) i.focus()}});
+  actions.gNo=()=>finish(false);
+  actions.gBio=async()=>{try{if(await bioCheck()) finish(true);else toast('Not recognised. Try again or use your PIN.')}catch(e){if(e&&e.name!=='NotAllowedError') toast('Fingerprint isn\u2019t available right now. Use your PIN.')}};
+  actions.gPin=async()=>{const v=$('#g-pin').value;if(!v) return;$('#g-err').textContent='Checking…';if(await checkGuardPin(v)) finish(true);else{$('#g-err').textContent='Wrong PIN.';$('#g-pin').select()}};
+  if(canBio) setTimeout(()=>actions.gBio(),250);
+})}
+async function revealAmounts(){
+  const g=guard();
+  if(g.mode==='off'){S.set.hide=false;render();return}
+  if(await askGuard('Show amounts')){S.set.hide=false;render();toast('Amounts shown until you leave the app.')}
+}
 
 boot();gcPhotos();
 </script>

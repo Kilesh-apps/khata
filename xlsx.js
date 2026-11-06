@@ -211,13 +211,14 @@ function build(m){
   const spentCached=m.cats.reduce((s,c)=>s+c.spent,0);
   const kpis=[
     ['Spent',spentCached,sumifs('G')],
+    ...(m.noIncome?[['Average a day',m.perDay,`IFERROR(A7/(MIN($D$4,TODAY())-$B$4+1),0)`]]:[
     ['Income',m.income,`SUMIFS(Entries!$F:$F,Entries!$B:$B,"Income",Entries!$A:$A,">="&$B$4,Entries!$A:$A,"<="&$D$4)`],
-    ['Saved (income minus spent)',m.income-spentCached,'B7-A7'],
-    ['Money you have',m.have,`SUMIFS(Accounts!$D:$D,Accounts!$C:$C,"Money")`],
-    ['Owed on cards',m.owe,`SUMIFS(Accounts!$F:$F,Accounts!$C:$C,"Credit")`],
+    ['Saved (income minus spent)',m.income-spentCached,'B7-A7']]),
+    m.cats.length&&m.cats.some(c=>c.budget)?['Budget left this period',m.cats.reduce((s,c)=>s+(c.budget||0),0)-spentCached,`B${11+m.cats.length}-C${11+m.cats.length}`]:['Budget left this period','No budgets set',null],
+    ['Owed on cards',m.owe,`SUMIFS(Accounts!$E:$E,Accounts!$C:$C,"Credit")`],
     ['Friends owe you (minus = you owe)',m.friends,`SUMIFS(Groups!$F:$F,Groups!$B:$B,"You")`]
   ];
-  kpis.forEach(([l,v,f],c)=>{S.set(6,c,l,ST.kpiTop);S.set(7,c,v,ST.kpiV,f)});
+  kpis.forEach(([l,v,f],c)=>{S.set(6,c,l,ST.kpiTop);S.set(7,c,v,typeof v==='string'?ST.kpiL:ST.kpiV,f||undefined)});
   S.heights[6]=30;S.heights[7]=30;
   let r=9;
   S.set(r,0,'Where your money went',ST.sect);S.heights[r]=24;r++;
@@ -260,38 +261,36 @@ function build(m){
   }
   S.set(r,0,'Last 12 months',ST.sect);S.heights[r]=24;r++;
   S.set(r,0,'From the Monthly sheet.',ST.sub);r++;
-  S.charts.push({r1:r-1,r2:r+15,c1:0,c2:6,xml:barChart({t:'Spent and income by month',dir:'col',showVal:true,legend:'b',gap:80,
+  S.charts.push({r1:r-1,r2:r+15,c1:0,c2:6,xml:barChart({t:m.noIncome?'Spent by month':'Spent and income by month',dir:'col',showVal:true,legend:m.noIncome?null:'b',gap:80,
     series:[{name:'Spent',nameRef:'Monthly!$D$1',ref:`Monthly!$D$2:$D$${m.months.length+1}`,vals:m.months.map(x=>x.spent),color:'2F6B4F'},
-            {name:'Income',nameRef:'Monthly!$E$1',ref:`Monthly!$E$2:$E$${m.months.length+1}`,vals:m.months.map(x=>x.income),color:'C2912E'}],
+            ...(m.noIncome?[]:[{name:'Income',nameRef:'Monthly!$E$1',ref:`Monthly!$E$2:$E$${m.months.length+1}`,vals:m.months.map(x=>x.income),color:'C2912E'}])],
     cats:{ref:`Monthly!$A$2:$A$${m.months.length+1}`,vals:m.months.map(x=>x.label)}})});
 
   /* Monthly */
   const M=new Sheet('Monthly',{freeze:1,tab:'C2912E'});
   M.cols=[14,13,13,15,15,15];
-  ['Month','From','To','Spent (Rs)','Income (Rs)','Saved (Rs)'].forEach((h,c)=>M.set(1,c,h,c>2?ST.headR:ST.head));M.heights[1]=24;
+  (m.noIncome?['Month','From','To','Spent (Rs)']:['Month','From','To','Spent (Rs)','Income (Rs)','Saved (Rs)']).forEach((h,c)=>M.set(1,c,h,c>2?ST.headR:ST.head));M.heights[1]=24;
   m.months.forEach((x,i)=>{const rr=i+2,b=i%2===1;
     M.set(rr,0,x.label,b?ST.textB:ST.text).set(rr,1,serial(x.start),b?ST.dateB:ST.date).set(rr,2,serial(x.end),b?ST.dateB:ST.date)
      .set(rr,3,x.spent,b?ST.moneyB:ST.money,`SUMIFS(Entries!$G:$G,Entries!$B:$B,"Expense",Entries!$A:$A,">="&B${rr},Entries!$A:$A,"<="&C${rr})`)
-     .set(rr,4,x.income,b?ST.moneyB:ST.money,`SUMIFS(Entries!$F:$F,Entries!$B:$B,"Income",Entries!$A:$A,">="&B${rr},Entries!$A:$A,"<="&C${rr})`)
+    if(!m.noIncome) M.set(rr,4,x.income,b?ST.moneyB:ST.money,`SUMIFS(Entries!$F:$F,Entries!$B:$B,"Income",Entries!$A:$A,">="&B${rr},Entries!$A:$A,"<="&C${rr})`)
      .set(rr,5,x.income-x.spent,b?ST.moneyB:ST.money,`E${rr}-D${rr}`)});
   const mt=m.months.length+2;
   M.set(mt,0,'Total',ST.totL).set(mt,1,'',ST.totL).set(mt,2,'',ST.totL)
-   .set(mt,3,m.months.reduce((s,x)=>s+x.spent,0),ST.totM,`SUM(D2:D${mt-1})`).set(mt,4,m.months.reduce((s,x)=>s+x.income,0),ST.totM,`SUM(E2:E${mt-1})`)
-   .set(mt,5,m.months.reduce((s,x)=>s+x.income-x.spent,0),ST.totM,`SUM(F2:F${mt-1})`);
-  M.cf.push(`<conditionalFormatting sqref="F2:F${mt}"><cfRule type="cellIs" dxfId="0" priority="1" operator="lessThan"><formula>0</formula></cfRule></conditionalFormatting>`);
+   .set(mt,3,m.months.reduce((s,x)=>s+x.spent,0),ST.totM,`SUM(D2:D${mt-1})`);
+  if(!m.noIncome){M.set(mt,4,m.months.reduce((s,x)=>s+x.income,0),ST.totM,`SUM(E2:E${mt-1})`).set(mt,5,m.months.reduce((s,x)=>s+x.income-x.spent,0),ST.totM,`SUM(F2:F${mt-1})`);
+  M.cf.push(`<conditionalFormatting sqref="F2:F${mt}"><cfRule type="cellIs" dxfId="0" priority="1" operator="lessThan"><formula>0</formula></cfRule></conditionalFormatting>`);}
 
   /* Accounts */
   const Ac=new Sheet('Accounts',{freeze:1,tab:'8E5A9B'});
-  Ac.cols=[26,22,10,15,15,15,15,12,14];
-  ['Account','Type','Kind','Balance (Rs)','Credit limit','Owed (Rs)','Available','Statement day','Pay by'].forEach((h,c)=>Ac.set(1,c,h,c>=3&&c<=6?ST.headR:ST.head));Ac.heights[1]=24;
-  m.accounts.forEach((a,i)=>{const rr=i+2,b=i%2===1,T=b?ST.textB:ST.text,Mo=b?ST.moneyB:ST.money;
-    Ac.set(rr,0,a.name,T).set(rr,1,a.type,T).set(rr,2,a.kind,T).set(rr,3,a.balance,a.balance<0?ST.moneyR:Mo)
-      .set(rr,4,a.limit||'',Mo).set(rr,5,a.kind==='Credit'?a.owed:'',Mo,a.kind==='Credit'?`MAX(0,-D${rr})`:undefined)
-      .set(rr,6,a.limit?a.limit-a.owed:'',Mo,a.limit?`E${rr}-F${rr}`:undefined).set(rr,7,a.stmtDay||'',T).set(rr,8,a.payBy||'',T)});
+  Ac.cols=[26,22,10,15,15,15,13,14];
+  ['Account','Type','Kind','Credit limit','Owed (Rs)','Available','Statement day','Pay by'].forEach((h,c)=>Ac.set(1,c,h,c>=3&&c<=5?ST.headR:ST.head));Ac.heights[1]=24;
+  m.accounts.forEach((a,i)=>{const rr=i+2,b=i%2===1,T=b?ST.textB:ST.text,Mo=b?ST.moneyB:ST.money,cr=a.kind==='Credit';
+    Ac.set(rr,0,a.name,T).set(rr,1,a.type,T).set(rr,2,a.kind,T).set(rr,3,cr&&a.limit?a.limit:'',Mo).set(rr,4,cr?a.owed:'',Mo)
+      .set(rr,5,cr&&a.limit?a.limit-a.owed:'',Mo,cr&&a.limit?`D${rr}-E${rr}`:undefined).set(rr,6,a.stmtDay||'',T).set(rr,7,a.payBy||'',T)});
   const at=m.accounts.length+2;
-  Ac.set(at,0,'Money you have',ST.totL).set(at,3,m.have,ST.totM,`SUMIFS(D2:D${at-1},C2:C${at-1},"Money")`).set(at,5,m.owe,ST.totM,`SUM(F2:F${at-1})`);
-  Ac.set(at+2,0,'Balances are what Khata worked out on the day of export. Edit entries in the app, not here.',ST.note);
-
+  Ac.set(at,0,'Owed on cards',ST.totL).set(at,4,m.owe,ST.totM,`SUMIFS(E2:E${at-1},C2:C${at-1},"Credit")`);
+  Ac.set(at+2,0,'Bank, wallet and cash balances are left out of this file on purpose. They stay in the app and in the encrypted backup file.',ST.note);
   /* Groups */
   const G=new Sheet('Groups',{freeze:1,tab:'B4553F'});
   G.cols=[20,18,15,15,15,15];
