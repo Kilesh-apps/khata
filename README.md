@@ -16,8 +16,8 @@ A personal money ledger. Static PWA on GitHub Pages. No server, no database. The
 |---|---|
 | `index.html` | The whole app. Data lives in `localStorage` on the phone. |
 | `xlsx.js` | Builds the Excel export (formulas, charts, hidden backup sheet) and reads it back for restore. No libraries. |
-| `ocr/` | Offline bill reader (tesseract.js, Apache-2.0). Keep the folder structure. |
-| `sw.js` | Caches the app for offline use. **Bump `CACHE` (`khata-v10` → `khata-v11`) on every update.** |
+| `tesseract*.js`, `eng.traineddata.gz` | Offline bill reader (tesseract.js 7, Apache-2.0, see `LICENSE-tesseract.md`). Kept next to `index.html` (no folders) so they can be uploaded from a phone. |
+| `sw.js` | Caches the app for offline use. **Bump `CACHE` (`khata-v11` → `khata-v12`) on every update.** |
 | `manifest.webmanifest` | Install info, home-screen shortcuts, and the Android share target for bank SMS. |
 | `icon-*.png` | App icons. |
 
@@ -59,7 +59,7 @@ A personal money ledger. Static PWA on GitHub Pages. No server, no database. The
 
 ## Reading bills
 
-- **On the phone (default):** Tesseract OCR in `ocr/` (tesseract.js 7.0.0, core 7.0.0, English `best_int` model). Loaded only when first used, about 7 MB, then cached by `sw.js` in its own cache (`khata-ocr-v1`) that survives app updates. Settings → Reading bills → Download makes it ready offline in advance.
+- **On the phone (default):** Tesseract OCR (tesseract.js 7.0.0, core 7.0.0, English `best_int` model), files in the repo root. Loaded only when first used, about 7 MB, then cached by `sw.js` in its own cache (`khata-ocr-v2`) that survives app updates. Settings → Reading bills → Download makes it ready offline in advance.
 - **AI (optional):** Settings → Reading bills → turn on, paste an Anthropic API key. The bill photo is sent to `api.anthropic.com` directly from the phone. The key is stored on the phone (encrypted when a PIN is set) and stripped from every backup and Excel file.
 - Results are always suggestions: pick the total, or open **Split by items**, tick who had each item; tax, service charge and discount are shared in proportion.
 - CSP allows `'wasm-unsafe-eval'` (needed for the OCR engine) and `connect-src https://api.anthropic.com` (only used when AI reading is on).

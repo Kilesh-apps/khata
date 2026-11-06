@@ -58,8 +58,8 @@ p{margin:0}
 @media (max-width:370px){.amount .cur{font-size:18px}.ghost{padding:0 9px;font-size:13px}.seg button{font-size:13.5px;padding:0 4px}.top .icon{width:38px}.view{padding-left:12px;padding-right:12px}.grid{gap:6px}.tile{font-size:12px;padding-left:2px;padding-right:2px}}
 
 /* add */
-.add{display:flex;flex-direction:column;min-height:100%;padding-bottom:12px}
-.status{font-size:14px;margin-top:6px;padding:9px 12px;border-radius:10px;background:var(--surface);text-align:left;width:100%}
+.add{display:flex;flex-direction:column;min-height:100%;padding-bottom:26px}
+.status{font-size:14px;margin-top:6px;padding:9px 12px;border-radius:10px;background:var(--surface);text-align:left;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
 .status.warn{background:var(--warn-soft);color:var(--warn)}
 .status.danger{background:var(--danger-soft);color:var(--danger)}
 .amount-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 0 0}
@@ -111,12 +111,12 @@ label.sel{cursor:text}
 .clip{width:13px;height:13px;vertical-align:-1px;color:var(--muted)}
 .ghost #ph-n:empty{display:none}
 .sel.date{position:relative}
-.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:auto;padding-top:12px}
-.keys button{height:clamp(46px,6.6vh,58px);font-size:24px;border-radius:12px;background:var(--key);text-align:center}
+.keys{display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:minmax(40px,1fr);gap:7px;margin-top:auto;padding-top:8px;flex:1 1 auto;max-height:290px}
+.keys button{height:auto;min-height:40px;font-size:24px;border-radius:12px;background:var(--key);text-align:center}
 .keys button:active{background:var(--soft)}
-.add.has-fuel .keys{gap:5px;padding-top:8px}.add.has-fuel .keys button{height:clamp(38px,5.2vh,50px)}.add.has-fuel .tile{min-height:46px;padding:6px 4px}.add.has-fuel .note{height:40px;margin-top:8px}.add.has-fuel .grid{margin-top:8px}
+.add.has-fuel .keys{gap:5px;padding-top:8px}.add.has-fuel .keys button{min-height:38px}.add.has-fuel .tile{min-height:46px;padding:6px 4px}.add.has-fuel .note{height:40px;margin-top:8px}.add.has-fuel .grid{margin-top:8px}
 @media (max-height:800px){.add .top{min-height:50px}.amount-row{margin-top:6px}.amount .num{font-size:clamp(40px,12vw,52px)}.note{height:40px;margin-top:8px}.grid{margin-top:8px}.tile{min-height:46px;padding:6px 4px}
-  .selects{margin-top:8px}.sel{height:44px}.keys{gap:5px;padding-top:8px}.keys button{height:clamp(40px,5.6vh,52px)}.save{height:50px;margin-top:6px}.status{padding:7px 12px;font-size:13.5px}}
+  .selects{margin-top:8px}.sel{height:44px}.keys{gap:5px;padding-top:8px}.keys button{min-height:40px}.save{height:50px;margin-top:6px}.status{padding:7px 12px;font-size:13.5px}}
 @media (max-width:370px){.wide-only{display:none}}
 @media (max-width:340px){.tile{font-size:11px;letter-spacing:-.01em}}
 .keys .clear{font-size:15px;font-weight:600;color:var(--muted)}
@@ -151,6 +151,36 @@ label.sel{cursor:text}
 .opt.sm{height:34px;padding:0 10px;font-size:14px}
 .more-row{gap:14px;padding:14px}.more-row b{display:block;font-weight:600}.more-row small{display:block;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mi{width:40px;height:40px;border-radius:12px;background:var(--soft);display:grid;place-items:center;flex:none;color:var(--accent)}.mi svg{width:22px;height:22px}
+.cgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 4px;margin-top:10px}
+.ctile{display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 2px 4px;border-radius:12px;min-width:0}
+.ctile:active{background:var(--soft)}
+.cic{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;flex:none;background:color-mix(in srgb,var(--c) 17%,transparent);color:var(--c)}
+@media (prefers-color-scheme:dark){.cic{color:color-mix(in srgb,var(--c) 60%,#fff);background:color-mix(in srgb,var(--c) 26%,transparent)}}
+.cic svg{width:22px;height:22px}
+.cic.sm{width:34px;height:34px}.cic.sm svg{width:18px;height:18px}
+.ctile.on .cic{background:var(--c);color:#fff;box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--c)}
+.cl{font-size:12px;line-height:1.2;text-align:center;max-width:100%;color:var(--muted);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow-wrap:break-word;hyphens:auto;-webkit-hyphens:auto}
+@media (max-width:370px){.cl{font-size:11px;letter-spacing:-.01em}.cic{width:36px;height:36px}}
+.ctile.on .cl{color:var(--ink);font-weight:650}
+.ctile.more .cic{--c:#8a948d}
+.quickrow{display:flex;gap:6px;overflow-x:auto;margin-top:10px;scrollbar-width:none}.quickrow::-webkit-scrollbar{display:none}
+.quickrow .qchip{border:1px dashed var(--line);background:transparent;color:var(--ink)}.quickrow .qchip b{margin-left:6px;font-weight:650}
+.catrow{display:flex;align-items:center;gap:10px;margin-top:8px}
+.catrow input[data-cn]{flex:1;min-width:0;height:44px;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:0 12px;font-size:15px}
+.icongrid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-top:10px;justify-items:center}
+.icongrid .cic{width:44px;height:44px}.cic.sel{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--c)}
+.swatch{width:34px;height:34px;border-radius:50%}.swatch.sel{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--ink)}
+.switch{position:relative;display:inline-block;width:48px;height:28px;flex:none;margin:0!important}
+.switch input{position:absolute!important;inset:0;opacity:0;margin:0!important;width:100%!important;height:100%!important;z-index:1;cursor:pointer}
+.switch i{position:absolute;inset:0;border-radius:14px;background:var(--line);transition:background .2s}
+.switch i:after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 2px rgba(0,0,0,.3)}
+.switch input:checked+i{background:var(--accent)}.switch input:checked+i:after{transform:translateX(20px)}
+.switch input:focus-visible+i{outline:2px solid var(--accent);outline-offset:2px}
+.srow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);font-size:15px}
+.srow>span:first-child{min-width:0}.srow small{display:block;font-size:12.5px;color:var(--muted);margin-top:2px}
+.ssel{height:40px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:0 10px;font-size:14px;max-width:55%}
+.flabel{display:block;font-size:13px;color:var(--muted);margin-top:12px;font-weight:500}
+.flabel input,.flabel select{display:block;width:100%;margin-top:5px;height:46px;border:1px solid var(--line);border-radius:12px;background:var(--bg);padding:0 12px;font-size:16px;color:var(--ink)}
 .pills{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:4px}
 .tbtn{height:44px;flex:none;padding:0 14px}.tbtn.on{border-color:var(--accent);color:var(--accent)}
 .filter{display:inline-flex;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;align-items:center;gap:8px;margin-top:6px;height:34px;padding:0 12px;border-radius:17px;background:var(--accent-soft);color:var(--accent);font-size:14px;font-weight:550}
@@ -198,6 +228,9 @@ label.sel{cursor:text}
 .tabs svg{width:24px;height:24px}
 .tabs button[aria-current="page"]{color:var(--accent)}
 .tabs .fab{flex:0 0 76px;position:relative;justify-content:flex-start}
+.fab span{transition:transform .15s,background .2s,opacity .2s}.fab.wait span{background:var(--muted);opacity:.55}
+.savehint{display:block;width:100%;margin-top:6px;height:22px;line-height:22px;text-align:center;font-size:14px;font-weight:650;color:var(--accent)}.savehint.wait{color:var(--muted);font-weight:500}
+.srow .btn{white-space:nowrap;flex:none;height:40px}
 .fab span{position:absolute;top:-14px;left:50%;transform:translateX(-50%);width:60px;height:60px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;
   box-shadow:0 0 0 6px var(--bg),0 4px 14px rgba(0,0,0,.28);transition:transform .15s}
 @media (prefers-color-scheme:dark){.fab span{color:#0E1A14}}
@@ -264,12 +297,13 @@ main{padding-bottom:22px}
   <section id="v-accounts" class="view" hidden></section>
   <section id="v-garage" class="view" hidden></section>
   <section id="v-plan" class="view" hidden></section>
+  <section id="v-settings" class="view" hidden></section>
 </main>
 
 <nav class="tabs" aria-label="Sections">
   <button data-act="tab" data-v="history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V11M10 19V5M16 19v-6M22 19H2"/></svg>History</button>
   <button data-act="tab" data-v="accounts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M15 15h3"/></svg>Accounts</button>
-  <button class="fab" data-act="tab" data-v="add" aria-current="page" aria-label="Add an entry"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></button>
+  <button class="fab" data-act="fab" data-v="add" aria-current="page" aria-label="Add an entry"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span></button>
   <button data-act="tab" data-v="groups"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><path d="M3 19c0-3.3 2.7-5 6-5s6 1.7 6 5"/><circle cx="17" cy="9" r="2.5"/><path d="M16.5 14c2.7.2 4.5 1.7 4.5 4.5"/></svg>Groups</button>
   <button data-act="more" data-v="more" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>More</button>
 </nav>
@@ -350,7 +384,8 @@ function forEachFlow(fn,upTo){
   for(const b of S.gbills){if(upTo&&b.date>upTo) continue;if(b.payer==='me'&&b.acc) fn(b.acc,-b.total)}
   for(const x of S.gpays){if(upTo&&x.date>upTo) continue;if(x.from==='me'&&x.acc) fn(x.acc,-x.amt);if(x.to==='me'&&x.acc) fn(x.acc,x.amt)}
 }
-function balances(upTo){const b={};S.accounts.forEach(a=>b[a.id]=a.open||0);forEachFlow((id,d)=>{if(id in b) b[id]+=d},upTo);return b}
+let BALC=null;
+function balances(upTo){const key=upTo||'now';if(BALC&&BALC.has(key)) return {...BALC.get(key)};const b={};S.accounts.forEach(a=>b[a.id]=a.open||0);forEachFlow((id,d)=>{if(id in b) b[id]+=d},upTo);if(BALC) BALC.set(key,{...b});return b}
 function period(off=0){
   const sd=Math.min(28,Math.max(1,S.set.startDay||1)),t=parseD(today());let y=t.getFullYear(),m=t.getMonth();
   if(t.getDate()<sd) m--;m+=off;
@@ -512,13 +547,17 @@ actions.more=()=>{
   ${row('moreGo','settings','','Settings','Backup, PIN lock, bill reading')}`);
   document.querySelectorAll('.more-row .mi').forEach((el,i)=>el.innerHTML=[MI.garage,MI.plan,I.gear][i]);
 };
-actions.moreGo=d=>{if(d.v==='settings'){actions.settings();return}actions.close();if(d.v==='garage'&&view==='garage') GA.open=null;show(d.v)};
+actions.moreGo=d=>{actions.close();if(d.v==='garage'&&view==='garage') GA.open=null;show(d.v)};
 actions.tab=d=>{if(d.v==='groups'&&view==='groups') G.open=null;if(d.v==='garage'&&view==='garage') GA.open=null;show(d.v)};
-function show(v){hideToast();view=v;document.querySelectorAll('.view').forEach(s=>s.hidden=s.id!=='v-'+v);document.querySelector('.tabs [data-v=more]').setAttribute('aria-current',v==='garage'||v==='plan'?'page':'false');
-  document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.v===v?'page':'false'));render();$('#main').scrollTop=0}
-function render(){if(!S) return;({add:updateAdd,history:renderHistory,groups:renderGroups,garage:renderGarage,accounts:renderAccounts,plan:renderPlan})[view]();hydrate($('#v-'+view))}
+function show(v){hideToast();view=v;document.querySelectorAll('.view').forEach(s=>s.hidden=s.id!=='v-'+v);document.querySelector('.tabs [data-v=more]').setAttribute('aria-current',v==='garage'||v==='plan'||v==='settings'?'page':'false');
+  document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.v===v?'page':'false'));render();$('#main').scrollTop=0;fabState()}
+function render(){if(!S) return;BALC=new Map();try{({add:updateAdd,history:renderHistory,groups:renderGroups,garage:renderGarage,accounts:renderAccounts,plan:renderPlan,settings:renderSettings})[view]();hydrate($('#v-'+view))}finally{BALC=null}}
 
 /* ================= ADD ================= */
+const CAT_ICONS={"food": "M7 3v8M4.5 3v4a2.5 2.5 0 0 0 5 0V3M7 11v10M17 21V3c-2.5 1-4 4-4 7.5 0 1.7 1 2.5 2.5 2.5H17", "groc": "M3 4h2.2l2.3 11h10.3L20 7.5H6.3M10 20.2h.01M17 20.2h.01", "trans": "M6 17V6.5A3.5 3.5 0 0 1 9.5 3h5A3.5 3.5 0 0 1 18 6.5V17M6 11.5h12M6 17h12M8 17v3M16 17v3M8.5 14.5h.01M15.5 14.5h.01", "fuel": "M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M3 21h12M7 8h4M14 10h2a2 2 0 0 1 2 2v4a1.5 1.5 0 0 0 3 0V8l-3-3", "rent": "M3 11.5L12 4l9 7.5M5.5 10v10h13V10M10 20v-5.5h4V20", "util": "M13.5 2.5L5 13.5h6.5l-1 8 8.5-11h-6.5z", "net": "M8 3h8a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM11 18h2", "shop": "M5 8h14l-1.2 12.2a1 1 0 0 1-1 .8H7.2a1 1 0 0 1-1-.8zM9 10V6.5a3 3 0 0 1 6 0V10", "health": "M12 20s-7.5-4.6-9.2-9.3A4.6 4.6 0 0 1 12 7.3a4.6 4.6 0 0 1 9.2 3.4C19.5 15.4 12 20 12 20zM8.5 12h2l1-2 1.5 4 1-2h1.5", "family": "M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5M17 11a2.5 2.5 0 1 0 0-5M17.5 14.5c2.2.4 3.5 2.2 3.5 5", "out": "M7 3h10l-1.2 7.5a3.8 3.8 0 0 1-7.6 0zM12 14.5V20M8.5 21h7", "subs": "M17 2.5l3 3-3 3M4 11.5v-2a4 4 0 0 1 4-4h12M7 21.5l-3-3 3-3M20 12.5v2a4 4 0 0 1-4 4H4", "learn": "M4 19.5V5a2 2 0 0 1 2-2h14v15H6a2 2 0 0 0-2 2 2 2 0 0 0 2 2h14", "give": "M3.5 8.5h17v4h-17zM5 12.5V21h14v-8.5M12 8.5V21M12 8.5C10 4.5 6.5 4.6 6.5 6.6S9.5 8.5 12 8.5zM12 8.5c2-4 5.5-3.9 5.5-1.9S14.5 8.5 12 8.5z", "fees": "M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6M9 16h3", "other": "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM7.8 12h.01M12 12h.01M16.2 12h.01", "salary": "M3.5 7.5h16a1.5 1.5 0 0 1 1.5 1.5v9.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5V8M3.5 7.5L15 3.5v4M16.5 13.5h1.5", "side": "M3 7.5h18V20H3zM8.5 7.5V4.5h7v3M3 12.5h18", "refund": "M9 14.5L4 9.5l5-5M4 9.5h10.5a5.5 5.5 0 0 1 0 11H12", "gotgift": "M3.5 8.5h17v4h-17zM5 12.5V21h14v-8.5M12 8.5V21M12 8.5C10 4.5 6.5 4.6 6.5 6.6S9.5 8.5 12 8.5zM12 8.5c2-4 5.5-3.9 5.5-1.9S14.5 8.5 12 8.5z", "oinc": "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8v8M8 12h8", "vehicle": "M14.7 6.3a4 4 0 0 0-5.4 5.4L3.5 17.5a2 2 0 1 0 3 3l5.8-5.8a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z", "travel": "M10.5 13.5L3 11l1.5-1.5 8 .5 4.5-5a2.1 2.1 0 0 1 3 3l-5 4.5.5 8L14 22l-2.5-7.5L8 18v2.5L6.5 22 5 18l-4-1.5L2.5 15H5z", "pets": "M12 13c-3 0-5.5 3-5.5 5.2 0 1.6 1.4 2.3 3 2.3 1 0 1.7-.5 2.5-.5s1.5.5 2.5.5c1.6 0 3-.7 3-2.3C17.5 16 15 13 12 13zM6 11.5a2 2 0 1 0 0-.1M18 11.5a2 2 0 1 0 0-.1M9.2 7a2 2 0 1 0 0-.1M14.8 7a2 2 0 1 0 0-.1", "coffee": "M4 8.5h13v5.5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5zM17 10h1.5a2.5 2.5 0 0 1 0 5H17M8 2.5v2.5M12 2.5v2.5", "home": "M4 10.5L12 4l8 6.5V20H4zM9 20v-5h6v5", "baby": "M12 4a7.5 7.5 0 1 0 0 15 7.5 7.5 0 0 0 0-15zM9.3 11h.01M14.7 11h.01M9.8 14.5c1.3 1 3.1 1 4.4 0M12 4c0 1.5 1.5 2 1.5 2", "beauty": "M8 21h8M10 21V11h4v10M10 11l1-7h2l1 7", "invest": "M3 20h18M5 16l4.5-5 3.5 3 6-7M15 7h4v4", "bank": "M3 9.5L12 4l9 5.5M4.5 9.5v8M9 9.5v8M15 9.5v8M19.5 9.5v8M3 20.5h18"};
+const catIcon=c=>CAT_ICONS[(c&&c.icon)||(c&&CAT_ICONS[c.id]?c.id:'other')]||CAT_ICONS.other;
+const icoSvg=d=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
+function ctile(c,on,act='pickCat'){return`<button class="ctile${on?' on':''}" data-act="${act}" data-id="${c.id}" style="--c:${c.color}" aria-pressed="${!!on}"><span class="cic">${icoSvg(catIcon(c))}</span><span class="cl">${esc(c.name)}</span></button>`}
 const MI={garage:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M3 21h12M7 8h4M14 10h2a2 2 0 0 1 2 2v4a1.5 1.5 0 0 0 3 0V8l-3-3"/></svg>`,plan:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2"/></svg>`};
 const I={eye:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
  eyeOff:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 3l18 18M10.6 5.1A10.6 10.6 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.1 3.9M6.6 6.6C3.7 8.4 2 12 2 12s3.6 7 10 7c1.8 0 3.3-.5 4.6-1.2"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>',
@@ -530,23 +569,29 @@ function buildAdd(){
     <div class="seg" id="seg-type" role="group" aria-label="Entry type">
       <button data-act="type" data-v="exp">Expense</button><button data-act="type" data-v="inc">Income</button><button data-act="type" data-v="xfer">Transfer</button>
     </div>
-    <div style="display:flex"><button class="icon" data-act="hide" id="btn-hide" aria-label="Hide amounts"></button><button class="icon" data-act="settings" aria-label="Settings">${I.gear}</button></div>
+    <div style="display:flex"><button class="icon" data-act="hide" id="btn-hide" aria-label="Hide amounts"></button></div>
   </div>
   <div id="add-status"></div>
   <div class="amount-row"><div class="amount" id="amt" aria-live="polite"></div><div style="display:flex;gap:6px"><button class="ghost" data-act="addPhoto" aria-label="Attach a bill photo"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-5px"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg> <span id="ph-n"></span></button><button class="ghost" data-act="paste" aria-label="Paste SMS"><span class="wide-only">Paste </span>SMS</button></div></div>
-  <input id="note" class="note" placeholder="What was it for? (optional)" autocomplete="off" enterkeyhint="done">
+  <input id="note" class="note" placeholder="What was it for? (optional)" autocomplete="off" enterkeyhint="done" list="note-list"><datalist id="note-list"></datalist>
   <div id="add-pick"></div>
   <div class="selects" id="add-selects"></div>
   <div class="selects" id="add-fuel"></div>
+  <button class="savehint" id="save" data-act="save"></button>
   <div class="keys">${['1','2','3','4','5','6','7','8','9','C','0','del'].map(k=>`<button data-act="key" data-k="${k}" class="${k==='C'?'clear':''}" aria-label="${k==='del'?'Delete':k==='C'?'Clear':k}">${k==='del'?'⌫':k==='C'?'Clear':k}</button>`).join('')}</div>
-  <button class="save" id="save" data-act="save"></button>`;
-  $('#note').addEventListener('input',e=>A.note=e.target.value);
-  document.addEventListener('keydown',e=>{
+`;
+  $('#note').addEventListener('input',e=>{A.note=e.target.value;autoCategory()});
+  $('#note').addEventListener('focus',fillNoteList);
+  if(!window.__keysBound){window.__keysBound=true;document.addEventListener('keydown',e=>{
     if(view!=='add'||!S||!$('#sheet').hidden||['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)) return;
     if(/^[0-9.]$/.test(e.key)) actions.key({k:e.key});else if(e.key==='Backspace') actions.key({k:'del'});else if(e.key==='Enter') actions.save();
-  });
+  })}
   built=true;
 }
+function noteMemory(){const m=new Map();for(const x of items()){if(x.t!==A.t||!x.note||!x.cat) continue;const k=x.note.trim().toLowerCase();const e=m.get(k)||{n:0,cat:x.cat,acc:x.acc,label:x.note.trim(),ts:0};e.n++;if((x.ts||0)>=e.ts){e.cat=x.cat;e.acc=x.acc;e.ts=x.ts||0}m.set(k,e)}return m}
+function fillNoteList(){const m=[...noteMemory().values()].sort((a,b)=>b.n-a.n).slice(0,40);$('#note-list').innerHTML=m.map(e=>`<option value="${esc(e.label)}"></option>`).join('')}
+function autoCategory(){if(A.t==='xfer') return;if(A.cat&&!A.autoCat) return;const e=noteMemory().get(A.note.trim().toLowerCase());
+  if(e&&cat(e.cat)&&!cat(e.cat).hidden){if(A.cat!==e.cat){A.cat=e.cat;A.autoCat=true;updateAdd();toast(`${cat(e.cat).name}, like last time.`)}}else if(A.autoCat){A.cat=null;A.autoCat=false;updateAdd()}}
 function fmtTyped(s){const[i,d]=s.split('.');return nf.format(Number(i||0))+(d!==undefined?'.'+d:'')}
 function updateAmt(){$('#amt').innerHTML=`<span class="cur">Rs</span><span class="num${A.amt?'':' zero'}${fmtTyped(A.amt||'0').length>10?' xlong':fmtTyped(A.amt||'0').length>7?' long':''}">${A.amt?fmtTyped(A.amt):'0'}</span>`}
 function ensureDefaults(){
@@ -574,12 +619,11 @@ function updateAdd(){
   if(A.t==='xfer') pick.innerHTML='';
   else{
     const cats=byUse(S.cats.filter(c=>c.kind===A.t&&!c.hidden),usage(A.t,'cat'));
-    const quick=A.t==='exp'?S.quick.slice(0,4):[];
-    const slots=7-quick.length;let shown=cats.slice(0,Math.max(3,slots));
-    if(A.cat&&!shown.some(c=>c.id===A.cat)){shown=[cat(A.cat),...shown.slice(0,shown.length-1)]}
-    pick.innerHTML=`<div class="grid">${quick.map(q=>`<button class="tile" data-act="useQuick" data-id="${q.id}"><i style="background:${catColor(q.cat)}"></i><span>${esc(q.label)} <b>${S.set.hide?'':nf.format(q.amt/100)}</b></span></button>`).join('')}
-      ${shown.map(c=>`<button class="tile${c.id===A.cat?' on':''}" data-act="pickCat" data-id="${c.id}"><i style="background:${c.color}"></i><span>${esc(c.name)}</span></button>`).join('')}
-      <button class="tile more" data-act="allCats"><span>All categories</span></button></div>`;
+    const quick=A.t==='exp'&&!A.amt&&!A.cat?S.quick:[];
+    let shown=cats.slice(0,7);
+    if(A.cat&&!shown.some(c=>c.id===A.cat)){shown=[cat(A.cat),...shown.slice(0,6)]}
+    pick.innerHTML=`${quick.length?`<div class="quickrow">${quick.map(q=>`<button class="qchip" data-act="useQuick" data-id="${q.id}">${esc(q.label)}<b>${S.set.hide?'':nf.format(q.amt/100)}</b></button>`).join('')}</div>`:''}
+      <div class="cgrid">${shown.map(c=>ctile(c,c.id===A.cat)).join('')}<button class="ctile more" data-act="allCats"><span class="cic">${icoSvg('M5 12h.01M12 12h.01M19 12h.01')}</span><span class="cl">More</span></button></div>`;
   }
   /* selects row */
   const ac=acc(A.acc),sp=A.split,sg=sp&&grp(sp.group);
@@ -620,7 +664,12 @@ function saveState(){
   if(A.split&&A.split.mode==='exact'){const s=sum(A.split.members,m=>toP(A.split.custom[m]));if(s!==amt) return[false,`Split adds up to ${money(s,{hide:false})}`]}
   return[true,`Save ${money(amt,{hide:false})}${A.split?' split':''}`];
 }
-function updateSave(){const[ok,label]=saveState(),s=$('#save');s.classList.toggle('wait',!ok);s.textContent=label;s.setAttribute('aria-disabled',!ok)}
+function updateSave(){const[ok,label]=saveState(),s=$('#save');s.classList.toggle('wait',!ok);s.textContent=ok?label.replace(/^Save /,'Ready to save ').replace(/^Move /,'Ready to move ')+'. Tap ✓':label;s.setAttribute('aria-disabled',!ok);fabState()}
+const FAB_PLUS='M12 5v14M5 12h14',FAB_OK='M5 12.5l4.5 4.5L19 7.5';
+function fabState(){const f=document.querySelector('.fab');if(!f) return;const onAdd=view==='add'&&S,ok=onAdd&&saveState()[0];
+  f.querySelector('path').setAttribute('d',onAdd?FAB_OK:FAB_PLUS);f.classList.toggle('wait',onAdd&&!ok);
+  f.setAttribute('aria-label',onAdd?(ok?saveState()[1]:saveState()[1]+' first'):'Add an entry')}
+actions.fab=()=>{if(view==='add') actions.save();else show('add')};
 actions.cycleVeh=()=>{const vs=S.vehicles.filter(v=>!v.archived),i=vs.findIndex(v=>v.id===A.fuel.veh);A.fuel.veh=vs[(i+1)%vs.length].id;updateAdd()};
 actions.type=d=>{const keep=A.amt;A=blankAdd(d.v);A.amt=keep;updateAdd()};
 actions.key=d=>{
@@ -628,12 +677,12 @@ actions.key=d=>{
   if(k==='del') a=a.slice(0,-1);else if(k==='C') a='';
   else if(k==='.'){if(!a.includes('.')) a=(a||'0')+'.'}
   else{if(a.includes('.')){if(a.split('.')[1].length>=2) return}else if(a.replace(/^0+/,'').length>=9) return;a=(a==='0'?'':a)+k}
-  A.amt=a;if(document.activeElement?.id==='note') document.activeElement.blur();updateAmt();updateSave();
+  const was=!!A.amt;A.amt=a;if(document.activeElement?.id==='note') document.activeElement.blur();if(was!==!!A.amt&&S.quick.length) updateAdd();else{updateAmt();updateSave()}
 };
-actions.pickCat=d=>{A.cat=A.cat===d.id?null:d.id;actions.close();updateAdd()};
+actions.pickCat=d=>{A.cat=A.cat===d.id?null:d.id;A.autoCat=false;actions.close();updateAdd()};
 actions.allCats=()=>{
   const cats=S.cats.filter(c=>c.kind===A.t&&!c.hidden);
-  sheet(`<h2>Category</h2><div class="grid" style="grid-template-columns:repeat(3,1fr)">${cats.map(c=>`<button class="tile${c.id===A.cat?' on':''}" data-act="pickCat" data-id="${c.id}"><i style="background:${c.color}"></i><span>${esc(c.name)}</span></button>`).join('')}</div>
+  sheet(`<h2>Category</h2><div class="cgrid" style="margin-top:12px">${cats.map(c=>ctile(c,c.id===A.cat)).join('')}</div>
   <div class="btns"><button class="btn grow" data-act="cats">Edit categories</button></div>`);
 };
 actions.pickAccSheet=d=>{
@@ -787,7 +836,7 @@ function renderHistory(){
       h+=`<div class="card"><h3>Where it went</h3><div class="donut-wrap">${donutSvg(parts,short(spent),'spent')}<div class="legend">
         ${rows.slice(0,6).map(([k,v])=>`<button data-act="hCat" data-id="${k}"><i class="dot" style="background:${catColor(k)}"></i><span>${esc(cat(k)?.name||'Other')}</span><span class="muted">${Math.round(v/spent*100)}%</span></button>`).join('')}
         ${rows.length>6?`<p class="small muted" style="padding-top:4px">and ${rows.length-6} more below</p>`:''}</div></div>
-        <div style="margin-top:8px">${rows.map(([k,v])=>{const c=cat(k);return`<button class="row" data-act="hCat" data-id="${k}"><div class="l"><i class="dot" style="background:${catColor(k)}"></i><div><p class="t">${esc(c?.name||'Other')}</p>${c&&c.budget?bar(v,c.budget):''}</div></div><div class="r">${money(v)}${c&&c.budget?`<p class="sub">of ${money(c.budget)}</p>`:''}</div></button>`}).join('')}</div></div>`;
+        <div style="margin-top:8px">${rows.map(([k,v])=>{const c=cat(k);return`<button class="row" data-act="hCat" data-id="${k}"><div class="l"><span class="cic sm" style="--c:${catColor(k)}">${icoSvg(catIcon(cat(k)))}</span><div><p class="t">${esc(c?.name||'Other')}</p>${c&&c.budget?bar(v,c.budget):''}</div></div><div class="r">${money(v)}${c&&c.budget?`<p class="sub">of ${money(c.budget)}</p>`:''}</div></button>`}).join('')}</div></div>`;
       const budget=S.cats.reduce((s,c)=>s+(c.kind==='exp'&&!c.hidden?c.budget||0:0),0);
       h+=`<div class="card"><h3>Day by day</h3>${dailySvg(p,sp,budget?budget/(diffDays(p.start,p.end)+1):0)}${budget?'<p class="help" style="margin-top:6px">Dashed line is your daily budget.</p>':''}</div>`;
       const mb={};sp.forEach(x=>{const k=x.method||'other';mb[k]=(mb[k]||0)+x.share});const mr=Object.entries(mb).sort((a,b)=>b[1]-a[1]);
@@ -859,8 +908,8 @@ function filteredItems(){
 }
 function itemRow(x,withDate){
   const amt=x.t==='exp'?money(-x.share,{sign:true}):x.t==='inc'?money(x.amt,{sign:true}):x.t==='adj'?money(x.amt,{sign:true}):x.k==='gp'?money(x.from==='me'?-x.amt:x.amt,{sign:true}):money(x.amt);
-  const color=x.t==='exp'||x.t==='inc'?catColor(x.cat):'var(--line)';
-  return`<button class="row" data-act="itemEdit" data-k="${x.k}" data-id="${x.id}"><div class="l"><i class="dot" style="background:${color}"></i><div><p class="t">${esc(x.note||itemTitle(x))}${hasPhoto(x)?CLIP:''}</p><p class="sub t">${withDate?fmtD(x.date)+' '+x.date.slice(2,4)+', ':''}${x.note?esc(itemTitle(x))+', ':''}${esc(itemSub(x))}</p></div></div>
+  const c=x.cat&&cat(x.cat),ic=c?`<span class="cic sm" style="--c:${c.color}">${icoSvg(catIcon(c))}</span>`:`<span class="cic sm" style="--c:#8a948d">${icoSvg(x.k==='gp'?'M16 3h5v5M21 3l-7 7M8 21H3v-5M3 21l7-7':x.t==='adj'?'M4 20h4L19 9l-4-4L4 16zM14 6l4 4':'M7 7h13l-3-3M17 17H4l3 3')}</span>`;
+  return`<button class="row" data-act="itemEdit" data-k="${x.k}" data-id="${x.id}"><div class="l">${ic}<div><p class="t">${esc(x.note||itemTitle(x))}${hasPhoto(x)?CLIP:''}</p><p class="sub t">${withDate?fmtD(x.date)+' '+x.date.slice(2,4)+', ':''}${x.note?esc(itemTitle(x))+', ':''}${esc(itemSub(x))}</p></div></div>
     <div class="r ${x.t==='inc'||(x.k==='gp'&&x.to==='me')?'good':''}">${amt}</div></button>`;
 }
 function renderHList(){
@@ -1115,7 +1164,7 @@ function renderPlan(){
   else{const left=total-spentB,days=diffDays(today(),p.end)+1;
     h+=`<p class="lede" style="font-size:15px">${left>=0?`<b>${money(left)}</b> left, ${days} days to go.`:`<b class="danger">${money(-left)} over budget.</b>`}${outside?` <span class="muted">${money(outside)} spent outside budgets.</span>`:''}</p>`+
       [...bud].sort((a,b)=>(by[b.id]||0)/b.budget-(by[a.id]||0)/a.budget).map(c=>{const s=by[c.id]||0;
-        return`<div class="row" style="display:block"><div style="display:flex;justify-content:space-between;gap:8px"><span style="display:flex;gap:8px;align-items:center"><i class="dot" style="background:${c.color}"></i>${esc(c.name)}</span><span class="${s>c.budget?'danger':''}">${money(s)} <span class="muted small">of ${money(c.budget)}</span></span></div>${bar(s,c.budget)}</div>`}).join('')}
+        return`<div class="row" style="display:block"><div style="display:flex;justify-content:space-between;gap:8px"><span style="display:flex;gap:10px;align-items:center"><span class="cic sm" style="--c:${c.color}">${icoSvg(catIcon(c))}</span>${esc(c.name)}</span><span class="${s>c.budget?'danger':''}">${money(s)} <span class="muted small">of ${money(c.budget)}</span></span></div>${bar(s,c.budget)}</div>`}).join('')}
   h+=`<div class="btns"><button class="btn grow" data-act="budgets">Set budgets</button><button class="btn grow" data-act="cats">Categories</button></div></div>`;
   h+=`<div class="card"><h3>Monthly bills</h3>`;
   if(!S.bills.length) h+=`<p class="muted">Rent, internet, school fees, EMIs. Add them once and Khata reminds you three days before.</p>`;
@@ -1132,12 +1181,18 @@ actions.budgets=()=>{const cats=S.cats.filter(c=>c.kind==='exp'&&!c.hidden);
   sheet(`<h2>Monthly budgets</h2><p class="help">Leave blank for no budget.</p><div class="grid2">${cats.map(c=>`<label>${esc(c.name)}<input inputmode="decimal" data-bud="${c.id}" value="${c.budget?c.budget/100:''}" placeholder="–"></label>`).join('')}</div>
   <div class="btns"><button class="btn primary grow" data-act="budgetsSave">Save budgets</button></div>`)};
 actions.budgetsSave=()=>{document.querySelectorAll('[data-bud]').forEach(i=>cat(i.dataset.bud).budget=toP(i.value));persist();actions.close();render();toast('Saved budgets.')};
-actions.cats=()=>{sheet(`<h2>Categories</h2><p class="help">Rename or hide. Hidden categories keep their past entries.</p>
-  ${S.cats.map(c=>`<div style="display:flex;gap:10px;align-items:end"><label style="flex:1">${c.kind==='exp'?'Expense':'Income'}<input data-cn="${c.id}" value="${esc(c.name)}"></label><label class="opt" style="margin-bottom:3px;color:var(--ink)"><input type="checkbox" data-ch="${c.id}" ${c.hidden?'checked':''}>Hide</label></div>`).join('')}
+actions.cats=()=>{sheet(`<h2>Categories</h2><p class="help">Tap an icon to change it. Hidden categories keep their past entries.</p>
+  ${['exp','inc'].map(k=>`<p class="lbl">${k==='exp'?'Spending':'Income'}</p>`+S.cats.filter(c=>c.kind===k).map(c=>`<div class="catrow"><button class="cic" style="--c:${c.color}" data-act="catIcon" data-id="${c.id}" aria-label="Change icon">${icoSvg(catIcon(c))}</button><input data-cn="${c.id}" value="${esc(c.name)}" aria-label="Category name"><label class="switch" title="Show"><input type="checkbox" data-ch="${c.id}" ${c.hidden?'':'checked'} aria-label="Show ${esc(c.name)}"><i></i></label></div>`).join('')).join('')}
   <p class="lbl">New category</p><div class="grid2"><label>Name<input id="f-newcat"></label><label>Type<select id="f-newkind">${opt('exp','Expense','exp')}${opt('inc','Income')}</select></label></div>
   <div class="btns"><button class="btn primary grow" data-act="catsSave">Save categories</button></div>`)};
+actions.catIcon=d=>{const keep={};document.querySelectorAll('[data-cn]').forEach(i=>keep[i.dataset.cn]=i.value);document.querySelectorAll('[data-ch]').forEach(i=>keep['h'+i.dataset.ch]=i.checked);
+  const c=cat(d.id);sheet(`<h2>Icon for ${esc(c.name)}</h2><div class="icongrid">${Object.keys(CAT_ICONS).map(k=>`<button class="cic${(c.icon||c.id)===k?' sel':''}" style="--c:${c.color}" data-act="catIconSet" data-k="${k}">${icoSvg(CAT_ICONS[k])}</button>`).join('')}</div>
+  <p class="lbl">Colour</p><div class="icongrid">${PAL.map(p=>`<button class="swatch${c.color===p?' sel':''}" style="background:${p}" data-act="catColorSet" data-k="${p}" aria-label="Colour ${p}"></button>`).join('')}</div>
+  <div class="btns"><button class="btn primary grow" data-act="cats">Done</button></div>`);
+  actions.catIconSet=x=>{c.icon=x.k;persist();actions.catIcon(d)};actions.catColorSet=x=>{c.color=x.k;persist();actions.catIcon(d)};
+  const back=actions.cats;actions.cats=()=>{actions.cats=back;back();document.querySelectorAll('[data-cn]').forEach(i=>{if(keep[i.dataset.cn]!=null) i.value=keep[i.dataset.cn]});document.querySelectorAll('[data-ch]').forEach(i=>{if(keep['h'+i.dataset.ch]!=null) i.checked=keep['h'+i.dataset.ch]})}};
 actions.catsSave=()=>{document.querySelectorAll('[data-cn]').forEach(i=>{const v=i.value.trim();if(v) cat(i.dataset.cn).name=v});
-  document.querySelectorAll('[data-ch]').forEach(i=>cat(i.dataset.ch).hidden=i.checked);
+  document.querySelectorAll('[data-ch]').forEach(i=>cat(i.dataset.ch).hidden=!i.checked);
   const n=$('#f-newcat').value.trim();if(n) S.cats.push({id:uid(),name:n,kind:$('#f-newkind').value,budget:0,color:PAL[S.cats.length%PAL.length]});
   persist();actions.close();render();toast('Saved categories.')};
 actions.billEdit=d=>{const b=d.id?S.bills.find(x=>x.id===d.id):{day:1};
@@ -1162,21 +1217,39 @@ actions.quickSave=d=>{const label=$('#f-name').value.trim(),amt=toP($('#f-amt').
 actions.quickDel=d=>{S.quick=S.quick.filter(q=>q.id!==d.id);persist();actions.close();render()};
 
 /* ================= SETTINGS / PRIVACY / BACKUP ================= */
-actions.settings=()=>{const lb=S.set.lastBackup;
-  sheet(`<h2>Settings</h2>
-  <div class="card"><h3>Backup</h3><p class="help" style="margin-top:0">${lb?`Last backup ${fmtD(lb)}, ${-diffDays(today(),lb)} days ago.`:'No backup yet.'} If this phone is lost or browser data is cleared, a backup file is the only way back.</p>
+actions.settings=()=>{actions.close();show('settings')};
+function renderSettings(){
+  const lb=S.set.lastBackup,ago=lb?-diffDays(today(),lb):null,stale=ago==null||ago>14;
+  const n=S.tx.length+S.gbills.length+S.vlogs.length;
+  $('#v-settings').innerHTML=`<div class="top"><h1>Settings</h1></div>
+  <div class="card"><h3>Backup</h3>
+    <p class="${stale?'warn':'muted'} small">${lb?`Last backup ${fmtD(lb)}, ${ago===0?'today':ago+' day'+(ago===1?'':'s')+' ago'}.`:'No backup yet.'} If this phone is lost or its browser data is cleared, a backup file is the only way back.</p>
     <div class="btns"><button class="btn primary grow" data-act="exportXlsx">Excel file</button><button class="btn grow" data-act="exportBackup">${meta.locked?'Encrypted file':'Backup file'}</button></div>
-    <p class="help">The Excel file has charts and every entry, and restores Khata too, but without bill photos. Anyone who opens it can read it. The backup file includes photos.${meta.locked?' The encrypted file needs your PIN.':' Set a PIN to make an encrypted backup.'}</p>
+    <p class="help">Excel has charts and every entry and can restore Khata, but not bill photos, and anyone who opens it can read it. The backup file includes photos${meta.locked?' and needs your PIN':''}.</p>
     <div class="btns"><button class="btn grow" data-act="importBackup">Restore from a file</button></div></div>
-  <div class="card"><h3>Privacy</h3><div class="kv"><span>Lock</span><span>${meta.locked?'On, data encrypted':'Off'}</span></div>
-    <div class="btns">${meta.locked?'<button class="btn grow" data-act="lockSet">Change PIN</button><button class="btn grow" data-act="lockNow">Lock now</button><button class="btn danger grow" data-act="lockOff">Turn off</button>':'<button class="btn primary grow" data-act="lockSet">Set a PIN</button>'}</div>
-    ${meta.locked?`<label>Lock again after leaving the app<select id="f-autolock">${[[0,'Immediately'],[1,'1 minute'],[5,'5 minutes'],[15,'15 minutes']].map(([v,l])=>opt(String(v),l,String(S.set.autolock))).join('')}</select></label>`:''}
-    <label class="opt" style="margin-top:14px;color:var(--ink)"><input type="checkbox" id="f-hideopen" ${S.set.hideOnOpen?'checked':''}>Hide amounts when the app opens</label>
-    <p class="help">Your entries stay in this browser on this phone. Khata only goes online to download the bill reader once, and to send a bill photo to Claude if you turn on AI reading.</p></div>
-  <div id="bill-set"></div>
-  <div class="card"><h3>Month</h3><label style="margin-top:0">Month starts on day<input id="f-start" inputmode="numeric" value="${S.set.startDay}"><small>Use your salary day to budget payday to payday (1 to 28).</small></label></div>
-  <div class="btns"><button class="btn danger" data-act="wipe">Erase everything</button><button class="btn primary grow" data-act="settingsSave">Done</button></div>`);
-  billSettingsHtml().then(h=>{const el=$('#bill-set');if(!el) return;el.outerHTML=h;const c=$('#f-aion');if(c) c.addEventListener('change',()=>{$('#ai-box').hidden=!c.checked})})};
+  <div class="card"><h3>Privacy</h3>
+    <div class="srow"><span>PIN lock<small>${meta.locked?'On. Your data is encrypted.':'Off'}</small></span>${meta.locked?'<button class="btn" data-act="lockNow">Lock now</button>':'<button class="btn primary" data-act="lockSet">Set a PIN</button>'}</div>
+    ${meta.locked?`<div class="srow"><span>Lock again after leaving</span><select id="f-autolock" class="ssel">${[[0,'Immediately'],[1,'1 minute'],[5,'5 minutes'],[15,'15 minutes']].map(([v,l])=>opt(String(v),l,String(S.set.autolock))).join('')}</select></div>
+      <div class="btns"><button class="btn grow" data-act="lockSet">Change PIN</button><button class="btn danger grow" data-act="lockOff">Turn lock off</button></div>`:''}
+    <div class="srow"><span>Hide amounts when the app opens</span><label class="switch"><input type="checkbox" id="f-hideopen" ${S.set.hideOnOpen?'checked':''} aria-label="Hide amounts when the app opens"><i></i></label></div>
+    <p class="help">Your entries stay on this phone. Khata only goes online to download the bill reader once, and to send a bill photo to Claude if you turn that on.</p></div>
+  <div id="bill-set" class="card"><h3>Reading bills</h3><p class="muted small">Checking…</p></div>
+  <div class="card"><h3>Month</h3><div class="srow" style="border:0"><span>Month starts on<small>Use your salary day to budget payday to payday.</small></span><select id="f-start" class="ssel">${Array.from({length:28},(_,i)=>opt(String(i+1),ord(i+1),String(S.set.startDay))).join('')}</select></div></div>
+  <div class="card"><h3>Data</h3><div class="srow"><span>Entries on this phone</span><span>${nf.format(n)}</span></div><div class="srow" style="border:0"><span>Storage used</span><span id="f-store">…</span></div>
+    <div class="btns"><button class="btn danger grow" data-act="wipe">Erase everything</button></div></div>
+  <p class="help" style="text-align:center">Khata, version ${APP_VERSION}</p>`;
+  const save=()=>{persist();};
+  $('#f-hideopen').addEventListener('change',e=>{S.set.hideOnOpen=e.target.checked;save()});
+  $('#f-start').addEventListener('change',e=>{S.set.startDay=+e.target.value;save();toast('Month now starts on the '+ord(+e.target.value)+'.')});
+  if($('#f-autolock')) $('#f-autolock').addEventListener('change',e=>{S.set.autolock=+e.target.value;save()});
+  if(navigator.storage&&navigator.storage.estimate) navigator.storage.estimate().then(e=>{const el=$('#f-store');if(el) el.textContent=(e.usage/1048576).toFixed(1)+' MB'}).catch(()=>{});
+  billSettingsHtml().then(h=>{const el=$('#bill-set');if(!el) return;el.outerHTML=h;
+    const c=$('#f-aion');if(!c) return;
+    c.addEventListener('change',()=>{aiSet().on=c.checked;$('#ai-box').hidden=!c.checked;save()});
+    $('#f-aikey').addEventListener('change',e=>{aiSet().key=e.target.value.trim();save();toast(aiSet().key?'API key saved on this phone.':'API key removed.')});
+    $('#f-aimodel').addEventListener('change',e=>{aiSet().model=e.target.value;save()})});
+}
+const APP_VERSION='v11';
 actions.settingsSave=()=>{if($('#f-aion')){const ai=aiSet();ai.on=$('#f-aion').checked;ai.key=($('#f-aikey').value||'').trim();ai.model=$('#f-aimodel').value}const sd=parseInt($('#f-start').value);S.set.startDay=sd>=1&&sd<=28?sd:1;S.set.hideOnOpen=$('#f-hideopen').checked;if($('#f-autolock')) S.set.autolock=Number($('#f-autolock').value);persist();actions.close();render()};
 actions.lockSet=()=>{if(!window.crypto||!crypto.subtle){toast('Encryption needs the app opened over https.');return}
   sheet(`<h2>${meta.locked?'Change PIN':'Set a PIN'}</h2><p class="help">Your data is encrypted with this. A short PIN keeps out someone who picks up your phone. Against someone who copies the phone's data, only a long passphrase holds up. There's no recovery: forget it and the data is gone unless you have a backup.</p>
@@ -1186,12 +1259,12 @@ actions.lockSave=async()=>{const a=$('#f-p1').value,b=$('#f-p2').value,err=$('#f
   if(a.length<4){err.textContent='Use at least 4 characters.';return}if(a!==b){err.textContent='The two entries don\u2019t match.';return}
   err.textContent='Encrypting…';const salt=crypto.getRandomValues(new Uint8Array(16)),oldKey=cryptoKey;cryptoKey=await deriveKey(a,salt);await rekeyPhotos(oldKey,cryptoKey);
   meta={locked:true,salt:b64(salt),numeric:/^\d+$/.test(a)};localStorage.setItem(K_META,JSON.stringify(meta));persist();await saving;localStorage.removeItem(K_PLAIN);
-  actions.close();toast('Locked with your PIN. Data is now encrypted.')};
+  actions.close();render();toast('Locked with your PIN. Data is now encrypted.')};
 actions.lockOff=async()=>{if(!confirm('Turn off the lock? Your data will be stored unencrypted on this phone.')) return;
-  await rekeyPhotos(cryptoKey,null);cryptoKey=null;meta={};localStorage.setItem(K_META,'{}');persist();await saving;localStorage.removeItem(K_ENC);actions.close();toast('Lock turned off.')};
+  await rekeyPhotos(cryptoKey,null);cryptoKey=null;meta={};localStorage.setItem(K_META,'{}');persist();await saving;localStorage.removeItem(K_ENC);actions.close();render();toast('Lock turned off.')};
 actions.lockNow=()=>showLock();
 function showLock(msg){if(S) persist();S=null;cryptoKey=null;actions.close();if(typeof forgetPhotoURLs==='function'){forgetPhotoURLs();actions.viewerClose()}
-  ['add','history','groups','garage','accounts','plan'].forEach(v=>$('#v-'+v).innerHTML='');built=false;
+  ['add','history','groups','garage','accounts','plan','settings'].forEach(v=>$('#v-'+v).innerHTML='');built=false;
   const inp=$('#lock-in');inp.value='';inp.setAttribute('inputmode',meta.numeric?'numeric':'text');$('#lock-err').textContent=msg||'';$('#lock').hidden=false;setTimeout(()=>inp.focus(),60)}
 actions.unlock=async()=>{const p=$('#lock-in').value;if(!p) return;$('#lock-err').textContent='Unlocking…';
   try{const key=await deriveKey(p,unb64(meta.salt));S=await decrypt(key,JSON.parse(localStorage.getItem(K_ENC)));cryptoKey=key;migrate();start()}
@@ -1208,7 +1281,7 @@ async function shareOrDownload(blob,name){
 actions.exportBackup=async()=>{persist();await saving;
   const data=exportSnapshot(),photos={};for(const id of photoRefs()){const b=await photoBytes(id);if(b) photos[id]=b64(b)}data.photos=photos;
   const payload=cryptoKey?{app:'khata',v:3,enc:true,salt:meta.salt,...await encrypt(cryptoKey,data)}:{app:'khata',v:3,enc:false,data};
-  if(await shareOrDownload(new Blob([JSON.stringify(payload)],{type:'application/json'}),`khata-backup-${today()}.json`)){S.set.lastBackup=today();persist();actions.close();toast(cryptoKey?'Saved an encrypted backup.':'Saved a backup file.')}};
+  if(await shareOrDownload(new Blob([JSON.stringify(payload)],{type:'application/json'}),`khata-backup-${today()}.json`)){S.set.lastBackup=today();persist();actions.close();render();toast(cryptoKey?'Saved an encrypted backup.':'Saved a backup file.')}};
 
 /* ----- Excel ----- */
 function excelModel(){
@@ -1245,7 +1318,7 @@ actions.exportXlsx=async()=>{
   if(!window.KhataXlsx){toast('The Excel part of the app didn\u2019t load. Reopen Khata and try again.');return}
   persist();await saving;
   const bytes=KhataXlsx.build(excelModel());
-  if(await shareOrDownload(new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),`khata-${today()}.xlsx`)){S.set.lastBackup=today();persist();actions.close();toast('Saved the Excel file.')}
+  if(await shareOrDownload(new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),`khata-${today()}.xlsx`)){S.set.lastBackup=today();persist();actions.close();render();toast('Saved the Excel file.')}
 };
 actions.importBackup=()=>$('#file-in').click();
 $('#file-in').addEventListener('change',async e=>{
@@ -1627,13 +1700,20 @@ const AI_MODELS=[['claude-haiku-5-5','Haiku (fast, cheapest)'],['claude-sonnet-5
 function aiSet(){return S.set.ai||(S.set.ai={on:false,key:'',model:'claude-haiku-5-5'})}
 async function loadOCR(progress){
   if(OCRW) return OCRW;
-  if(!window.Tesseract) await new Promise((res,rej)=>{const s=document.createElement('script');s.src='ocr/tesseract.min.js';s.onload=res;s.onerror=()=>rej(new Error('The bill reader files are missing from the app.'));document.head.appendChild(s)});
+  if(!window.Tesseract) await new Promise((res,rej)=>{const s=document.createElement('script');s.src='tesseract.min.js';s.onload=res;s.onerror=()=>rej(new Error('The bill reader files are missing from the app.'));document.head.appendChild(s)});
   const U=p=>new URL(p,location.href).href;
-  OCRW=await Tesseract.createWorker('eng',1,{workerPath:U('ocr/worker.min.js'),corePath:U('ocr/core'),langPath:U('ocr/lang'),workerBlobURL:false,cacheMethod:'none',gzip:true,
-    logger:m=>{if(progress&&m.status) progress(m.status,m.progress)},errorHandler:()=>{}});
+  OCRW=await Promise.race([new Promise((_,rej)=>setTimeout(()=>rej(new Error('timed out while loading')),120000)),Tesseract.createWorker('eng',1,{workerPath:U('tesseract-worker.min.js'),corePath:U('./'),langPath:U('./'),workerBlobURL:false,cacheMethod:'none',gzip:true,
+    logger:m=>{if(progress&&m.status) progress(m.status,m.progress)},errorHandler:()=>{}})]);
   return OCRW;
 }
-async function ocrReady(){try{return !!(await caches.match(new URL('ocr/lang/eng.traineddata.gz',location.href).href))}catch{return false}}
+async function ocrReady(){try{return !!(await caches.match(new URL('eng.traineddata.gz',location.href).href))}catch{return false}}
+const OCR_FILES=['tesseract.min.js','tesseract-worker.min.js','tesseract-core-lstm.wasm.js','eng.traineddata.gz'];
+async function ocrProblem(e){
+  if(!navigator.onLine&&!(await ocrReady())) return 'You\u2019re offline. Connect once to download the bill reader; after that it works offline.';
+  const missing=[];for(const f of OCR_FILES){try{const r=await fetch(f,{method:'HEAD',cache:'no-store'});if(!r.ok) missing.push(f)}catch{}}
+  if(missing.length) return `The bill reader files aren\u2019t on your website yet (${missing.join(', ')}). Upload them to the GitHub repo next to index.html.`;
+  return 'The bill reader couldn\u2019t start: '+((e&&e.message)||'unknown error')+'.';
+}
 async function prepImage(blob,max,gray){
   const bmp=await createImageBitmap(blob),sc=Math.min(1,max/Math.max(bmp.width,bmp.height)),c=document.createElement('canvas');
   c.width=Math.round(bmp.width*sc);c.height=Math.round(bmp.height*sc);const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);
@@ -1700,7 +1780,7 @@ actions.readBill=async d=>{
       const img=await prepImage(blob,2000,true);const out=await w.recognize(img);r=parseBillText(out.data.text);r.raw=out.data.text;
     }
     BILL=r;showBillResult();
-  }catch(e){actions.close();toast(e.message||'Couldn\u2019t read that bill.')}
+  }catch(e){actions.close();if(!useAI){OCRW=null;toast(await ocrProblem(e))}else toast(e.message||'Couldn\u2019t read that bill.')}
 };
 function showBillResult(){
   const r=BILL,ai=aiSet(),f=v=>v==null?'–':money(Math.round(v*100),{hide:false});
@@ -1775,15 +1855,14 @@ actions.siDone=()=>{
 /* ---- settings card ---- */
 async function billSettingsHtml(){
   const ai=aiSet(),ready=await ocrReady();
-  return`<div class="card"><h3>Reading bills</h3>
-  <div class="kv"><span>On your phone</span><span>${ready?'<span class="good">Ready offline</span>':'Not downloaded'}</span></div>
-  ${ready?'':'<div class="btns"><button class="btn grow" data-act="ocrDownload">Download bill reader (about 7 MB)</button></div>'}
-  <label class="opt" style="margin-top:14px"><input type="checkbox" id="f-aion" ${ai.on?'checked':''}>Also offer reading with AI (Claude)</label>
-  <div id="ai-box" ${ai.on?'':'hidden'}><label>Anthropic API key<input id="f-aikey" type="password" autocomplete="off" value="${esc(ai.key)}" placeholder="sk-ant-…"></label>
-  <label>Model<select id="f-aimodel">${AI_MODELS.map(([v,l])=>opt(v,l,ai.model)).join('')}</select></label>
-  <p class="help">AI reading sends the bill photo to Anthropic and uses your API credit. Nothing else leaves the phone. The key stays on this phone${meta.locked?', encrypted with your PIN':'; set a PIN to encrypt it'}, and is never put in backups.</p></div></div>`;
+  return`<div id="bill-set" class="card"><h3>Reading bills</h3>
+  <div class="srow"><span>On your phone<small>${ready?'Ready, works offline':'Downloads about 7 MB the first time'}</small></span>${ready?'<span class="good">Ready</span>':'<button class="btn" data-act="ocrDownload">Download</button>'}</div>
+  <div class="srow"><span>Also offer AI reading<small>More accurate. Sends the photo to Claude and uses your API credit.</small></span><label class="switch"><input type="checkbox" id="f-aion" ${ai.on?'checked':''} aria-label="Offer AI reading"><i></i></label></div>
+  <div id="ai-box" ${ai.on?'':'hidden'}><label class="flabel">Anthropic API key<input id="f-aikey" type="password" autocomplete="off" value="${esc(ai.key)}" placeholder="sk-ant-…"></label>
+  <label class="flabel">Model<select id="f-aimodel">${AI_MODELS.map(([v,l])=>opt(v,l,ai.model)).join('')}</select></label>
+  <p class="help">The key stays on this phone${meta.locked?', encrypted with your PIN':' (set a PIN to encrypt it)'} and is never put in backups.</p></div></div>`;
 }
-actions.ocrDownload=async()=>{toast('Downloading the bill reader…');try{await loadOCR();toast('Bill reader is ready. It now works offline.');if(!$('#sheet').hidden&&$('#f-start')) actions.settings()}catch(e){toast('Download failed. Check your internet and try again.')}};
+actions.ocrDownload=async()=>{toast('Downloading the bill reader (about 7 MB)…');try{await loadOCR();toast('Bill reader is ready. It now works offline.');if(view==='settings') renderSettings()}catch(e){OCRW=null;toast(await ocrProblem(e))}};
 
 boot();gcPhotos();
 </script>
