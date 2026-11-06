@@ -18,7 +18,7 @@ A personal money ledger. Static PWA on GitHub Pages. No server, no database. The
 | `xlsx.js` | Builds the Excel export (formulas, charts, hidden backup sheet) and reads it back for restore. No libraries. |
 | `tesseract*.js`, `eng.traineddata.gz` | Offline bill reader (tesseract.js 7, Apache-2.0, see `LICENSE-tesseract.md`). Kept next to `index.html` (no folders) so they can be uploaded from a phone. |
 | `Code.gs` | Apps Script for the optional Google Sheets sync. Not used by the app itself. |
-| `sw.js` | Caches the app for offline use. **Bump `CACHE` (`khata-v21` → `khata-v22`) on every update.** |
+| `sw.js` | Caches the app for offline use. **Bump `CACHE` (`khata-v23` → `khata-v24`) on every update.** |
 | `manifest.webmanifest` | Install info, home-screen shortcuts, and the Android share target for bank SMS. |
 | `icon-*.png` | App icons. |
 
@@ -65,6 +65,16 @@ A personal money ledger. Static PWA on GitHub Pages. No server, no database. The
 - How it works: an RSA key pair is made on the phone. The public half encrypts the current PIN, and every new PIN when it changes, so the key keeps working. The private half is stored encrypted with the recovery key.
 - Lock screen → Forgot your PIN? → Reset it: use the recovery key (or fingerprint, if fingerprint unlock is on), then set a new PIN. Wrong keys count towards the same wait as wrong PINs.
 
+## Category types (subcategories)
+
+- `S.subs`: `{id, parent, name, icon, hidden}`. Entries and split bills store `sub`. Seeded for Shopping (Clothes & shoes, Electronics, Equipment & tools, Home & furniture, Personal care, Online orders, Books), Food, Groceries, Transport, Bills, Phone & internet, Health, Family, Going out, Subscriptions and Fees.
+- Add screen: picking a category shows its types as a scrolling row (optional), with + to add one. Notes remember the type too.
+- History → Overview: tap a category for its breakdown by type. Filters offer types when one category is picked. Excel and Sheets have a Subcategory column.
+
+## Account pages
+
+- Accounts → tap an account: summary, actions, and every entry in or out of it per month, with the balance (or amount owed) right after each entry.
+
 ## Transfer fees
 
 - Transfers and ATM withdrawals have a Fee or charge field. The fee comes out of the sending account and is logged as Fees & charges spending, linked to the transfer (edit or delete together). The last fee for the same route is suggested.
@@ -72,7 +82,8 @@ A personal money ledger. Static PWA on GitHub Pages. No server, no database. The
 ## Fingerprint unlock
 
 - Settings → Privacy → Unlock with fingerprint (needs PIN lock on). Uses the WebAuthn PRF extension: the fingerprint check returns a secret only this phone's authenticator can produce; that secret encrypts a copy of the PIN in `khata.meta`. Unlocking decrypts the PIN and opens the data as usual.
-- If the browser doesn't support PRF, the app says so and the PIN keeps working. Changing the PIN turns fingerprint unlock off (turn it on again).
+- The credential is device-bound (`residentKey: 'discouraged'`), so it isn't saved as a synced passkey and normally doesn't ask for the Google Password Manager PIN.
+- If the browser can't do PRF, Khata offers a simpler mode: a non-extractable AES key in IndexedDB encrypts the PIN and is only used after a fingerprint check (WebAuthn user verification). It stops someone holding the phone, not someone who can run code in the browser. It survives PIN changes; PRF mode is turned off by a PIN change.
 
 ## Bill photos
 

@@ -190,15 +190,15 @@ const PALETTE=['2F6B4F','3B6EA5','C2912E','8E5A9B','4E9A9A','B4553F','6B8E23','A
 function build(m){
   const sheets=[];
   /* Entries */
-  const E=new Sheet('Entries',{freeze:1,tab:'3B6EA5',filter:`A1:J${Math.max(2,m.entries.length+1)}`,landscape:true});
-  E.cols=[13,11,18,22,18,14,15,16,14,34];
-  ['Date','Type','Category','Account','To / with','Amount (Rs)','My share (Rs)','Paid with','Group','Note'].forEach((h,c)=>E.set(1,c,h,c===5||c===6?ST.headR:ST.head));
+  const E=new Sheet('Entries',{freeze:1,tab:'3B6EA5',filter:`A1:K${Math.max(2,m.entries.length+1)}`,landscape:true});
+  E.cols=[13,11,18,22,18,14,15,16,14,34,20];
+  ['Date','Type','Category','Account','To / with','Amount (Rs)','My share (Rs)','Paid with','Group','Note','Subcategory'].forEach((h,c)=>E.set(1,c,h,c===5||c===6?ST.headR:ST.head));
   E.heights[1]=24;
   m.entries.forEach((e,i)=>{
     const r=i+2,b=i%2===1;
     E.set(r,0,serial(e.date),b?ST.dateB:ST.date).set(r,1,e.type,b?ST.textB:ST.text).set(r,2,e.cat||'',b?ST.textB:ST.text)
      .set(r,3,e.acc||'',b?ST.textB:ST.text).set(r,4,e.to||'',b?ST.textB:ST.text).set(r,5,e.amt,b?ST.moneyB:ST.money)
-     .set(r,6,e.share==null?'':e.share,b?ST.moneyB:ST.money).set(r,7,e.method||'',b?ST.textB:ST.text).set(r,8,e.group||'',b?ST.textB:ST.text).set(r,9,e.note||'',b?ST.textB:ST.text);
+     .set(r,6,e.share==null?'':e.share,b?ST.moneyB:ST.money).set(r,7,e.method||'',b?ST.textB:ST.text).set(r,8,e.group||'',b?ST.textB:ST.text).set(r,9,e.note||'',b?ST.textB:ST.text).set(r,10,e.sub||'',b?ST.textB:ST.text);
   });
   const sumifs=(col,extra)=>`SUMIFS(Entries!$${col}:$${col},Entries!$B:$B,"Expense",Entries!$A:$A,">="&$B$4,Entries!$A:$A,"<="&$D$4${extra||''})`;
 
@@ -375,7 +375,7 @@ function build(m){
 <workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
 <bookViews><workbookView activeTab="0"/></bookViews>
 <sheets>${sheets.map((sh,i)=>`<sheet name="${X(sh.name)}" sheetId="${i+1}"${sh.name==='_khata'?' state="hidden"':''} r:id="rId${i+1}"/>`).join('')}</sheets>
-<definedNames><definedName name="_xlnm._FilterDatabase" localSheetId="${eIdx}" hidden="1">Entries!$A$1:$J$${Math.max(2,m.entries.length+1)}</definedName></definedNames>
+<definedNames><definedName name="_xlnm._FilterDatabase" localSheetId="${eIdx}" hidden="1">Entries!$A$1:$K$${Math.max(2,m.entries.length+1)}</definedName></definedNames>
 <calcPr calcId="191029" fullCalcOnLoad="1"/>
 </workbook>`;
   files.unshift(

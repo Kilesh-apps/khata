@@ -192,6 +192,13 @@ label.sel{cursor:text}
 .gs-help{margin-top:12px}.gs-help summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14px;padding:6px 0}.gs-help ol{padding-left:18px;margin:6px 0}.gs-help li{margin:4px 0}
 .reckey{font:600 20px/1.5 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.04em;text-align:center;padding:16px;margin-top:12px;border-radius:12px;background:var(--surface);border:1px dashed var(--line);user-select:all;-webkit-user-select:all;word-break:break-word}
 #lock:not([hidden])~#sheet{z-index:50}#lock:not([hidden])~#toast{z-index:55}
+.subrow{display:flex;gap:6px;overflow-x:auto;margin:6px -16px 0;padding:2px 16px;scrollbar-width:none}.subrow::-webkit-scrollbar{display:none}
+.schip{flex:none;display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px 0 9px;border-radius:17px;background:var(--surface);border:1.5px solid var(--line);font-size:13.5px;font-weight:550;color:var(--ink)}
+.schip svg{width:17px;height:17px;color:var(--c)}
+@media (prefers-color-scheme:dark){.schip svg{color:color-mix(in srgb,var(--c) 60%,#fff)}}
+.schip.on{background:var(--c);border-color:var(--c);color:#fff}.schip.on svg{color:#fff}
+.schip.add{padding:0 13px;color:var(--muted);font-size:17px}
+.typelink{display:block;font-size:13px;padding:2px 0 4px 50px;text-align:left;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .pills{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:4px}
 .tbtn{height:44px;flex:none;padding:0 14px}.tbtn.on{border-color:var(--accent);color:var(--accent)}
 .filter{display:inline-flex;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;align-items:center;gap:8px;margin-top:6px;height:34px;padding:0 12px;border-radius:17px;background:var(--accent-soft);color:var(--accent);font-size:14px;font-weight:550}
@@ -348,11 +355,12 @@ const SEED_INC=[['salary','Salary'],['side','Side income'],['refund','Refunds'],
 let S=null,cryptoKey=null,meta=safeJSON(localStorage.getItem(K_META))||{};
 let view='add',built=false;
 let A=blankAdd('exp');
-let H={day:null,off:0,mode:'overview',q:'',range:'period',from:'',to:'',sort:'new',f:{types:[],cats:[],accs:[],methods:[],min:'',max:'',photo:false,split:false}};
+let H={day:null,off:0,mode:'overview',q:'',range:'period',from:'',to:'',sort:'new',f:{types:[],cats:[],subs:[],accs:[],methods:[],min:'',max:'',photo:false,split:false}};
 let G={open:null};
 
 function safeJSON(s){try{return s?JSON.parse(s):null}catch{return null}}
-function fresh(){return{v:2,accounts:[{id:'cash',name:'Cash',kind:'cash',open:0}],
+const SEED_SUBS=[{"id": "s-restaurants", "parent": "food", "name": "Restaurants", "icon": "food"}, {"id": "s-snacks", "parent": "food", "name": "Snacks & tea", "icon": "coffee"}, {"id": "s-delivery", "parent": "food", "name": "Delivery", "icon": "box"}, {"id": "s-drinks", "parent": "food", "name": "Drinks & bar", "icon": "out"}, {"id": "s-veg", "parent": "groc", "name": "Vegetables & fruit", "icon": "leaf"}, {"id": "s-meat", "parent": "groc", "name": "Meat & fish", "icon": "fish"}, {"id": "s-household", "parent": "groc", "name": "Household supplies", "icon": "home"}, {"id": "s-bus", "parent": "trans", "name": "Bus & micro", "icon": "trans"}, {"id": "s-ride", "parent": "trans", "name": "Taxi & ride apps", "icon": "car"}, {"id": "s-flight", "parent": "trans", "name": "Flights", "icon": "travel"}, {"id": "s-parking", "parent": "trans", "name": "Parking & tolls", "icon": "parking"}, {"id": "s-elec", "parent": "util", "name": "Electricity", "icon": "util"}, {"id": "s-water", "parent": "util", "name": "Water", "icon": "drop"}, {"id": "s-gas", "parent": "util", "name": "Cooking gas", "icon": "flame"}, {"id": "s-recharge", "parent": "net", "name": "Mobile recharge", "icon": "net"}, {"id": "s-internet", "parent": "net", "name": "Internet", "icon": "wifi"}, {"id": "s-clothes", "parent": "shop", "name": "Clothes & shoes", "icon": "shirt"}, {"id": "s-electronics", "parent": "shop", "name": "Electronics", "icon": "laptop"}, {"id": "s-equipment", "parent": "shop", "name": "Equipment & tools", "icon": "vehicle"}, {"id": "s-furniture", "parent": "shop", "name": "Home & furniture", "icon": "sofa"}, {"id": "s-care", "parent": "shop", "name": "Personal care", "icon": "beauty"}, {"id": "s-online", "parent": "shop", "name": "Online orders", "icon": "box"}, {"id": "s-books", "parent": "shop", "name": "Books", "icon": "learn"}, {"id": "s-doctor", "parent": "health", "name": "Doctor & hospital", "icon": "doctor"}, {"id": "s-medicine", "parent": "health", "name": "Medicine", "icon": "pill"}, {"id": "s-fitness", "parent": "health", "name": "Gym & fitness", "icon": "gym"}, {"id": "s-insurance", "parent": "health", "name": "Insurance", "icon": "other"}, {"id": "s-kids", "parent": "family", "name": "Kids", "icon": "kids"}, {"id": "s-parents", "parent": "family", "name": "Parents", "icon": "family"}, {"id": "s-pets", "parent": "family", "name": "Pets", "icon": "pets"}, {"id": "s-movies", "parent": "out", "name": "Movies", "icon": "film"}, {"id": "s-events", "parent": "out", "name": "Events", "icon": "ticket"}, {"id": "s-trips", "parent": "out", "name": "Trips & travel", "icon": "travel"}, {"id": "s-streaming", "parent": "subs", "name": "Streaming", "icon": "play"}, {"id": "s-software", "parent": "subs", "name": "Apps & software", "icon": "code"}, {"id": "s-member", "parent": "subs", "name": "Memberships", "icon": "card"}, {"id": "s-bankfee", "parent": "fees", "name": "Bank charges", "icon": "bank"}, {"id": "s-cardfee", "parent": "fees", "name": "Card fees", "icon": "card"}, {"id": "s-latefee", "parent": "fees", "name": "Late fees", "icon": "clock"}];
+function fresh(){return{subs:SEED_SUBS.map(x=>({...x})),v:2,accounts:[{id:'cash',name:'Cash',kind:'cash',open:0}],
   cats:SEED.map(([id,name],i)=>({id,name,kind:'exp',budget:0,color:PAL[i%PAL.length]})).concat(SEED_INC.map(([id,name],i)=>({id,name,kind:'inc',color:PAL[(i+3)%PAL.length]}))),
   tx:[],bills:[],quick:[],groups:[],gbills:[],gpays:[],vehicles:[],vlogs:[],
   set:{startDay:1,autolock:1,hide:false,hideOnOpen:false,lastBackup:null,lastAcc:{}}}}
@@ -361,6 +369,7 @@ function migrate(){
   for(const k of ['accounts','cats','tx','bills','quick','groups','gbills','gpays','vehicles','vlogs']) if(!Array.isArray(S[k])) S[k]=f[k];
   S.set=Object.assign(f.set,S.set||{});if(!S.set.lastAcc) S.set.lastAcc={};
   S.cats.forEach((c,i)=>{if(!c.color) c.color=PAL[i%PAL.length]});
+  if(!Array.isArray(S.subs)){S.subs=SEED_SUBS.filter(x=>S.cats.some(c=>c.id===x.parent)).map(x=>({...x}))}
   if(S.set.hideOnOpen||(S.set.guard&&S.set.guard.mode!=='off')) S.set.hide=true;S.v=2;
 }
 
@@ -412,8 +421,8 @@ const inP=(t,p)=>t.date>=p.start&&t.date<=p.end;
 /* every entry, normalised: personal tx, split bills, group payments that involve you */
 function items(p){
   const o=[];
-  for(const t of S.tx) if(!p||inP(t,p)) o.push({k:'tx',id:t.id,date:t.date,ts:t.ts,t:t.t,amt:t.amt,share:t.t==='exp'?t.amt:0,cat:t.cat,acc:t.acc,to:t.to,method:t.method,note:t.note});
-  for(const b of S.gbills) if(!p||inP(b,p)) o.push({k:'gb',id:b.id,date:b.date,ts:b.ts,t:'exp',amt:b.total,share:b.shares.me||0,cat:b.cat,acc:b.payer==='me'?b.acc:null,method:b.payer==='me'?b.method:'friend',note:b.note,group:b.group,payer:b.payer});
+  for(const t of S.tx) if(!p||inP(t,p)) o.push({k:'tx',id:t.id,date:t.date,ts:t.ts,t:t.t,amt:t.amt,share:t.t==='exp'?t.amt:0,cat:t.cat,sub:t.sub,acc:t.acc,to:t.to,method:t.method,note:t.note});
+  for(const b of S.gbills) if(!p||inP(b,p)) o.push({k:'gb',id:b.id,date:b.date,ts:b.ts,t:'exp',amt:b.total,share:b.shares.me||0,cat:b.cat,sub:b.sub,acc:b.payer==='me'?b.acc:null,method:b.payer==='me'?b.method:'friend',note:b.note,group:b.group,payer:b.payer});
   for(const x of S.gpays) if((x.from==='me'||x.to==='me')&&(!p||inP(x,p))) o.push({k:'gp',id:x.id,date:x.date,ts:x.ts,t:'settle',amt:x.amt,share:0,acc:x.acc,from:x.from,to:x.to,group:x.group,method:x.method,note:x.note});
   return o;
 }
@@ -511,6 +520,8 @@ function persist(){
 
 /* ================= ui helpers ================= */
 const actions={};
+document.addEventListener('change',e=>{if(e.target.id!=='f-cat'||!$('#f-subwrap')) return;const c=e.target.value,L=S.subs.filter(x=>x.parent===c&&!x.hidden);
+  $('#f-subwrap').innerHTML=L.length?`<label>Type<select id="f-sub"><option value="">No type</option>${L.map(x=>opt(x.id,x.name,'')).join('')}</select></label>`:''});
 document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if(!el) return;const f=actions[el.dataset.act];if(f){e.preventDefault();f(el.dataset,el,e)}});
 let toastT;
 function hideToast(){const t=$('#toast');clearTimeout(toastT);t.hidden=true;t.style.transform='';t.style.opacity=''}
@@ -568,14 +579,15 @@ actions.more=()=>{
   document.querySelectorAll('.more-row .mi').forEach((el,i)=>el.innerHTML=[MI.garage,MI.plan,I.gear][i]);
 };
 actions.moreGo=d=>{actions.close();if(d.v==='garage'&&view==='garage') GA.open=null;show(d.v)};
-actions.tab=d=>{if(d.v==='groups'&&view==='groups') G.open=null;if(d.v==='garage'&&view==='garage') GA.open=null;show(d.v)};
+actions.tab=d=>{if(d.v==='groups'&&view==='groups') G.open=null;if(d.v==='accounts'&&view==='accounts') AC.open=null;if(d.v==='garage'&&view==='garage') GA.open=null;show(d.v)};
 function show(v){hideToast();view=v;document.querySelectorAll('.view').forEach(s=>s.hidden=s.id!=='v-'+v);document.querySelector('.tabs [data-v=more]').setAttribute('aria-current',v==='garage'||v==='plan'||v==='settings'?'page':'false');
   document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.v===v?'page':'false'));render();$('#main').scrollTop=0;fabState()}
 function render(){if(!S) return;BALC=new Map();try{({add:updateAdd,history:renderHistory,groups:renderGroups,garage:renderGarage,accounts:renderAccounts,plan:renderPlan,settings:renderSettings})[view]();hydrate($('#v-'+view))}finally{BALC=null}}
 
 /* ================= ADD ================= */
 const eyeBtn=()=>`<button class="icon" data-act="hide" aria-label="${S.set.hide?'Show':'Hide'} amounts">${S.set.hide?I.eyeOff:I.eye}</button>`;
-const CAT_ICONS={"food": "M7 3v8M4.5 3v4a2.5 2.5 0 0 0 5 0V3M7 11v10M17 21V3c-2.5 1-4 4-4 7.5 0 1.7 1 2.5 2.5 2.5H17", "groc": "M3 4h2.2l2.3 11h10.3L20 7.5H6.3M10 20.2h.01M17 20.2h.01", "trans": "M6 17V6.5A3.5 3.5 0 0 1 9.5 3h5A3.5 3.5 0 0 1 18 6.5V17M6 11.5h12M6 17h12M8 17v3M16 17v3M8.5 14.5h.01M15.5 14.5h.01", "fuel": "M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M3 21h12M7 8h4M14 10h2a2 2 0 0 1 2 2v4a1.5 1.5 0 0 0 3 0V8l-3-3", "rent": "M3 11.5L12 4l9 7.5M5.5 10v10h13V10M10 20v-5.5h4V20", "util": "M13.5 2.5L5 13.5h6.5l-1 8 8.5-11h-6.5z", "net": "M8 3h8a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM11 18h2", "shop": "M5 8h14l-1.2 12.2a1 1 0 0 1-1 .8H7.2a1 1 0 0 1-1-.8zM9 10V6.5a3 3 0 0 1 6 0V10", "health": "M12 20s-7.5-4.6-9.2-9.3A4.6 4.6 0 0 1 12 7.3a4.6 4.6 0 0 1 9.2 3.4C19.5 15.4 12 20 12 20zM8.5 12h2l1-2 1.5 4 1-2h1.5", "family": "M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5M17 11a2.5 2.5 0 1 0 0-5M17.5 14.5c2.2.4 3.5 2.2 3.5 5", "out": "M7 3h10l-1.2 7.5a3.8 3.8 0 0 1-7.6 0zM12 14.5V20M8.5 21h7", "subs": "M17 2.5l3 3-3 3M4 11.5v-2a4 4 0 0 1 4-4h12M7 21.5l-3-3 3-3M20 12.5v2a4 4 0 0 1-4 4H4", "learn": "M4 19.5V5a2 2 0 0 1 2-2h14v15H6a2 2 0 0 0-2 2 2 2 0 0 0 2 2h14", "give": "M3.5 8.5h17v4h-17zM5 12.5V21h14v-8.5M12 8.5V21M12 8.5C10 4.5 6.5 4.6 6.5 6.6S9.5 8.5 12 8.5zM12 8.5c2-4 5.5-3.9 5.5-1.9S14.5 8.5 12 8.5z", "fees": "M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6M9 16h3", "other": "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM7.8 12h.01M12 12h.01M16.2 12h.01", "salary": "M3.5 7.5h16a1.5 1.5 0 0 1 1.5 1.5v9.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5V8M3.5 7.5L15 3.5v4M16.5 13.5h1.5", "side": "M3 7.5h18V20H3zM8.5 7.5V4.5h7v3M3 12.5h18", "refund": "M9 14.5L4 9.5l5-5M4 9.5h10.5a5.5 5.5 0 0 1 0 11H12", "gotgift": "M3.5 8.5h17v4h-17zM5 12.5V21h14v-8.5M12 8.5V21M12 8.5C10 4.5 6.5 4.6 6.5 6.6S9.5 8.5 12 8.5zM12 8.5c2-4 5.5-3.9 5.5-1.9S14.5 8.5 12 8.5z", "oinc": "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8v8M8 12h8", "vehicle": "M14.7 6.3a4 4 0 0 0-5.4 5.4L3.5 17.5a2 2 0 1 0 3 3l5.8-5.8a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z", "travel": "M10.5 13.5L3 11l1.5-1.5 8 .5 4.5-5a2.1 2.1 0 0 1 3 3l-5 4.5.5 8L14 22l-2.5-7.5L8 18v2.5L6.5 22 5 18l-4-1.5L2.5 15H5z", "pets": "M12 13c-3 0-5.5 3-5.5 5.2 0 1.6 1.4 2.3 3 2.3 1 0 1.7-.5 2.5-.5s1.5.5 2.5.5c1.6 0 3-.7 3-2.3C17.5 16 15 13 12 13zM6 11.5a2 2 0 1 0 0-.1M18 11.5a2 2 0 1 0 0-.1M9.2 7a2 2 0 1 0 0-.1M14.8 7a2 2 0 1 0 0-.1", "coffee": "M4 8.5h13v5.5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5zM17 10h1.5a2.5 2.5 0 0 1 0 5H17M8 2.5v2.5M12 2.5v2.5", "home": "M4 10.5L12 4l8 6.5V20H4zM9 20v-5h6v5", "baby": "M12 4a7.5 7.5 0 1 0 0 15 7.5 7.5 0 0 0 0-15zM9.3 11h.01M14.7 11h.01M9.8 14.5c1.3 1 3.1 1 4.4 0M12 4c0 1.5 1.5 2 1.5 2", "beauty": "M8 21h8M10 21V11h4v10M10 11l1-7h2l1 7", "invest": "M3 20h18M5 16l4.5-5 3.5 3 6-7M15 7h4v4", "bank": "M3 9.5L12 4l9 5.5M4.5 9.5v8M9 9.5v8M15 9.5v8M19.5 9.5v8M3 20.5h18"};
+const CAT_ICONS={"shirt": "M8 3l-5 3 2 4 2-1v12h10V9l2 1 2-4-5-3a4 4 0 0 1-8 0z", "laptop": "M5 5h14v10H5zM2.5 19h19", "sofa": "M5 11V8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3M3 11a2 2 0 0 1 2 2v2h14v-2a2 2 0 1 1 2 2v3H3v-3a2 2 0 0 1 0-4zM6 18v2M18 18v2", "box": "M3 7.5L12 3l9 4.5v9L12 21l-9-4.5zM3 7.5l9 4.5 9-4.5M12 12v9", "film": "M4 4h16v16H4zM8 4v16M16 4v16M4 9h4M4 15h4M16 9h4M16 15h4", "ticket": "M3 8a2 2 0 0 0 0 4v0a2 2 0 0 1 0 4v2h18v-2a2 2 0 0 1 0-4 2 2 0 0 1 0-4V6H3zM14 6v12", "play": "M4 5h16v14H4zM10 9l5 3-5 3z", "code": "M8 8l-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14", "gym": "M6.5 7v10M17.5 7v10M3.5 9.5v5M20.5 9.5v5M6.5 12h11", "pill": "M10.5 20.5a5 5 0 0 1-7-7l6-6a5 5 0 0 1 7 7zM7.5 10.5l6 6", "drop": "M12 3s6.5 7 6.5 11.5a6.5 6.5 0 0 1-13 0C5.5 10 12 3 12 3z", "flame": "M12 21a6 6 0 0 0 6-6c0-4-3-6-4-10-2 2-3 4-3 6-1-1-2-2-2-4-2 2-3 5-3 8a6 6 0 0 0 6 6z", "wifi": "M2.5 9a14 14 0 0 1 19 0M5.5 12.5a9.5 9.5 0 0 1 13 0M8.5 16a5 5 0 0 1 7 0M12 19.5h.01", "leaf": "M5 19c0-8 5-14 15-15-1 10-7 15-15 15zM5 19l7-7", "fish": "M3 12s4-6 10-6c4 0 7 3 8 6-1 3-4 6-8 6-6 0-10-6-10-6zM3 12l-1.5-3M3 12l-1.5 3M16 10.5h.01", "car": "M5 16v-4l2-5h10l2 5v4M3 16h18v3H3zM7 12h10M7 19v1M17 19v1", "parking": "M5 3h14v18H5zM10 17V8h3a2.5 2.5 0 0 1 0 5h-3", "card": "M3 6h18v12H3zM3 10h18M7 15h3", "clock": "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3 3", "bike": "M5.5 17.5a3 3 0 1 0 0-.1M18.5 17.5a3 3 0 1 0 0-.1M5.5 17.5l4-7h5l4 7M9.5 10.5L8 7H6M14.5 10.5L13 6h3", "doctor": "M6 3v6a4 4 0 0 0 8 0V3M10 13v3a4 4 0 0 0 8 0v-1.5M18 14.5a2 2 0 1 0 0-.1", "kids": "M12 7a2.5 2.5 0 1 0 0-.1M7 21l2-7h6l2 7M9 14l-3-4M15 14l3-4","food": "M7 3v8M4.5 3v4a2.5 2.5 0 0 0 5 0V3M7 11v10M17 21V3c-2.5 1-4 4-4 7.5 0 1.7 1 2.5 2.5 2.5H17", "groc": "M3 4h2.2l2.3 11h10.3L20 7.5H6.3M10 20.2h.01M17 20.2h.01", "trans": "M6 17V6.5A3.5 3.5 0 0 1 9.5 3h5A3.5 3.5 0 0 1 18 6.5V17M6 11.5h12M6 17h12M8 17v3M16 17v3M8.5 14.5h.01M15.5 14.5h.01", "fuel": "M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M3 21h12M7 8h4M14 10h2a2 2 0 0 1 2 2v4a1.5 1.5 0 0 0 3 0V8l-3-3", "rent": "M3 11.5L12 4l9 7.5M5.5 10v10h13V10M10 20v-5.5h4V20", "util": "M13.5 2.5L5 13.5h6.5l-1 8 8.5-11h-6.5z", "net": "M8 3h8a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM11 18h2", "shop": "M5 8h14l-1.2 12.2a1 1 0 0 1-1 .8H7.2a1 1 0 0 1-1-.8zM9 10V6.5a3 3 0 0 1 6 0V10", "health": "M12 20s-7.5-4.6-9.2-9.3A4.6 4.6 0 0 1 12 7.3a4.6 4.6 0 0 1 9.2 3.4C19.5 15.4 12 20 12 20zM8.5 12h2l1-2 1.5 4 1-2h1.5", "family": "M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5M17 11a2.5 2.5 0 1 0 0-5M17.5 14.5c2.2.4 3.5 2.2 3.5 5", "out": "M7 3h10l-1.2 7.5a3.8 3.8 0 0 1-7.6 0zM12 14.5V20M8.5 21h7", "subs": "M17 2.5l3 3-3 3M4 11.5v-2a4 4 0 0 1 4-4h12M7 21.5l-3-3 3-3M20 12.5v2a4 4 0 0 1-4 4H4", "learn": "M4 19.5V5a2 2 0 0 1 2-2h14v15H6a2 2 0 0 0-2 2 2 2 0 0 0 2 2h14", "give": "M3.5 8.5h17v4h-17zM5 12.5V21h14v-8.5M12 8.5V21M12 8.5C10 4.5 6.5 4.6 6.5 6.6S9.5 8.5 12 8.5zM12 8.5c2-4 5.5-3.9 5.5-1.9S14.5 8.5 12 8.5z", "fees": "M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6M9 16h3", "other": "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM7.8 12h.01M12 12h.01M16.2 12h.01", "salary": "M3.5 7.5h16a1.5 1.5 0 0 1 1.5 1.5v9.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5V8M3.5 7.5L15 3.5v4M16.5 13.5h1.5", "side": "M3 7.5h18V20H3zM8.5 7.5V4.5h7v3M3 12.5h18", "refund": "M9 14.5L4 9.5l5-5M4 9.5h10.5a5.5 5.5 0 0 1 0 11H12", "gotgift": "M3.5 8.5h17v4h-17zM5 12.5V21h14v-8.5M12 8.5V21M12 8.5C10 4.5 6.5 4.6 6.5 6.6S9.5 8.5 12 8.5zM12 8.5c2-4 5.5-3.9 5.5-1.9S14.5 8.5 12 8.5z", "oinc": "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8v8M8 12h8", "vehicle": "M14.7 6.3a4 4 0 0 0-5.4 5.4L3.5 17.5a2 2 0 1 0 3 3l5.8-5.8a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z", "travel": "M10.5 13.5L3 11l1.5-1.5 8 .5 4.5-5a2.1 2.1 0 0 1 3 3l-5 4.5.5 8L14 22l-2.5-7.5L8 18v2.5L6.5 22 5 18l-4-1.5L2.5 15H5z", "pets": "M12 13c-3 0-5.5 3-5.5 5.2 0 1.6 1.4 2.3 3 2.3 1 0 1.7-.5 2.5-.5s1.5.5 2.5.5c1.6 0 3-.7 3-2.3C17.5 16 15 13 12 13zM6 11.5a2 2 0 1 0 0-.1M18 11.5a2 2 0 1 0 0-.1M9.2 7a2 2 0 1 0 0-.1M14.8 7a2 2 0 1 0 0-.1", "coffee": "M4 8.5h13v5.5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5zM17 10h1.5a2.5 2.5 0 0 1 0 5H17M8 2.5v2.5M12 2.5v2.5", "home": "M4 10.5L12 4l8 6.5V20H4zM9 20v-5h6v5", "baby": "M12 4a7.5 7.5 0 1 0 0 15 7.5 7.5 0 0 0 0-15zM9.3 11h.01M14.7 11h.01M9.8 14.5c1.3 1 3.1 1 4.4 0M12 4c0 1.5 1.5 2 1.5 2", "beauty": "M8 21h8M10 21V11h4v10M10 11l1-7h2l1 7", "invest": "M3 20h18M5 16l4.5-5 3.5 3 6-7M15 7h4v4", "bank": "M3 9.5L12 4l9 5.5M4.5 9.5v8M9 9.5v8M15 9.5v8M19.5 9.5v8M3 20.5h18"};
+const subOf=id=>S.subs.find(x=>x.id===id);const subsFor=cid=>S.subs.filter(x=>x.parent===cid&&!x.hidden);
 const catIcon=c=>CAT_ICONS[(c&&c.icon)||(c&&CAT_ICONS[c.id]?c.id:'other')]||CAT_ICONS.other;
 const icoSvg=d=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
 function ctile(c,on,act='pickCat'){return`<button class="ctile${on?' on':''}" data-act="${act}" data-id="${c.id}" style="--c:${c.color}" aria-pressed="${!!on}"><span class="cic">${icoSvg(catIcon(c))}</span><span class="cl">${esc(c.name)}</span></button>`}
@@ -583,7 +595,7 @@ const MI={garage:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
 const I={eye:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
  eyeOff:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 3l18 18M10.6 5.1A10.6 10.6 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.1 3.9M6.6 6.6C3.7 8.4 2 12 2 12s3.6 7 10 7c1.8 0 3.3-.5 4.6-1.2"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>',
  gear:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>'};
-function blankAdd(t){return{lastOriginal:null,t,amt:'',cat:null,acc:null,to:null,method:null,note:'',date:null,fee:'',split:null,photos:[],fuel:{veh:null,odo:'',litres:''}}}
+function blankAdd(t){return{sub:null,lastOriginal:null,t,amt:'',cat:null,acc:null,to:null,method:null,note:'',date:null,fee:'',split:null,photos:[],fuel:{veh:null,odo:'',litres:''}}}
 function buildAdd(){
   $('#v-add').innerHTML=`
   <div class="top">
@@ -609,10 +621,10 @@ function buildAdd(){
   })}
   built=true;
 }
-function noteMemory(){const m=new Map();for(const x of items()){if(x.t!==A.t||!x.note||!x.cat) continue;const k=x.note.trim().toLowerCase();const e=m.get(k)||{n:0,cat:x.cat,acc:x.acc,label:x.note.trim(),ts:0};e.n++;if((x.ts||0)>=e.ts){e.cat=x.cat;e.acc=x.acc;e.ts=x.ts||0}m.set(k,e)}return m}
+function noteMemory(){const m=new Map();for(const x of items()){if(x.t!==A.t||!x.note||!x.cat) continue;const k=x.note.trim().toLowerCase();const e=m.get(k)||{n:0,cat:x.cat,sub:x.sub,acc:x.acc,label:x.note.trim(),ts:0};e.n++;if((x.ts||0)>=e.ts){e.cat=x.cat;e.sub=x.sub;e.acc=x.acc;e.ts=x.ts||0}m.set(k,e)}return m}
 function fillNoteList(){const m=[...noteMemory().values()].sort((a,b)=>b.n-a.n).slice(0,40);$('#note-list').innerHTML=m.map(e=>`<option value="${esc(e.label)}"></option>`).join('')}
 function autoCategory(){if(A.t==='xfer') return;if(A.cat&&!A.autoCat) return;const e=noteMemory().get(A.note.trim().toLowerCase());
-  if(e&&cat(e.cat)&&!cat(e.cat).hidden){if(A.cat!==e.cat){A.cat=e.cat;A.autoCat=true;updateAdd();toast(`${cat(e.cat).name}, like last time.`)}}else if(A.autoCat){A.cat=null;A.autoCat=false;updateAdd()}}
+  if(e&&cat(e.cat)&&!cat(e.cat).hidden){if(A.cat!==e.cat||A.sub!==(e.sub||null)){A.cat=e.cat;A.sub=e.sub&&subOf(e.sub)?e.sub:null;A.autoCat=true;updateAdd();toast(`${A.sub?subOf(A.sub).name:cat(e.cat).name}, like last time.`)}}else if(A.autoCat){A.cat=null;A.autoCat=false;updateAdd()}}
 function fmtTyped(s){const[i,d]=s.split('.');return nf.format(Number(i||0))+(d!==undefined?'.'+d:'')}
 function updateAmt(){$('#amt').innerHTML=`<span class="cur">Rs</span><span class="num${A.amt?'':' zero'}${fmtTyped(A.amt||'0').length>10?' xlong':fmtTyped(A.amt||'0').length>7?' long':''}">${A.amt?fmtTyped(A.amt):'0'}</span>`}
 function ensureDefaults(){
@@ -646,6 +658,9 @@ function updateAdd(){
     pick.innerHTML=`${quick.length?`<div class="quickrow">${quick.map(q=>`<button class="qchip" data-act="useQuick" data-id="${q.id}">${esc(q.label)}<b>${S.set.hide?'':nf.format(q.amt/100)}</b></button>`).join('')}</div>`:''}
       <div class="cgrid">${shown.map(c=>ctile(c,c.id===A.cat)).join('')}<button class="ctile more" data-act="allCats"><span class="cic">${icoSvg('M5 12h.01M12 12h.01M19 12h.01')}</span><span class="cl">More</span></button></div>`;
   }
+  const subs=A.t!=='xfer'&&A.cat?subsFor(A.cat):[];
+  if(subs.length&&!subs.some(x=>x.id===A.sub)) A.sub=A.sub&&subOf(A.sub)&&subOf(A.sub).parent===A.cat?A.sub:null;
+  pick.insertAdjacentHTML('beforeend',subs.length?`<div class="subrow" role="group" aria-label="${esc(cat(A.cat).name)} type">${subs.map(x=>`<button class="schip${A.sub===x.id?' on':''}" data-act="pickSub" data-id="${x.id}" style="--c:${cat(A.cat).color}">${icoSvg(CAT_ICONS[x.icon]||CAT_ICONS.other)}<span>${esc(x.name)}</span></button>`).join('')}<button class="schip add" data-act="subAdd" data-id="${A.cat}" aria-label="Add a type">+</button></div>`:'');
   /* selects row */
   const ac=acc(A.acc),sp=A.split,sg=sp&&grp(sp.group);
   const dl=!A.date||A.date===today()?'Today':A.date===addDays(today(),-1)?'Yesterday':fmtD(A.date);
@@ -710,7 +725,8 @@ actions.key=d=>{
   else{if(a.includes('.')){if(a.split('.')[1].length>=2) return}else if(a.replace(/^0+/,'').length>=9) return;a=(a==='0'?'':a)+k}
   const was=!!A.amt;A.amt=a;if(document.activeElement?.id==='note') document.activeElement.blur();if(was!==!!A.amt&&S.quick.length) updateAdd();else{updateAmt();updateSave()}
 };
-actions.pickCat=d=>{A.cat=A.cat===d.id?null:d.id;A.autoCat=false;actions.close();updateAdd()};
+actions.pickSub=d=>{A.sub=A.sub===d.id?null:d.id;A.autoCat=false;updateAdd()};
+actions.pickCat=d=>{if(A.cat!==d.id) A.sub=null;A.cat=A.cat===d.id?null:d.id;A.autoCat=false;actions.close();updateAdd()};
 actions.allCats=()=>{
   const cats=S.cats.filter(c=>c.kind===A.t&&!c.hidden);
   sheet(`<h2>Category</h2><div class="cgrid" style="margin-top:12px">${cats.map(c=>ctile(c,c.id===A.cat)).join('')}</div>
@@ -737,7 +753,7 @@ actions.save=()=>{
   const amt=toP(A.amt),date=A.date||today(),ts=Date.now();let undo,label;
   if(A.split){
     const sp=A.split,g=grp(sp.group);
-    const b={id:uid(),group:sp.group,date,ts,note:A.note.trim(),cat:A.cat,total:amt,payer:sp.payer,members:sp.members.slice(),mode:sp.mode,
+    const b={id:uid(),group:sp.group,date,ts,note:A.note.trim(),cat:A.cat,sub:A.sub||undefined,total:amt,payer:sp.payer,members:sp.members.slice(),mode:sp.mode,
       shares:computeShares(amt,sp.members,sp.payer,sp.mode,sp.custom)};
     if(sp.payer==='me'){b.acc=A.acc;b.method=A.method}
     if(A.photos.length) b.photos=A.photos.slice();
@@ -746,7 +762,7 @@ actions.save=()=>{
     label=`${money(amt,{hide:false})} split in ${g.name}. Your share ${money(b.shares.me||0,{hide:false})}`;
     S.set.lastGroup=sp.group;
   }else{
-    const ids=[],tx={id:uid(),t:A.t,amt,acc:A.acc,date,ts,method:A.method,note:A.note.trim()};
+    const ids=[],tx={id:uid(),t:A.t,amt,acc:A.acc,date,ts,method:A.method,note:A.note.trim()};if(A.sub&&A.t!=='xfer') tx.sub=A.sub;
     if(A.t==='xfer') tx.to=A.to;else tx.cat=A.cat;if(A.photos.length) tx.photos=A.photos.slice();S.tx.push(tx);ids.push(tx.id);
     let vl=null;
     if(A.t==='exp'&&A.cat==='fuel'&&A.fuel.veh&&vehicle(A.fuel.veh)&&(A.fuel.odo!==''||A.fuel.litres!=='')){
@@ -755,7 +771,7 @@ actions.save=()=>{
     const fee=A.t==='xfer'?toP(A.fee):0;
     if(fee>0){const f={id:uid(),t:'exp',amt:fee,acc:A.acc,cat:cat('fees')?'fees':'other',date,ts:ts+1,method:A.method,note:METHODS[A.method]+' fee',link:tx.id};S.tx.push(f);ids.push(f.id)}
     undo=()=>{S.tx=S.tx.filter(x=>!ids.includes(x.id));if(vl) S.vlogs=S.vlogs.filter(x=>x!==vl)};
-    label=A.t==='xfer'?`Moved ${money(amt,{hide:false})} to ${acc(A.to).name}${fee>0?', fee '+money(fee,{hide:false})+' logged as Fees & charges':''}`:`Saved ${money(amt,{hide:false})} in ${cat(A.cat).name}`;
+    label=A.t==='xfer'?`Moved ${money(amt,{hide:false})} to ${acc(A.to).name}${fee>0?', fee '+money(fee,{hide:false})+' logged as Fees & charges':''}`:`Saved ${money(amt,{hide:false})} in ${A.sub&&subOf(A.sub)?subOf(A.sub).name:cat(A.cat).name}`;
   }
   if(A.acc) S.set.lastAcc[A.t]=A.acc;if(A.t==='xfer') S.set.lastAcc.xferTo=A.to;
   let warn='';const ac=acc(A.acc);if(A.t!=='inc'&&isCredit(ac)&&ac.limit&&cardStatus(ac).avail<0) warn=' Over the card limit.';
@@ -849,7 +865,16 @@ function monthsSvg(k){
 /* ================= HISTORY ================= */
 actions.hOff=d=>{H.off=Math.min(0,H.off+Number(d.d));renderHistory()};
 actions.hMode=d=>{H.mode=d.v;renderHistory()};
-actions.hCat=d=>{H.f.cats=[d.id];H.mode='entries';renderHistory()};
+actions.hCat=d=>{
+  const c=cat(d.id),p=period(H.off),sp=spends(p).filter(x=>x.cat===d.id),tot=sum(sp,x=>x.share),by={};
+  sp.forEach(x=>{const k=x.sub&&subOf(x.sub)?x.sub:'';by[k]=(by[k]||0)+x.share});
+  const rows=Object.entries(by).sort((a,b)=>b[1]-a[1]);
+  if(!c||rows.length<=1&&!rows[0]?.[0]){H.f.cats=[d.id];H.f.subs=[];H.mode='entries';renderHistory();return}
+  sheet(`<div style="display:flex;gap:12px;align-items:center"><span class="cic" style="--c:${c.color}">${icoSvg(catIcon(c))}</span><div><h2 style="margin:0">${esc(c.name)}</h2><p class="muted small">${money(tot)} in ${esc(p.label)}</p></div></div>
+  <div style="margin-top:12px">${rows.map(([k,v])=>{const x=subOf(k);return`<button class="row" data-act="hSub" data-c="${d.id}" data-id="${k}"><div class="l"><span class="cic sm" style="--c:${c.color}">${icoSvg(x?CAT_ICONS[x.icon]||catIcon(c):'M5 12h14')}</span><div style="flex:1"><p class="t">${esc(x?x.name:'No type set')}</p>${bar(v,tot,2)}</div></div><div class="r">${money(v)}<p class="sub">${Math.round(v/tot*100)}%</p></div></button>`}).join('')}</div>
+  <div class="btns"><button class="btn grow" data-act="hSub" data-c="${d.id}" data-id="*">See all ${esc(c.name)} entries</button></div>`);
+};
+actions.hSub=d=>{actions.close();H.f.cats=[d.c];H.f.subs=d.id==='*'||!d.id?[]:[d.id];H.mode='entries';renderHistory()};
 function renderHistory(){
   const p=H.mode==='entries'?rangeOf():period(H.off),it=items(p),sp=it.filter(x=>x.t==='exp'),spent=sum(sp,x=>x.share),inc=sum(it.filter(x=>x.t==='inc'));
   const navOff=H.mode==='entries'&&H.range!=='period';
@@ -913,14 +938,14 @@ function itemTitle(x){
   if(x.k==='gp'){const g=grp(x.group);return x.from==='me'?`You paid ${who(g,x.to)}`:`${who(g,x.from)} paid you`}
   if(x.t==='xfer') return`${acc(x.acc)?.name||'?'} to ${acc(x.to)?.name||'?'}`;
   if(x.t==='adj') return'Balance correction';
-  return cat(x.cat)?.name||'Other';
+  return (x.sub&&subOf(x.sub)?subOf(x.sub).name:null)||cat(x.cat)?.name||'Other';
 }
 function itemSub(x){
   const g=x.group&&grp(x.group);
   if(x.k==='gb') return`${g?g.name+', ':''}${x.payer==='me'?'you paid '+money(x.amt):who(g,x.payer)+' paid'}`;
   if(x.k==='gp') return`${g?g.name:''}${x.acc?', '+(acc(x.acc)?.name||''):''}`;
   if(x.t==='xfer'){const f=x.k==='tx'&&S.tx.find(t=>t.link===x.id);return (METHODS[x.method]||'')+(f?', fee '+money(f.amt):'')}
-  return`${acc(x.acc)?.name||'?'}${x.method&&!(x.method==='cash'&&acc(x.acc)?.kind==='cash')?', '+METHODS[x.method]:''}`;
+  return`${x.sub&&subOf(x.sub)&&cat(x.cat)?cat(x.cat).name+', ':''}${acc(x.acc)?.name||'?'}${x.method&&!(x.method==='cash'&&acc(x.acc)?.kind==='cash')?', '+METHODS[x.method]:''}`;
 }
 function rangeOf(){
   if(H.range==='all') return{start:'0000-01-01',end:'9999-12-31',label:'All time'};
@@ -933,10 +958,11 @@ actions.hQuick=d=>{H.f.types={all:[],exp:['exp'],inc:['inc'],move:['xfer','settl
 actions.hSort=()=>{const SO=[['new','Newest first'],['old','Oldest first'],['high','Biggest amount first'],['low','Smallest amount first'],['cat','Group by category']];
   sheet(`<h2>Sort by</h2>${SO.map(([v,l])=>`<button class="pick${H.sort===v?' on':''}" data-act="hSortSet" data-v="${v}"><span>${l}</span>${H.sort===v?'<span class="good">✓</span>':''}</button>`).join('')}`)};
 actions.hSortSet=d=>{H.sort=d.v;actions.close();renderHList();const b=document.querySelector('.sortbtn');if(b) b.textContent={new:'Newest',old:'Oldest',high:'Biggest',low:'Smallest',cat:'Category'}[d.v]+' ▾'};
-function filterCount(){const f=H.f;return (quickType()==='custom'?f.types.length:0)+(H.range!=='period'?1:0)+f.cats.length+f.accs.length+f.methods.length+(f.min!==''?1:0)+(f.max!==''?1:0)+(f.photo?1:0)+(f.split?1:0)}
+function filterCount(){const f=H.f;return (f.subs||[]).length+(quickType()==='custom'?f.types.length:0)+(H.range!=='period'?1:0)+f.cats.length+f.accs.length+f.methods.length+(f.min!==''?1:0)+(f.max!==''?1:0)+(f.photo?1:0)+(f.split?1:0)}
 function filterPills(){const f=H.f,p=[];
   if(H.range!=='period') p.push(['range','',rangeOf().label]);
   if(quickType()==='custom') f.types.forEach(v=>p.push(['types',v,TYPES[v]]));f.cats.forEach(v=>p.push(['cats',v,cat(v)?.name||'Category']));f.accs.forEach(v=>p.push(['accs',v,acc(v)?.name||'Account']));
+  (f.subs||[]).forEach(v=>p.push(['subs',v,subOf(v)?.name||'Type']));
   f.methods.forEach(v=>p.push(['methods',v,METHODS[v]||v]));if(f.min!=='') p.push(['min','','From Rs '+f.min]);if(f.max!=='') p.push(['max','','Up to Rs '+f.max]);
   if(f.photo) p.push(['photo','','Has photo']);if(f.split) p.push(['split','','Split bills']);
   return p.map(([k,v,l])=>`<button class="filter" data-act="hPillOff" data-k="${k}" data-v="${esc(v)}" aria-label="Remove filter ${esc(l)}">${esc(l)} ✕</button>`).join('')+(p.length>1?'<button class="link" data-act="hClear" style="margin-left:4px">Clear all</button>':'');}
@@ -948,6 +974,7 @@ function filteredItems(){
   const f=H.f,q=H.q.trim().toLowerCase();let it=items(rangeOf());
   if(f.types.length) it=it.filter(x=>f.types.includes(x.t));
   if(f.cats.length) it=it.filter(x=>f.cats.includes(x.cat));
+  if((f.subs||[]).length) it=it.filter(x=>f.subs.includes(x.sub));
   if(f.accs.length) it=it.filter(x=>f.accs.includes(x.acc)||f.accs.includes(x.to));
   if(f.methods.length) it=it.filter(x=>f.methods.includes(x.method));
   const mn=toP(f.min),mx=toP(f.max);
@@ -961,7 +988,7 @@ function filteredItems(){
 }
 function itemRow(x,withDate){
   const amt=x.t==='exp'?money(-x.share,{sign:true}):x.t==='inc'?money(x.amt,{sign:true}):x.t==='adj'?money(x.amt,{sign:true}):x.k==='gp'?money(x.from==='me'?-x.amt:x.amt,{sign:true}):money(x.amt);
-  const c=x.cat&&cat(x.cat),ic=c?`<span class="cic sm" style="--c:${c.color}">${icoSvg(catIcon(c))}</span>`:`<span class="cic sm" style="--c:#8a948d">${icoSvg(x.k==='gp'?'M16 3h5v5M21 3l-7 7M8 21H3v-5M3 21l7-7':x.t==='adj'?'M4 20h4L19 9l-4-4L4 16zM14 6l4 4':'M7 7h13l-3-3M17 17H4l3 3')}</span>`;
+  const c=x.cat&&cat(x.cat),sb=x.sub&&subOf(x.sub),ic=c?`<span class="cic sm" style="--c:${c.color}">${icoSvg(sb?CAT_ICONS[sb.icon]||catIcon(c):catIcon(c))}</span>`:`<span class="cic sm" style="--c:#8a948d">${icoSvg(x.k==='gp'?'M16 3h5v5M21 3l-7 7M8 21H3v-5M3 21l7-7':x.t==='adj'?'M4 20h4L19 9l-4-4L4 16zM14 6l4 4':'M7 7h13l-3-3M17 17H4l3 3')}</span>`;
   return`<button class="row" data-act="itemEdit" data-k="${x.k}" data-id="${x.id}"><div class="l">${ic}<div><p class="t">${esc(x.note||itemTitle(x))}${hasPhoto(x)?CLIP:''}</p><p class="sub t">${withDate?fmtD(x.date)+' '+x.date.slice(2,4)+', ':''}${x.note?esc(itemTitle(x))+', ':''}${esc(itemSub(x))}</p></div></div>
     <div class="r ${x.t==='inc'||(x.k==='gp'&&x.to==='me')?'good':''}">${amt}</div></button>`;
 }
@@ -987,6 +1014,7 @@ actions.hFilter=()=>{
     <p class="lbl">When</p><div class="seg" style="margin-top:8px">${[['period','This month'],['all','All time'],['custom','Pick dates']].map(([v,l])=>`<button data-act="hfR" data-v="${v}" aria-pressed="${st.range===v}">${l}</button>`).join('')}</div>
     ${st.range==='custom'?`<div class="grid2"><label>From<input type="date" id="hf-from" value="${st.from}"></label><label>To<input type="date" id="hf-to" value="${st.to}"></label></div>`:''}
     <p class="lbl">Category</p><div class="opts">${top.map(c=>ch('cats',c.id,c.name)).join('')}${cats.length>top.length?`<button class="opt" data-act="hfAll">All ${cats.length} categories</button>`:''}</div>
+    ${f.cats.length===1&&S.subs.some(x=>x.parent===f.cats[0])?`<p class="lbl">${esc(cat(f.cats[0]).name)} type</p><div class="opts">${S.subs.filter(x=>x.parent===f.cats[0]).map(x=>ch('subs',x.id,x.name)).join('')}</div>`:''}
     <p class="lbl">Account</p><div class="opts">${S.accounts.filter(a=>!a.archived||f.accs.includes(a.id)).map(a=>ch('accs',a.id,a.name)).join('')}</div>
     ${st.more?`<p class="lbl">Paid with</p><div class="opts">${Object.entries(METHODS).map(([v,l])=>ch('methods',v,l)).join('')}</div>
       <div class="grid2"><label>Amount from (Rs)<input id="hf-min" inputmode="decimal" value="${esc(f.min)}"></label><label>Up to (Rs)<input id="hf-max" inputmode="decimal" value="${esc(f.max)}"></label></div>
@@ -1014,7 +1042,7 @@ function txEdit(id){
   const cats=S.cats.filter(c=>c.kind===t.t&&(!c.hidden||c.id===t.cat));
   sheet(`<h2>Edit ${{exp:'expense',inc:'income',xfer:'transfer',adj:'correction'}[t.t]}</h2>
   <label>Amount<input id="f-amt" inputmode="decimal" value="${t.amt/100}"></label>
-  ${t.t==='exp'||t.t==='inc'?`<label>Category<select id="f-cat">${cats.map(c=>opt(c.id,c.name,t.cat)).join('')}</select></label>`:''}
+  ${t.t==='exp'||t.t==='inc'?`<label>Category<select id="f-cat">${cats.map(c=>opt(c.id,c.name,t.cat)).join('')}</select></label><div id="f-subwrap">${(()=>{const L=S.subs.filter(x=>x.parent===t.cat&&(!x.hidden||x.id===t.sub));return L.length?`<label>Type<select id="f-sub"><option value="">No type</option>${L.map(x=>opt(x.id,x.name,t.sub)).join('')}</select></label>`:''})()}</div>`:''}
   <div class="grid2"><label>${t.t==='xfer'?'From':'Account'}<select id="f-acc">${S.accounts.map(a=>opt(a.id,a.name,t.acc)).join('')}</select></label>
   ${t.t==='xfer'?`<label>To<select id="f-to">${S.accounts.map(a=>opt(a.id,a.name,t.to)).join('')}</select></label>`:t.t!=='adj'?`<label>Paid with<select id="f-method">${['qr','card','online','cash','bank'].map(k=>opt(k,METHODS[k],t.method)).join('')}</select></label>`:''}</div>
   ${t.t==='xfer'?`<div class="grid2"><label>Fee or charge (Rs)<input id="f-fee" inputmode="decimal" value="${(S.tx.find(x=>x.link===t.id)||{}).amt/100||''}" placeholder="0"></label><label>How<select id="f-xm">${['bank','atm','qr','cash'].map(k=>opt(k,METHODS[k],t.method)).join('')}</select></label></div>`:''}
@@ -1029,7 +1057,7 @@ actions.txSave=d=>{
     if(fee>0){if(f) Object.assign(f,{amt:fee,acc:v('#f-acc'),date:v('#f-date')||t.date,method:t.method,note:(METHODS[t.method]||'Transfer')+' fee'});
       else S.tx.push({id:uid(),t:'exp',amt:fee,acc:v('#f-acc'),cat:cat('fees')?'fees':'other',date:v('#f-date')||t.date,ts:t.ts+1,method:t.method,note:(METHODS[t.method]||'Transfer')+' fee',link:t.id})}
     else if(f) S.tx=S.tx.filter(x=>x!==f)}
-  Object.assign(t,{amt,acc:v('#f-acc'),date:v('#f-date')||t.date,note:v('#f-note').trim()});if($('#f-cat')) t.cat=v('#f-cat');if($('#f-to')) t.to=v('#f-to');if($('#f-method')) t.method=v('#f-method');
+  Object.assign(t,{amt,acc:v('#f-acc'),date:v('#f-date')||t.date,note:v('#f-note').trim()});if($('#f-cat')){if(t.cat!==v('#f-cat')) t.sub=undefined;t.cat=v('#f-cat')}if($('#f-sub')&&$('#f-cat')&&subOf(v('#f-sub'))?.parent===t.cat) t.sub=v('#f-sub')||undefined;else if($('#f-sub')&&!v('#f-sub')) t.sub=undefined;if($('#f-to')) t.to=v('#f-to');if($('#f-method')) t.method=v('#f-method');
   persist();actions.close();render();toast('Saved changes.');
 };
 actions.txDel=d=>{const rm=S.tx.filter(x=>x.id===d.id||x.link===d.id);S.tx=S.tx.filter(x=>!rm.includes(x));persist();actions.close();render();toast('Deleted.',()=>{S.tx.push(...rm);persist();render()})};
@@ -1118,12 +1146,13 @@ function gbillEdit(id){
   sheet(`<h2>${esc(b.note||'Split bill')}</h2><p class="muted">${esc(g?.name||'')}, ${esc(who(g,b.payer))} paid ${money(b.total)}</p>
   <div style="margin-top:10px">${Object.entries(b.shares).map(([k,v])=>`<div class="kv"><span>${esc(who(g,k))}</span><span>${money(v)}</span></div>`).join('')}</div>
   <label>Total${b.mode==='exact'?' (delete and re-add to change exact amounts)':''}<input id="f-amt" inputmode="decimal" value="${b.total/100}" ${b.mode==='exact'?'disabled':''}></label>
-  <div class="grid2"><label>Category<select id="f-cat">${S.cats.filter(c=>c.kind==='exp').map(c=>opt(c.id,c.name,b.cat)).join('')}</select></label><label>Date<input id="f-date" type="date" value="${b.date}"></label></div>
+  <div class="grid2"><label>Category<select id="f-cat">${S.cats.filter(c=>c.kind==='exp').map(c=>opt(c.id,c.name,b.cat)).join('')}</select></label><label>Date<input id="f-date" type="date" value="${b.date}"></label></div><div id="f-subwrap">${(()=>{const L=S.subs.filter(x=>x.parent===b.cat&&(!x.hidden||x.id===b.sub));return L.length?`<label>Type<select id="f-sub"><option value="">No type</option>${L.map(x=>opt(x.id,x.name,b.sub)).join('')}</select></label>`:''})()}</div>
   <label>Note<input id="f-note" value="${esc(b.note)}"></label>${b.items&&b.items.length?`<p class="lbl">Items</p><div class="card" style="margin-top:6px">${b.items.map(i=>`<div class="kv"><span>${esc(i.name||'Item')}<span class="sub" style="display:block">${esc(i.who.map(p=>who(g,p)).join(', '))}</span></span><span>${money(Math.round(i.price*100))}</span></div>`).join('')}</div>`:''}${thumbs(b.photos)}
   <div class="btns"><button class="btn danger" data-act="gbDel" data-id="${b.id}">Delete</button><button class="btn primary grow" data-act="gbSave" data-id="${b.id}">Save changes</button></div>`);
 }
 actions.gbSave=d=>{const b=S.gbills.find(x=>x.id===d.id);
   if(b.mode!=='exact'){const t=toP($('#f-amt').value);if(!t){toast('Enter an amount.');return}if(t!==b.total){b.total=t;b.shares=computeShares(t,b.members||Object.keys(b.shares),b.payer,'equal',{})}}
+  if(b.cat!==$('#f-cat').value) b.sub=undefined;else if($('#f-sub')) b.sub=$('#f-sub').value||undefined;
   Object.assign(b,{cat:$('#f-cat').value,date:$('#f-date').value||b.date,note:$('#f-note').value.trim()});persist();actions.close();render();toast('Saved changes.')};
 actions.gbDel=d=>{const b=S.gbills.find(x=>x.id===d.id);S.gbills=S.gbills.filter(x=>x!==b);persist();actions.close();render();toast('Deleted bill.',()=>{S.gbills.push(b);persist();render()})};
 function gpayEdit(id){const x=S.gpays.find(y=>y.id===id);if(!x) return;const g=grp(x.group);
@@ -1140,6 +1169,7 @@ actions.groupShare=async d=>{
 
 /* ================= ACCOUNTS ================= */
 function renderAccounts(){
+  if(AC.open){const a=acc(AC.open);if(a) return renderAccountPage(a);AC.open=null}
   const b=balances(),accs=activeAccs(),mon=accs.filter(a=>!isCredit(a)),cr=accs.filter(isCredit);
   const have=mon.reduce((s,a)=>s+b[a.id],0),owe=cr.reduce((s,a)=>s+Math.max(0,-b[a.id]),0),friends=myGroupNet();
   let h=`<div class="top"><h1>Accounts</h1><div style="display:flex;align-items:center;gap:4px"><button class="icon" data-act="hide" aria-label="${S.set.hide?'Show':'Hide'} amounts">${S.set.hide?I.eyeOff:I.eye}</button><button class="link" data-act="accEdit">Add account</button></div></div>
@@ -1160,8 +1190,12 @@ function renderAccounts(){
 }
 actions.startXfer=()=>{A=blankAdd('xfer');show('add')};
 actions.startAtm=()=>{A=blankAdd('xfer');const bank=byUse(activeAccs().filter(a=>a.kind==='bank'),usage('exp','acc'))[0],cash=S.accounts.find(a=>a.kind==='cash');A.acc=bank?.id||null;A.to=cash?.id||null;A.method='atm';show('add')};
-actions.accOpen=d=>{
-  const a=acc(d.id),bal=balances()[a.id],c=isCredit(a)?cardStatus(a):null;let body;
+let AC={open:null,off:0};
+actions.accOpen=d=>{actions.close();AC.open=d.id;AC.off=0;if(view!=='accounts') show('accounts');else{renderAccounts();$('#main').scrollTop=0}};
+actions.accBack=()=>{AC.open=null;renderAccounts()};
+actions.accOff=d=>{AC.off=Math.min(0,AC.off+Number(d.d));const y=$('#main').scrollTop;renderAccounts();$('#main').scrollTop=y};
+function accSummaryHtml(a){
+  const bal=balances()[a.id],c=isCredit(a)?cardStatus(a):null;let body;
   if(c){body=`<p class="big">${money(c.owed)}</p><p class="muted">owed${c.limit?` of ${money(c.limit)} limit`:''}</p>${c.limit?bar(c.owed,c.limit,.7):''}<div class="card">
     ${c.limit?`<div class="kv"><span>Available</span><span class="${c.avail<0?'danger':''}">${money(c.avail)}</span></div>`:''}
     ${a.stmtDay?`<div class="kv"><span>To pay</span><span class="${c.overdue?'danger':''}">${c.remaining>0?money(c.remaining)+' by '+fmtD(c.due):'Nothing due'}</span></div>
@@ -1170,9 +1204,32 @@ actions.accOpen=d=>{
       `</div><p class="help">Add the statement day and due period from your bank app to see what to pay and when.</p>`}
     ${a.kind==='vcc'?'<p class="help">Works on Fonepay QR only. If you scan a NepalPay QR, some banks charge your linked savings account instead, so log it there.</p>':''}`}
   else body=`<p class="big ${bal<0?'danger':''}">${money(bal)}</p><p class="muted">${esc(KINDS[a.kind])}${a.last4?', ending '+esc(a.last4):''}</p>`;
-  sheet(`<h2>${esc(a.name)}</h2>${body}<div class="btns">${c&&c.owed>0?`<button class="btn primary grow" data-act="payCard" data-id="${a.id}">Pay this card</button>`:''}
-  <button class="btn grow" data-act="reconcile" data-id="${a.id}">Fix balance</button><button class="btn grow" data-act="accTx" data-id="${a.id}">Entries</button><button class="btn grow" data-act="accEdit" data-id="${a.id}">Edit</button></div>`);
-};
+  return body+`<div class="btns">${c&&c.owed>0?`<button class="btn primary grow" data-act="payCard" data-id="${a.id}">Pay this card</button>`:''}<button class="btn grow" data-act="accAddHere" data-id="${a.id}">Add entry</button><button class="btn grow" data-act="accMoveHere" data-id="${a.id}">Move money</button></div>
+  <div class="btns" style="margin-top:8px"><button class="btn grow" data-act="reconcile" data-id="${a.id}">Fix balance</button><button class="btn grow" data-act="accEdit" data-id="${a.id}">Edit</button></div>`;
+}
+function accDelta(x,id){
+  if(x.k==='tx'){if(x.t==='exp') return x.acc===id?-x.amt:0;if(x.t==='inc'||x.t==='adj') return x.acc===id?x.amt:0;if(x.t==='xfer') return x.acc===id?-x.amt:x.to===id?x.amt:0}
+  if(x.k==='gb') return x.acc===id?-x.amt:0;if(x.k==='gp') return x.acc===id?(x.from==='me'?-x.amt:x.amt):0;return 0}
+function renderAccountPage(a){
+  const cr=isCredit(a),all=items().map(x=>({x,d:accDelta(x,a.id)})).filter(r=>r.d!==0).sort((p,q)=>p.x.date.localeCompare(q.x.date)||(p.x.ts||0)-(q.x.ts||0));
+  let run=a.open||0;all.forEach(r=>{run+=r.d;r.after=run});
+  const p=period(AC.off),rows=all.filter(r=>inP(r.x,p)).reverse(),inn=sum(rows.filter(r=>r.d>0),r=>r.d),out=-sum(rows.filter(r=>r.d<0),r=>r.d);
+  const balTxt=v=>cr?(v<0?'owes '+money(-v):v>0?'credit '+money(v):'nothing owed'):money(v);
+  let h=`<button class="back" data-act="accBack">‹ Accounts</button><div class="top" style="min-height:40px"><h1 style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(a.name)}</h1>${eyeBtn()}</div>
+  ${accSummaryHtml(a)}
+  <div class="top" style="margin-top:14px"><button class="icon" data-act="accOff" data-d="-1" aria-label="Previous month">‹</button><h3 style="margin:0">${esc(p.label)}</h3><button class="icon" data-act="accOff" data-d="1" ${AC.off>=0?'disabled':''} aria-label="Next month">›</button></div>
+  <div class="stats" style="margin-top:4px"><div class="stat"><small>Money in</small><b class="good ${sz(money(inn))}">${money(inn)}</b></div><div class="stat"><small>Money out</small><b class="${sz(money(out))}">${money(out)}</b></div></div>`;
+  if(!rows.length) h+=`<p class="empty">Nothing in or out of ${esc(a.name)} in ${esc(p.label)}.</p>`;
+  else{let cur=null;h+=rows.map(r=>{const x=r.x,c=x.cat&&cat(x.cat),sb=x.sub&&subOf(x.sub);
+      const ic=c?`<span class="cic sm" style="--c:${c.color}">${icoSvg(sb?CAT_ICONS[sb.icon]||catIcon(c):catIcon(c))}</span>`:`<span class="cic sm" style="--c:#8a948d">${icoSvg(x.t==='adj'?'M4 20h4L19 9l-4-4L4 16zM14 6l4 4':'M7 7h13l-3-3M17 17H4l3 3')}</span>`;
+      let day='';if(x.date!==cur){day=`${cur?'</div>':''}<div class="day"><span>${fmtDay(x.date)}</span></div><div class="card" style="margin-top:0;padding:2px 14px">`;cur=x.date}
+      return day+`<button class="row" data-act="itemEdit" data-k="${x.k}" data-id="${x.id}"><div class="l">${ic}<div><p class="t">${esc(x.note||itemTitle(x))}</p><p class="sub t">${x.note?esc(itemTitle(x))+', ':sb&&c?esc(c.name)+', ':''}${esc(x.t==='xfer'?(x.acc===a.id?'to '+(acc(x.to)?.name||'?'):'from '+(acc(x.acc)?.name||'?')):(METHODS[x.method]||''))}</p></div></div>
+        <div class="r"><span class="${r.d>0?'good':''}">${money(r.d,{sign:true})}</span><p class="sub">${balTxt(r.after)}</p></div></button>`}).join('')+'</div>'}
+  h+=`<p class="help" style="text-align:center">The small number under each amount is the ${cr?'amount owed':'balance'} right after it.</p>`;
+  $('#v-accounts').innerHTML=h;
+}
+actions.accAddHere=d=>{A=blankAdd('exp');A.acc=d.id;show('add')};
+actions.accMoveHere=d=>{A=blankAdd('xfer');A.acc=d.id;A.to=null;show('add')};
 actions.payCard=d=>{const a=acc(d.id),c=cardStatus(a);A=blankAdd('xfer');A.to=a.id;A.amt=String((c.remaining>0?c.remaining:c.owed)/100);
   A.acc=(byUse(activeAccs().filter(x=>x.kind==='bank'||x.kind==='wallet'),usage('xfer','acc'))[0]||{}).id||null;A.method='bank';actions.close();show('add')};
 actions.accTx=d=>{H.f={types:[],cats:[],accs:[d.id],methods:[],min:'',max:'',photo:false,split:false};H.mode='entries';H.q='';actions.close();show('history')};
@@ -1240,7 +1297,7 @@ actions.budgets=()=>{const cats=S.cats.filter(c=>c.kind==='exp'&&!c.hidden);
   <div class="btns"><button class="btn primary grow" data-act="budgetsSave">Save budgets</button></div>`)};
 actions.budgetsSave=()=>{document.querySelectorAll('[data-bud]').forEach(i=>cat(i.dataset.bud).budget=toP(i.value));persist();actions.close();render();toast('Saved budgets.')};
 actions.cats=()=>{sheet(`<h2>Categories</h2><p class="help">Tap an icon to change it. Hidden categories keep their past entries.</p>
-  ${['exp','inc'].map(k=>`<p class="lbl">${k==='exp'?'Spending':'Income'}</p>`+S.cats.filter(c=>c.kind===k).map(c=>`<div class="catrow"><button class="cic" style="--c:${c.color}" data-act="catIcon" data-id="${c.id}" aria-label="Change icon">${icoSvg(catIcon(c))}</button><input data-cn="${c.id}" value="${esc(c.name)}" aria-label="Category name"><label class="switch" title="Show"><input type="checkbox" data-ch="${c.id}" ${c.hidden?'':'checked'} aria-label="Show ${esc(c.name)}"><i></i></label></div>`).join('')).join('')}
+  ${['exp','inc'].map(k=>`<p class="lbl">${k==='exp'?'Spending':'Income'}</p>`+S.cats.filter(c=>c.kind===k).map(c=>`<div class="catrow"><button class="cic" style="--c:${c.color}" data-act="catIcon" data-id="${c.id}" aria-label="Change icon">${icoSvg(catIcon(c))}</button><input data-cn="${c.id}" value="${esc(c.name)}" aria-label="Category name"><label class="switch" title="Show"><input type="checkbox" data-ch="${c.id}" ${c.hidden?'':'checked'} aria-label="Show ${esc(c.name)}"><i></i></label></div>${k==='exp'?`<button class="link typelink" data-act="subEdit" data-id="${c.id}">${S.subs.filter(x=>x.parent===c.id).length?`Types: ${esc(S.subs.filter(x=>x.parent===c.id&&!x.hidden).map(x=>x.name).join(', ')||'all hidden')}`:'Add types'} ›</button>`:''}`).join('')).join('')}
   <p class="lbl">New category</p><div class="grid2"><label>Name<input id="f-newcat"></label><label>Type<select id="f-newkind">${opt('exp','Expense','exp')}${opt('inc','Income')}</select></label></div>
   <div class="btns"><button class="btn primary grow" data-act="catsSave">Save categories</button></div>`)};
 actions.catIcon=d=>{const keep={};document.querySelectorAll('[data-cn]').forEach(i=>keep[i.dataset.cn]=i.value);document.querySelectorAll('[data-ch]').forEach(i=>keep['h'+i.dataset.ch]=i.checked);
@@ -1290,7 +1347,7 @@ function renderSettings(){
     <div class="srow"><span>PIN lock<small>${meta.locked?'On. Your data is encrypted.':'Off'}</small></span>${meta.locked?'<button class="btn" data-act="lockNow">Lock now</button>':'<button class="btn primary" data-act="lockSet">Set a PIN</button>'}</div>
     ${meta.locked?`<div class="srow"><span>Lock again after leaving</span><select id="f-autolock" class="ssel">${[[0,'Immediately'],[1,'1 minute'],[5,'5 minutes'],[15,'15 minutes']].map(([v,l])=>opt(String(v),l,String(S.set.autolock))).join('')}</select></div>
       <div class="srow"><span>Recovery key<small>${meta.rec?'Set. Lets you reset a forgotten PIN.':'Not set. Without it, a forgotten PIN means your data is gone.'}</small></span><button class="btn${meta.rec?'':' primary'}" data-act="recNew">${meta.rec?'New key':'Create'}</button></div>
-      <div class="srow"><span>Unlock with fingerprint<small>${meta.bio?'On. Your PIN still works too.':'Open Khata with your fingerprint or face instead of typing the PIN.'}</small></span><label class="switch"><input type="checkbox" id="f-bioun" ${meta.bio?'checked':''} aria-label="Unlock with fingerprint"><i></i></label></div>
+      <div class="srow"><span>Unlock with fingerprint<small>${meta.bio?(meta.bio.mode==='device'?'On (simpler mode). Your PIN still works too.':'On. Your PIN still works too.'):'Open Khata with your fingerprint or face instead of typing the PIN.'}</small></span><label class="switch"><input type="checkbox" id="f-bioun" ${meta.bio?'checked':''} aria-label="Unlock with fingerprint"><i></i></label></div>
       <div class="btns"><button class="btn grow" data-act="lockSet">Change PIN</button><button class="btn danger grow" data-act="lockOff">Turn lock off</button></div>`:''}
     <div class="srow"><span>Always hide amounts<small>Hidden every time you open or come back to the app. Tap the eye to show them.</small></span><label class="switch"><input type="checkbox" id="f-hideopen" ${S.set.hideOnOpen?'checked':''} aria-label="Always hide amounts"><i></i></label></div>
     <div class="srow"><span>To show amounts, ask for<small>${guardSummary()}</small></span><select id="f-guard" class="ssel">${[['off','Nothing'],['pin','PIN'],['bio','Fingerprint or face']].map(([v,l])=>opt(v,l,guard().mode)).join('')}</select></div>
@@ -1316,7 +1373,7 @@ function renderSettings(){
     $('#f-aikey').addEventListener('change',e=>{aiSet().key=e.target.value.trim();save();toast(aiSet().key?'API key saved on this phone.':'API key removed.')});
     $('#f-aimodel').addEventListener('change',e=>{aiSet().model=e.target.value;save()})});
 }
-const APP_VERSION='v21';
+const APP_VERSION='v23';
 actions.settingsSave=()=>{if($('#f-aion')){const ai=aiSet();ai.on=$('#f-aion').checked;ai.key=($('#f-aikey').value||'').trim();ai.model=$('#f-aimodel').value}const sd=parseInt($('#f-start').value);S.set.startDay=sd>=1&&sd<=28?sd:1;S.set.hideOnOpen=$('#f-hideopen').checked;if($('#f-autolock')) S.set.autolock=Number($('#f-autolock').value);persist();actions.close();render()};
 actions.lockSet=async()=>{if(!window.crypto||!crypto.subtle){toast('Encryption needs the app opened over https.');return}
   if(meta.locked&&!(await requireAuth('Change PIN'))) return;
@@ -1328,13 +1385,14 @@ actions.lockSave=async()=>{const a=$('#f-p1').value,b=$('#f-p2').value,err=$('#f
   const oldMeta=meta;err.textContent='Encrypting…';const salt=crypto.getRandomValues(new Uint8Array(16)),oldKey=cryptoKey;cryptoKey=await deriveKey(a,salt);await rekeyPhotos(oldKey,cryptoKey);
   meta={locked:true,salt:b64(salt),numeric:/^\d+$/.test(a)};
   if(oldMeta.rec){meta.rec={...oldMeta.rec,pinCt:await recWrapPin(oldMeta.rec.pub,a)}}
+  if(oldMeta.bio&&oldMeta.bio.mode==='device'){try{const k=await idbKey('get');if(k){const e=await encrypt(k,{pin:a});meta.bio={...oldMeta.bio,iv:e.iv,ct:e.ct}}}catch{}}
   localStorage.setItem(K_META,JSON.stringify(meta));persist();await saving;localStorage.removeItem(K_PLAIN);
-  const hadBio=!!oldMeta.bio,first=!oldMeta.locked;actions.close();render();
+  const hadBio=!!oldMeta.bio&&!meta.bio,first=!oldMeta.locked;actions.close();render();
   if(first&&!meta.rec){await recCreate(a,true);return}
   toast(hadBio?'New PIN saved. Turn fingerprint unlock on again in Settings.':first?'Locked with your PIN. Data is now encrypted.':'New PIN saved.'+(meta.rec?' Your recovery key still works.':''))};
 actions.lockOff=async()=>{if(!(await requireAuth('Turn off the lock'))) return;if(!confirm('Turn off the lock? Your data will be stored unencrypted on this phone.')) return;
   if(guard().mode!=='off'&&!guard().pinHash){toast('Amounts still need a PIN. Set one for that.');if(!(await setGuardPin())) return}
-  await rekeyPhotos(cryptoKey,null);cryptoKey=null;meta={};localStorage.setItem(K_META,'{}');persist();await saving;localStorage.removeItem(K_ENC);actions.close();render();toast('Lock turned off.')};
+  await rekeyPhotos(cryptoKey,null);if(meta.bio&&meta.bio.mode==='device') idbKey('del').catch(()=>{});cryptoKey=null;meta={};localStorage.setItem(K_META,'{}');persist();await saving;localStorage.removeItem(K_ENC);actions.close();render();toast('Lock turned off.')};
 actions.lockNow=()=>showLock();
 function showLock(msg){hideToast();if(S) persist();S=null;cryptoKey=null;actions.close();if(typeof forgetPhotoURLs==='function'){forgetPhotoURLs();actions.viewerClose()}
   ['add','history','groups','garage','accounts','plan','settings'].forEach(v=>$('#v-'+v).innerHTML='');built=false;
@@ -1374,10 +1432,11 @@ actions.exportBackup=async()=>{if(guard().mode!=='off'&&!(await askGuard('Save a
 function excelModel(){
   const p=period(0),R=v=>Math.round(v)/100,catName=id=>cat(id)?.name||'Other',all=items();
   const noInc=!S.set.excelIncome;
+  const subName=x=>x.sub&&subOf(x.sub)?subOf(x.sub).name:'';
   const entries=[...all].filter(x=>x.t!=='adj'&&!(noInc&&x.t==='inc')).sort((a,b)=>b.date.localeCompare(a.date)||b.ts-a.ts).map(x=>{const g=x.group&&grp(x.group);
-    if(x.k==='gb') return{date:x.date,type:'Expense',cat:catName(x.cat),acc:x.payer==='me'?acc(x.acc)?.name:`Paid by ${who(g,x.payer)}`,to:`Split, ${Object.keys(S.gbills.find(b=>b.id===x.id).shares).length} people`,amt:R(x.amt),share:R(x.share),method:METHODS[x.method],group:g?.name,note:x.note};
+    if(x.k==='gb') return{date:x.date,type:'Expense',cat:catName(x.cat),acc:x.payer==='me'?acc(x.acc)?.name:`Paid by ${who(g,x.payer)}`,to:`Split, ${Object.keys(S.gbills.find(b=>b.id===x.id).shares).length} people`,amt:R(x.amt),share:R(x.share),method:METHODS[x.method],group:g?.name,note:x.note,sub:subName(x)};
     if(x.k==='gp') return{date:x.date,type:'Settle up',acc:acc(x.acc)?.name||'',to:x.from==='me'?`to ${who(g,x.to)}`:`from ${who(g,x.from)}`,amt:R(x.amt),share:null,method:'',group:g?.name,note:x.note};
-    if(x.t==='exp') return{date:x.date,type:'Expense',cat:catName(x.cat),acc:acc(x.acc)?.name,amt:R(x.amt),share:R(x.amt),method:METHODS[x.method]||'',note:x.note};
+    if(x.t==='exp') return{date:x.date,type:'Expense',cat:catName(x.cat),sub:subName(x),acc:acc(x.acc)?.name,amt:R(x.amt),share:R(x.amt),method:METHODS[x.method]||'',note:x.note};
     if(x.t==='inc') return{date:x.date,type:'Income',cat:catName(x.cat),acc:acc(x.acc)?.name,amt:R(x.amt),share:null,method:METHODS[x.method]||'',note:x.note};
     if(x.t==='xfer') return{date:x.date,type:'Transfer',acc:acc(x.acc)?.name,to:acc(x.to)?.name,amt:R(x.amt),share:null,method:METHODS[x.method]||'',note:x.note};
     return{date:x.date,type:'Correction',acc:acc(x.acc)?.name,amt:R(x.amt),share:null,note:'Balance correction'}});
@@ -1461,7 +1520,7 @@ if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostnam
 'use strict';
 /* ================= photos: compressed, kept on this phone (IndexedDB), encrypted when a PIN is set ================= */
 const IDB={p:null,
-  open(){return this.p||(this.p=new Promise((res,rej)=>{const r=indexedDB.open('khata',1);r.onupgradeneeded=()=>r.result.createObjectStore('photos');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}))},
+  open(){return this.p||(this.p=new Promise((res,rej)=>{const r=indexedDB.open('khata',2);r.onupgradeneeded=()=>{const db=r.result;if(!db.objectStoreNames.contains('photos')) db.createObjectStore('photos');if(!db.objectStoreNames.contains('keys')) db.createObjectStore('keys')};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}))},
   async run(mode,fn){const db=await this.open();return new Promise((res,rej)=>{const t=db.transaction('photos',mode),q=fn(t.objectStore('photos'));t.oncomplete=()=>res(q&&q.result);t.onerror=t.onabort=()=>rej(t.error)})},
   put(id,v){return this.run('readwrite',s=>s.put(v,id))},get(id){return this.run('readonly',s=>s.get(id))},del(id){return this.run('readwrite',s=>s.delete(id))},keys(){return this.run('readonly',s=>s.getAllKeys())}};
 const photoURL=new Map();
@@ -2049,7 +2108,7 @@ function askAppAuth(title){return new Promise(res=>{
   <div class="btns"><button class="btn" data-act="aaNo">Cancel</button><button class="btn ${meta.bio?'':'primary '}grow" data-act="aaGo">Confirm</button></div>`,
   p=>{const i=p.querySelector('#aa-pin');i.addEventListener('keydown',e=>{if(e.key==='Enter') actions.aaGo()});if(!meta.bio) i.focus()});
   actions.aaNo=()=>fin(false);
-  actions.aaBio=async()=>{try{await prfGet(meta.bio.credId,unb64(meta.bio.salt));fin(true)}catch{toast('Fingerprint didn\u2019t work. Use your PIN.')}};
+  actions.aaBio=async()=>{try{await bioPin();fin(true)}catch{toast('Fingerprint didn\u2019t work. Use your PIN.')}};
   actions.aaGo=async()=>{const v=$('#aa-pin').value;if(!v) return;if(lockWait()>0){$('#aa-err').textContent='Too many wrong tries. Wait a bit.';return}
     $('#aa-err').textContent='Checking…';try{const key=await deriveKey(v,unb64(meta.salt));await decrypt(key,JSON.parse(localStorage.getItem(K_ENC)));clearFails();fin(true)}
     catch{noteFail();$('#aa-err').textContent=lockWait()>0?'Too many wrong tries. Wait a bit.':'Wrong PIN.';$('#aa-pin').select()}};
@@ -2062,30 +2121,48 @@ function askAppPin(title){return new Promise(res=>{
   actions.bGo=async()=>{const v=$('#b-pin').value;if(!v) return;$('#b-err').textContent='Checking…';
     try{const key=await deriveKey(v,unb64(meta.salt));await decrypt(key,JSON.parse(localStorage.getItem(K_ENC)));actions.close();res(v)}catch{$('#b-err').textContent='Wrong PIN.';$('#b-pin').select()}};
 })}
+async function idbKey(op,val){const db=await IDB.open();return new Promise((res,rej)=>{const t=db.transaction('keys',op==='get'?'readonly':'readwrite'),st=t.objectStore('keys');
+  const q=op==='get'?st.get('unlock'):op==='del'?st.delete('unlock'):st.put(val,'unlock');t.oncomplete=()=>res(q.result);t.onerror=t.onabort=()=>rej(t.error)})}
+async function uvGet(credId){
+  const a=await navigator.credentials.get({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),rpId:location.hostname,allowCredentials:[{type:'public-key',id:unb64(credId)}],userVerification:'required',timeout:60000}});
+  if(!(a&&a.response&&(new Uint8Array(a.response.authenticatorData)[32]&0x04))) throw new Error('nouv');
+}
+/* returns the app PIN after a fingerprint check; works for both modes */
+async function bioPin(){
+  const b=meta.bio;if(!b) throw new Error('nobio');
+  if(b.mode==='device'){await uvGet(b.credId);const k=await idbKey('get');if(!k) throw new Error('nokey');return (await decrypt(k,b)).pin}
+  const out=await prfGet(b.credId,unb64(b.salt));return (await decrypt(await prfKey(out),b)).pin;
+}
+function askSimpleMode(){return new Promise(res=>{
+  sheet(`<h2>Use the simpler fingerprint unlock?</h2><p class="help">Your phone\u2019s browser can\u2019t do the strongest kind, where the fingerprint itself unlocks your data. The simpler kind keeps a locked key inside this browser and only uses it after your fingerprint matches.</p>
+  <p class="help">It stops anyone who picks up your phone. It would not stop someone who can run code in your phone\u2019s browser, for example with a rooted phone or a cable to a computer while your phone is unlocked. Your PIN still works either way.</p>
+  <div class="btns"><button class="btn" data-act="smNo">No thanks</button><button class="btn primary grow" data-act="smYes">Use it</button></div>`);
+  actions.smNo=()=>{actions.close();res(false)};actions.smYes=()=>{actions.close();res(true)};
+})}
 async function bioUnlockSetup(){
   const back=()=>{if(view==='settings') renderSettings()};
   if(!(await bioSupported())){toast('This phone has no fingerprint or face unlock the browser can use.');back();return}
   const pin=await askAppPin('Turn on fingerprint unlock');if(!pin){back();return}
   try{
     const salt=crypto.getRandomValues(new Uint8Array(32));
+    // residentKey 'discouraged' keeps the key on this phone instead of syncing it as a passkey, which avoids the Google Password Manager PIN on most phones
     const cred=await navigator.credentials.create({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),rp:{name:'Khata',id:location.hostname},
       user:{id:crypto.getRandomValues(new Uint8Array(16)),name:'khata-unlock',displayName:'Khata unlock'},pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
-      authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required',residentKey:'preferred'},timeout:60000,attestation:'none',extensions:{prf:{eval:{first:salt}}}}});
-    const ext=cred.getClientExtensionResults&&cred.getClientExtensionResults().prf;
-    if(!ext||ext.enabled===false){toast('Your phone\u2019s browser can\u2019t do fingerprint unlock yet. Your PIN still works.');back();return}
-    const credId=b64(new Uint8Array(cred.rawId));
-    let out=ext.results&&ext.results.first?new Uint8Array(ext.results.first):null;
-    if(!out){toast('Touch the sensor once more to finish.');out=await prfGet(credId,salt)}
-    const enc=await encrypt(await prfKey(out),{pin});
-    meta.bio={credId,salt:b64(salt),iv:enc.iv,ct:enc.ct};localStorage.setItem(K_META,JSON.stringify(meta));
-    back();toast('Fingerprint unlock is on.');
-  }catch(e){toast(e&&e.name==='NotAllowedError'?'Fingerprint setup was cancelled.':e&&e.message==='nprf'?'Your phone\u2019s browser can\u2019t do fingerprint unlock yet. Your PIN still works.':'Couldn\u2019t set up fingerprint unlock: '+((e&&e.message)||'error'));back()}
+      authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required',residentKey:'discouraged',requireResidentKey:false},timeout:60000,attestation:'none',extensions:{prf:{eval:{first:salt}}}}});
+    const ext=cred.getClientExtensionResults&&cred.getClientExtensionResults().prf,credId=b64(new Uint8Array(cred.rawId));
+    let out=ext&&ext.results&&ext.results.first?new Uint8Array(ext.results.first):null;
+    if(!out&&ext&&ext.enabled){try{toast('Touch the sensor once more to finish.');out=await prfGet(credId,salt)}catch{out=null}}
+    if(out){const enc=await encrypt(await prfKey(out),{pin});meta.bio={mode:'prf',credId,salt:b64(salt),iv:enc.iv,ct:enc.ct};saveMeta();back();toast('Fingerprint unlock is on.');return}
+    if(!(await askSimpleMode())){back();return}
+    const k=await crypto.subtle.generateKey({name:'AES-GCM',length:256},false,['encrypt','decrypt']);await idbKey('put',k);
+    const enc=await encrypt(k,{pin});meta.bio={mode:'device',credId,iv:enc.iv,ct:enc.ct};saveMeta();back();toast('Fingerprint unlock is on.');
+  }catch(e){toast(e&&e.name==='NotAllowedError'?'Fingerprint setup was cancelled.':'Couldn\u2019t set up fingerprint unlock: '+((e&&e.message)||'error'));back()}
 }
-function bioUnlockOff(){delete meta.bio;localStorage.setItem(K_META,JSON.stringify(meta));if(view==='settings') renderSettings();toast('Fingerprint unlock is off. Use your PIN.')}
+function bioUnlockOff(){if(meta.bio&&meta.bio.mode==='device') idbKey('del').catch(()=>{});delete meta.bio;localStorage.setItem(K_META,JSON.stringify(meta));if(view==='settings') renderSettings();toast('Fingerprint unlock is off. Use your PIN.')}
 let bioBusy=false;
 actions.bioUnlock=async()=>{
   if(!meta.bio||bioBusy) return;bioBusy=true;$('#lock-err').textContent='';
-  try{const out=await prfGet(meta.bio.credId,unb64(meta.bio.salt));const {pin}=await decrypt(await prfKey(out),meta.bio);$('#lock-in').value=pin;await actions.unlock()}
+  try{const pin=await bioPin();$('#lock-in').value=pin;await actions.unlock()}
   catch(e){$('#lock-err').textContent=e&&e.name==='NotAllowedError'?'Fingerprint didn\u2019t unlock. Tap \u201cUse fingerprint\u201d to try again, or type your PIN.':'Fingerprint isn\u2019t working right now. Type your PIN.';setTimeout(()=>$('#lock-in').focus(),60)}
   finally{bioBusy=false}
 };
@@ -2099,7 +2176,7 @@ function gsDirty(){const g=S.set.gs;if(!g||!gsValid(g.url)) return;g.dirty=true;
 function gsSchedule(ms){clearTimeout(gsTimer);gsTimer=setTimeout(()=>gsPush(false),ms)}
 function gsTabs(){
   const m=excelModel(),T={};
-  T.Entries=[['Date','Type','Category','Account','To / with','Amount (Rs)','My share (Rs)','Paid with','Group','Note']].concat(m.entries.map(e=>[e.date,e.type,e.cat||'',e.acc||'',e.to||'',e.amt,e.share==null?'':e.share,e.method||'',e.group||'',e.note||'']));
+  T.Entries=[['Date','Type','Category','Subcategory','Account','To / with','Amount (Rs)','My share (Rs)','Paid with','Group','Note']].concat(m.entries.map(e=>[e.date,e.type,e.cat||'',e.sub||'',e.acc||'',e.to||'',e.amt,e.share==null?'':e.share,e.method||'',e.group||'',e.note||'']));
   T.Monthly=[m.noIncome?['Month','Spent (Rs)']:['Month','Spent (Rs)','Income (Rs)','Saved (Rs)']].concat(m.months.map(x=>m.noIncome?[x.label,x.spent]:[x.label,x.spent,x.income,Math.round((x.income-x.spent)*100)/100]));
   T.Budgets=[['Category','Budget (Rs)','Spent this period (Rs)','Left (Rs)']].concat(m.cats.map(c=>[c.name,c.budget||'',c.spent,c.budget?Math.round((c.budget-c.spent)*100)/100:'']));
   T.Groups=[['Group','Person','Paid for bills','Their share','Settled','Balance (+ is owed)']].concat(m.groups.flatMap(g=>g.rows.map(r=>[g.name,r.person,r.paid,r.share,r.settled,Math.round((r.paid-r.share+r.settled)*100)/100])));
@@ -2209,7 +2286,7 @@ actions.forgotPin=()=>{
 async function unlockThenNewPin(pin){actions.close();$('#lock-in').value=pin;await actions.unlock();if(!S) return;
   sheet(`<h2>Set a new PIN</h2><p class="help">You\u2019re in. Choose a new PIN now.</p><label>New PIN<input id="f-p1" type="password" autocomplete="new-password"></label><label>Again<input id="f-p2" type="password" autocomplete="new-password"></label><p class="danger small" id="f-perr"></p>
   <div class="btns"><button class="btn primary grow" data-act="lockSave">Save new PIN</button></div>`,p=>p.querySelector('input').focus())}
-actions.recBio=async()=>{try{const out=await prfGet(meta.bio.credId,unb64(meta.bio.salt));const {pin}=await decrypt(await prfKey(out),meta.bio);await unlockThenNewPin(pin)}catch{toast('Fingerprint didn\u2019t work.')}};
+actions.recBio=async()=>{try{const pin=await bioPin();await unlockThenNewPin(pin)}catch{toast('Fingerprint didn\u2019t work.')}};
 actions.recGo=async()=>{
   const code=$('#rec-in').value,err=$('#rec-err');if(recNorm(code).length<30){err.textContent='That key looks too short. It has 8 groups of 4.';return}
   if(lockWait()>0){err.textContent='Too many wrong tries. Wait a bit.';return}err.textContent='Checking…';
@@ -2218,6 +2295,27 @@ actions.recGo=async()=>{
     const pin=new TextDecoder().decode(await crypto.subtle.decrypt({name:'RSA-OAEP'},pk,unb64(r.pinCt)));clearFails();await unlockThenNewPin(pin)}
   catch{noteFail();err.textContent=lockWait()>0?'Too many wrong tries. Wait a bit.':'That recovery key doesn\u2019t match.'}
 };
+
+/* ================= subcategory ("type") editing ================= */
+function subForm(cid,sub){
+  const c=cat(cid),x=sub||{name:'',icon:'other'};
+  sheet(`<h2>${sub?'Edit type':'New type for '+esc(c.name)}</h2><label>Name<input id="sb-name" value="${esc(x.name)}" placeholder="e.g. Clothes, Electronics, Gadgets"></label>
+  <p class="lbl">Icon</p><div class="icongrid">${Object.keys(CAT_ICONS).map(k=>`<button class="cic${x.icon===k?' sel':''}" style="--c:${c.color}" data-act="sbIcon" data-k="${k}" aria-label="${k}">${icoSvg(CAT_ICONS[k])}</button>`).join('')}</div>
+  <div class="btns">${sub?`<button class="btn" data-act="sbHide">${x.hidden?'Show':'Hide'}</button>`:'<button class="btn" data-act="close">Cancel</button>'}<button class="btn primary grow" data-act="sbSave">${sub?'Save':'Add type'}</button></div>`,p=>{if(!sub) p.querySelector('input').focus()});
+  let icon=x.icon;
+  actions.sbIcon=e=>{icon=e.k;document.querySelectorAll('.icongrid .cic').forEach(b=>b.classList.toggle('sel',b.dataset.k===icon))};
+  actions.sbSave=()=>{const n=$('#sb-name').value.trim();if(!n){toast('Give the type a name.');return}
+    if(!sub&&S.subs.some(y=>y.parent===cid&&y.name.toLowerCase()===n.toLowerCase())){toast('That type already exists.');return}
+    if(sub){sub.name=n;sub.icon=icon}else{const y={id:'s-'+uid(),parent:cid,name:n,icon};S.subs.push(y);if(view==='add'&&A.cat===cid) A.sub=y.id}
+    persist();actions.close();render();toast(sub?'Saved.':`Added ${n}.`)};
+  actions.sbHide=()=>{sub.hidden=!sub.hidden;if(A.sub===sub.id) A.sub=null;persist();actions.subEdit({id:cid})};
+}
+actions.subAdd=d=>subForm(d.id,null);
+actions.subEdit=d=>{const c=cat(d.id),L=S.subs.filter(x=>x.parent===d.id);
+  sheet(`<h2>${esc(c.name)} types</h2><p class="help">Types say what exactly you spent on, like Clothes or Electronics under Shopping. Picking one is optional.</p>
+  ${L.map(x=>`<button class="row" data-act="subOne" data-id="${x.id}"><div class="l"><span class="cic sm" style="--c:${c.color}">${icoSvg(CAT_ICONS[x.icon]||CAT_ICONS.other)}</span><div><p class="t ${x.hidden?'muted':''}">${esc(x.name)}${x.hidden?' (hidden)':''}</p></div></div><span class="muted">›</span></button>`).join('')||'<p class="muted">No types yet.</p>'}
+  <div class="btns"><button class="btn grow" data-act="cats">Back</button><button class="btn primary grow" data-act="subAdd" data-id="${d.id}">Add a type</button></div>`)};
+actions.subOne=d=>{const x=subOf(d.id);if(x) subForm(x.parent,x)};
 
 boot();gcPhotos();
 </script>
