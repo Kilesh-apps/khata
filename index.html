@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'none'; manifest-src 'self'; worker-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com; manifest-src 'self'; worker-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#EDEFEB" media="(prefers-color-scheme: light)">
@@ -141,6 +141,16 @@ label.sel{cursor:text}
 .bar-t i.over{background:var(--danger)}.bar-t i.mid{background:var(--warn)}
 .tools{display:flex;gap:8px;margin-top:12px}
 .tools input,.tools select{flex:1;min-width:0;height:44px;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:0 12px;font-size:15px}
+.quick{display:flex;gap:6px;align-items:center;margin-top:10px;overflow-x:auto;scrollbar-width:none}
+.quick::-webkit-scrollbar{display:none}
+.qchip{height:34px;padding:0 13px;border-radius:17px;background:var(--surface);font-size:14px;font-weight:550;color:var(--muted);flex:none}
+.qchip.on{background:var(--ink);color:var(--bg)}
+.sortbtn{margin-left:auto;flex:none;font-size:14px;font-weight:550;color:var(--muted);height:34px;padding:0 4px;white-space:nowrap}
+.siitem{padding:12px;margin-top:10px}.siitem input{height:42px;border:1px solid var(--line);border-radius:10px;background:var(--bg);padding:0 10px;font-size:15px;min-width:0}
+.siname{flex:1}.siprice{width:96px;text-align:right}.x2{width:34px;flex:none;color:var(--muted)}
+.opt.sm{height:34px;padding:0 10px;font-size:14px}
+.more-row{gap:14px;padding:14px}.more-row b{display:block;font-weight:600}.more-row small{display:block;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mi{width:40px;height:40px;border-radius:12px;background:var(--soft);display:grid;place-items:center;flex:none;color:var(--accent)}.mi svg{width:22px;height:22px}
 .pills{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:4px}
 .tbtn{height:44px;flex:none;padding:0 14px}.tbtn.on{border-color:var(--accent);color:var(--accent)}
 .filter{display:inline-flex;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;align-items:center;gap:8px;margin-top:6px;height:34px;padding:0 12px;border-radius:17px;background:var(--accent-soft);color:var(--accent);font-size:14px;font-weight:550}
@@ -183,10 +193,18 @@ label.sel{cursor:text}
 .gbar .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* tabs */
-.tabs{display:flex;border-top:1px solid var(--line);background:var(--bg);padding-bottom:env(safe-area-inset-bottom,0px)}
+.tabs{display:flex;align-items:stretch;border-top:1px solid var(--line);background:var(--bg);padding-bottom:env(safe-area-inset-bottom,0px);position:relative;z-index:5}
 .tabs button{flex:1;min-width:0;height:60px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;font-weight:550;color:var(--muted)}
 .tabs svg{width:24px;height:24px}
 .tabs button[aria-current="page"]{color:var(--accent)}
+.tabs .fab{flex:0 0 76px;position:relative;justify-content:flex-start}
+.fab span{position:absolute;top:-14px;left:50%;transform:translateX(-50%);width:60px;height:60px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;
+  box-shadow:0 0 0 6px var(--bg),0 4px 14px rgba(0,0,0,.28);transition:transform .15s}
+@media (prefers-color-scheme:dark){.fab span{color:#0E1A14}}
+.fab svg{width:28px;height:28px}
+.fab:active span{transform:translateX(-50%) scale(.93)}
+.fab[aria-current="page"] span{box-shadow:0 0 0 6px var(--bg),0 0 0 8px var(--accent-soft),0 4px 14px rgba(0,0,0,.28)}
+main{padding-bottom:22px}
 
 /* sheet */
 #sheet{position:fixed;inset:0;z-index:20}
@@ -249,12 +267,11 @@ label.sel{cursor:text}
 </main>
 
 <nav class="tabs" aria-label="Sections">
-  <button data-act="tab" data-v="add" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>Add</button>
   <button data-act="tab" data-v="history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V11M10 19V5M16 19v-6M22 19H2"/></svg>History</button>
-  <button data-act="tab" data-v="groups"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><path d="M3 19c0-3.3 2.7-5 6-5s6 1.7 6 5"/><circle cx="17" cy="9" r="2.5"/><path d="M16.5 14c2.7.2 4.5 1.7 4.5 4.5"/></svg>Groups</button>
   <button data-act="tab" data-v="accounts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M15 15h3"/></svg>Accounts</button>
-  <button data-act="tab" data-v="garage"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M3 21h12M7 8h4M14 10h2a2 2 0 0 1 2 2v4a1.5 1.5 0 0 0 3 0V8l-3-3"/></svg>Garage</button>
-  <button data-act="tab" data-v="plan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2"/></svg>Plan</button>
+  <button class="fab" data-act="tab" data-v="add" aria-current="page" aria-label="Add an entry"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></button>
+  <button data-act="tab" data-v="groups"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><path d="M3 19c0-3.3 2.7-5 6-5s6 1.7 6 5"/><circle cx="17" cy="9" r="2.5"/><path d="M16.5 14c2.7.2 4.5 1.7 4.5 4.5"/></svg>Groups</button>
+  <button data-act="more" data-v="more" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>More</button>
 </nav>
 <div id="sheet" hidden></div>
 <div id="toast" hidden></div>
@@ -431,6 +448,7 @@ async function deriveKey(pass,salt){const base=await crypto.subtle.importKey('ra
 async function encrypt(key,obj){const iv=crypto.getRandomValues(new Uint8Array(12));const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,new TextEncoder().encode(JSON.stringify(obj)));return{iv:b64(iv),ct:b64(new Uint8Array(ct))}}
 async function decrypt(key,e){const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(e.iv)},key,unb64(e.ct));return JSON.parse(new TextDecoder().decode(pt))}
 const snapshot=()=>{const s=JSON.parse(JSON.stringify(S));s.set.hide=false;return s};
+const exportSnapshot=()=>{const s=snapshot();if(s.set.ai) s.set.ai.key='';return s};
 function persist(){
   if(!S) return;const snap=snapshot(),key=cryptoKey,locked=!!meta.locked;
   saving=saving.then(async()=>{try{if(key) localStorage.setItem(K_ENC,JSON.stringify(await encrypt(key,snap)));else if(!locked) localStorage.setItem(K_PLAIN,JSON.stringify(snap))}
@@ -485,16 +503,27 @@ const accOpts=(sel,f=()=>true)=>activeAccs().filter(f).map(a=>opt(a.id,a.name,se
 const bar=(v,max,w=.85)=>{const r=max?v/max:0;return`<div class="bar-t"><i class="${r>1?'over':r>w?'mid':''}" style="width:${Math.min(100,r*100).toFixed(1)}%"></i></div>`};
 
 /* ================= views ================= */
+actions.more=()=>{
+  const vs=S.vehicles.filter(v=>!v.archived),st=vs[0]?vehStats(vs[0]):null,bud=S.cats.filter(c=>c.kind==='exp'&&c.budget&&!c.hidden).length;
+  const row=(act,v,icon,title,sub)=>`<button class="pick more-row${view===v?' on':''}" data-act="${act}" data-v="${v}"><span class="mi">${icon}</span><span style="flex:1;min-width:0"><b>${title}</b><small>${esc(sub)}</small></span><span class="muted">›</span></button>`;
+  sheet(`<h2>More</h2>
+  ${row('moreGo','garage',document.querySelector('.tabs [data-v=more]').dataset.garage||'','Garage',vs.length?`${vs.map(v=>v.name).join(', ')}${st&&st.kml?', '+st.kml.toFixed(1)+' km/l':''}`:'Fuel, servicing and mileage')}
+  ${row('moreGo','plan','','Plan',bud?`${bud} budget${bud>1?'s':''}, ${S.bills.length} bill${S.bills.length===1?'':'s'}`:'Budgets, monthly bills, shortcuts')}
+  ${row('moreGo','settings','','Settings','Backup, PIN lock, bill reading')}`);
+  document.querySelectorAll('.more-row .mi').forEach((el,i)=>el.innerHTML=[MI.garage,MI.plan,I.gear][i]);
+};
+actions.moreGo=d=>{if(d.v==='settings'){actions.settings();return}actions.close();if(d.v==='garage'&&view==='garage') GA.open=null;show(d.v)};
 actions.tab=d=>{if(d.v==='groups'&&view==='groups') G.open=null;if(d.v==='garage'&&view==='garage') GA.open=null;show(d.v)};
-function show(v){hideToast();view=v;document.querySelectorAll('.view').forEach(s=>s.hidden=s.id!=='v-'+v);
+function show(v){hideToast();view=v;document.querySelectorAll('.view').forEach(s=>s.hidden=s.id!=='v-'+v);document.querySelector('.tabs [data-v=more]').setAttribute('aria-current',v==='garage'||v==='plan'?'page':'false');
   document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.v===v?'page':'false'));render();$('#main').scrollTop=0}
 function render(){if(!S) return;({add:updateAdd,history:renderHistory,groups:renderGroups,garage:renderGarage,accounts:renderAccounts,plan:renderPlan})[view]();hydrate($('#v-'+view))}
 
 /* ================= ADD ================= */
+const MI={garage:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M3 21h12M7 8h4M14 10h2a2 2 0 0 1 2 2v4a1.5 1.5 0 0 0 3 0V8l-3-3"/></svg>`,plan:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2"/></svg>`};
 const I={eye:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
  eyeOff:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 3l18 18M10.6 5.1A10.6 10.6 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.1 3.9M6.6 6.6C3.7 8.4 2 12 2 12s3.6 7 10 7c1.8 0 3.3-.5 4.6-1.2"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>',
  gear:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>'};
-function blankAdd(t){return{t,amt:'',cat:null,acc:null,to:null,method:null,note:'',date:null,fee:'',split:null,photos:[],fuel:{veh:null,odo:'',litres:''}}}
+function blankAdd(t){return{lastOriginal:null,t,amt:'',cat:null,acc:null,to:null,method:null,note:'',date:null,fee:'',split:null,photos:[],fuel:{veh:null,odo:'',litres:''}}}
 function buildAdd(){
   $('#v-add').innerHTML=`
   <div class="top">
@@ -632,6 +661,7 @@ actions.save=()=>{
       shares:computeShares(amt,sp.members,sp.payer,sp.mode,sp.custom)};
     if(sp.payer==='me'){b.acc=A.acc;b.method=A.method}
     if(A.photos.length) b.photos=A.photos.slice();
+    if(sp.items) b.items=sp.items;
     S.gbills.push(b);undo=()=>{S.gbills=S.gbills.filter(x=>x.id!==b.id)};
     label=`${money(amt,{hide:false})} split in ${g.name}. Your share ${money(b.shares.me||0,{hide:false})}`;
     S.set.lastGroup=sp.group;
@@ -671,7 +701,7 @@ function drawSplit(){
   <p class="lbl">How</p><div class="seg" style="margin-top:8px"><button data-act="spMode" data-v="equal" aria-pressed="${sp.mode==='equal'}">Equally</button><button data-act="spMode" data-v="exact" aria-pressed="${sp.mode==='exact'}">Exact amounts</button></div>
   ${sp.mode==='exact'?sp.members.map(id=>`<label>${esc(who(g,id))}<input inputmode="decimal" data-sp="${id}" value="${esc(sp.custom[id]||'')}"></label>`).join('')+`<p class="help" id="sp-left">${amt?`${money(amt-assigned,{hide:false})} left to assign`:''}</p>`
    :`<div style="margin-top:10px">${sp.members.map(id=>`<div class="kv"><span>${esc(who(g,id))}</span><span>${amt?money(shares[id]||0,{hide:false}):'–'}</span></div>`).join('')}</div>`}
-  <p class="help">Amounts are rounded to whole rupees; any leftover goes to whoever paid.</p>
+  <p class="help">Amounts are rounded to whole rupees; any leftover goes to whoever paid.</p><button class="link" data-act="billSplit">Split by items instead</button>
   <div class="btns"><button class="btn danger" data-act="spOff">Don't split</button><button class="btn primary grow" data-act="spDone">Done</button></div>`,
   p=>p.querySelectorAll('[data-sp]').forEach(i=>i.addEventListener('input',()=>{sp.custom[i.dataset.sp]=i.value;const a=sum(sp.members,m=>toP(sp.custom[m]));const el=$('#sp-left');if(el&&amt) el.textContent=`${money(amt-a,{hide:false})} left to assign`})));
 }
@@ -767,18 +797,14 @@ function renderHistory(){
     h+=`<div class="card"><h3>Last 6 months</h3>${monthsSvg(6)}</div>`;
     $('#v-history').innerHTML=h;return;
   }
-  const nf_=filterCount();
-  h+=`<div class="tools"><input id="h-q" type="search" placeholder="Search notes, shops, people" value="${esc(H.q)}" autocomplete="off">
-    <button class="btn tbtn${nf_?' on':''}" data-act="hFilter">Filter${nf_?` (${nf_})`:''}</button></div>
-  <div class="tools"><select id="h-sort" aria-label="Sort">${[['new','Newest first'],['old','Oldest first'],['high','Biggest amount'],['low','Smallest amount'],['cat','By category']].map(([v,l])=>opt(v,l,H.sort)).join('')}</select>
-    <select id="h-range" aria-label="Date range">${[['period','One month'],['all','All time'],['custom','Pick dates']].map(([v,l])=>opt(v,l,H.range)).join('')}</select></div>
-  ${H.range==='custom'?`<div class="tools"><input type="date" id="h-from" value="${H.from}" aria-label="From"><input type="date" id="h-to" value="${H.to}" aria-label="To"></div>`:''}
-  <div class="pills">${filterPills()}</div><p class="small muted" id="h-sum" style="margin-top:8px"></p><div id="h-list"></div>`;
+  const nf_=filterCount(),qt=quickType(),SORTS={new:'Newest',old:'Oldest',high:'Biggest',low:'Smallest',cat:'Category'};
+  h+=`<div class="tools"><input id="h-q" type="search" placeholder="Search" value="${esc(H.q)}" autocomplete="off">
+    <button class="btn tbtn${nf_?' on':''}" data-act="hFilter">Filter${nf_?' ('+nf_+')':''}</button></div>
+  <div class="quick">${[['all','All'],['exp','Spent'],['inc','Income'],['move','Transfers']].map(([v,l])=>`<button class="qchip${qt===v?' on':''}" data-act="hQuick" data-v="${v}">${l}</button>`).join('')}
+    <button class="sortbtn" data-act="hSort" aria-label="Sort order">${SORTS[H.sort]} ▾</button></div>
+  ${nf_?`<div class="pills">${filterPills()}</div>`:''}<p class="small muted" id="h-sum" style="margin-top:8px"></p><div id="h-list"></div>`;
   $('#v-history').innerHTML=h;
   $('#h-q').addEventListener('input',e=>{H.q=e.target.value;renderHList()});
-  $('#h-sort').addEventListener('change',e=>{H.sort=e.target.value;renderHList()});
-  $('#h-range').addEventListener('change',e=>{H.range=e.target.value;if(H.range==='custom'&&!H.from){const q=period(H.off);H.from=q.start;H.to=q.end<today()?q.end:today()}renderHistory()});
-  if($('#h-from')){const upd=()=>{H.from=$('#h-from').value;H.to=$('#h-to').value;if(H.from&&H.to&&H.from>H.to){const t=H.from;H.from=H.to;H.to=t}renderHistory()};$('#h-from').addEventListener('change',upd);$('#h-to').addEventListener('change',upd)}
   renderHList();
 }
 function itemTitle(x){
@@ -792,7 +818,7 @@ function itemSub(x){
   if(x.k==='gb') return`${g?g.name+', ':''}${x.payer==='me'?'you paid '+money(x.amt):who(g,x.payer)+' paid'}`;
   if(x.k==='gp') return`${g?g.name:''}${x.acc?', '+(acc(x.acc)?.name||''):''}`;
   if(x.t==='xfer') return METHODS[x.method]||'';
-  return`${acc(x.acc)?.name||'?'}${x.method?', '+METHODS[x.method]:''}`;
+  return`${acc(x.acc)?.name||'?'}${x.method&&!(x.method==='cash'&&acc(x.acc)?.kind==='cash')?', '+METHODS[x.method]:''}`;
 }
 function rangeOf(){
   if(H.range==='all') return{start:'0000-01-01',end:'9999-12-31',label:'All time'};
@@ -800,14 +826,20 @@ function rangeOf(){
   return period(H.off);
 }
 const TYPES={exp:'Expense',inc:'Income',xfer:'Transfer',settle:'Settle-up',adj:'Correction'};
-function filterCount(){const f=H.f;return f.types.length+f.cats.length+f.accs.length+f.methods.length+(f.min!==''?1:0)+(f.max!==''?1:0)+(f.photo?1:0)+(f.split?1:0)}
+function quickType(){const t=H.f.types.slice().sort().join();return t===''?'all':t==='exp'?'exp':t==='inc'?'inc':t==='settle,xfer'?'move':'custom'}
+actions.hQuick=d=>{H.f.types={all:[],exp:['exp'],inc:['inc'],move:['xfer','settle']}[d.v];renderHistory()};
+actions.hSort=()=>{const SO=[['new','Newest first'],['old','Oldest first'],['high','Biggest amount first'],['low','Smallest amount first'],['cat','Group by category']];
+  sheet(`<h2>Sort by</h2>${SO.map(([v,l])=>`<button class="pick${H.sort===v?' on':''}" data-act="hSortSet" data-v="${v}"><span>${l}</span>${H.sort===v?'<span class="good">✓</span>':''}</button>`).join('')}`)};
+actions.hSortSet=d=>{H.sort=d.v;actions.close();renderHList();const b=document.querySelector('.sortbtn');if(b) b.textContent={new:'Newest',old:'Oldest',high:'Biggest',low:'Smallest',cat:'Category'}[d.v]+' ▾'};
+function filterCount(){const f=H.f;return (quickType()==='custom'?f.types.length:0)+(H.range!=='period'?1:0)+f.cats.length+f.accs.length+f.methods.length+(f.min!==''?1:0)+(f.max!==''?1:0)+(f.photo?1:0)+(f.split?1:0)}
 function filterPills(){const f=H.f,p=[];
-  f.types.forEach(v=>p.push(['types',v,TYPES[v]]));f.cats.forEach(v=>p.push(['cats',v,cat(v)?.name||'Category']));f.accs.forEach(v=>p.push(['accs',v,acc(v)?.name||'Account']));
+  if(H.range!=='period') p.push(['range','',rangeOf().label]);
+  if(quickType()==='custom') f.types.forEach(v=>p.push(['types',v,TYPES[v]]));f.cats.forEach(v=>p.push(['cats',v,cat(v)?.name||'Category']));f.accs.forEach(v=>p.push(['accs',v,acc(v)?.name||'Account']));
   f.methods.forEach(v=>p.push(['methods',v,METHODS[v]||v]));if(f.min!=='') p.push(['min','','From Rs '+f.min]);if(f.max!=='') p.push(['max','','Up to Rs '+f.max]);
   if(f.photo) p.push(['photo','','Has photo']);if(f.split) p.push(['split','','Split bills']);
   return p.map(([k,v,l])=>`<button class="filter" data-act="hPillOff" data-k="${k}" data-v="${esc(v)}" aria-label="Remove filter ${esc(l)}">${esc(l)} ✕</button>`).join('')+(p.length>1?'<button class="link" data-act="hClear" style="margin-left:4px">Clear all</button>':'');}
-actions.hPillOff=d=>{const f=H.f;if(Array.isArray(f[d.k])) f[d.k]=f[d.k].filter(x=>x!==d.v);else f[d.k]=typeof f[d.k]==='boolean'?false:'';renderHistory()};
-actions.hClear=()=>{H.f={types:[],cats:[],accs:[],methods:[],min:'',max:'',photo:false,split:false};H.q='';renderHistory()};
+actions.hPillOff=d=>{if(d.k==='range'){H.range='period';renderHistory();return}const f=H.f;if(Array.isArray(f[d.k])) f[d.k]=f[d.k].filter(x=>x!==d.v);else f[d.k]=typeof f[d.k]==='boolean'?false:'';renderHistory()};
+actions.hClear=()=>{H.range='period';H.f={types:H.f.types,cats:[],accs:[],methods:[],min:'',max:'',photo:false,split:false};H.q='';renderHistory()};
 const hasPhoto=x=>!!((x.k==='tx'?S.tx.find(t=>t.id===x.id):x.k==='gb'?S.gbills.find(t=>t.id===x.id):null)?.photos?.length);
 const shownAmt=x=>x.t==='exp'?x.share||x.amt:x.amt;
 function filteredItems(){
@@ -845,22 +877,33 @@ function renderHList(){
   $('#h-list').innerHTML=h;
 }
 actions.hFilter=()=>{
-  const f=JSON.parse(JSON.stringify(H.f)),draw=()=>{
+  const f=JSON.parse(JSON.stringify(H.f)),st={range:H.range,from:H.from,to:H.to,more:!!(f.methods.length||f.min!==''||f.max!==''||f.photo||f.split||quickType()==='custom'),allCats:false};
+  const draw=()=>{
     const ch=(k,v,l)=>`<button class="opt${f[k].includes(v)?' on':''}" data-act="hfT" data-k="${k}" data-v="${esc(v)}">${esc(l)}</button>`;
-    sheet(`<h2>Filter entries</h2>
-    <p class="lbl">Type</p><div class="opts">${Object.entries(TYPES).map(([v,l])=>ch('types',v,l)).join('')}</div>
-    <p class="lbl">Category</p><div class="opts">${S.cats.filter(c=>!c.hidden||f.cats.includes(c.id)).map(c=>ch('cats',c.id,c.name)).join('')}</div>
-    <p class="lbl">Account</p><div class="opts">${S.accounts.map(a=>ch('accs',a.id,a.name)).join('')}</div>
-    <p class="lbl">Paid with</p><div class="opts">${Object.entries(METHODS).map(([v,l])=>ch('methods',v,l)).join('')}</div>
-    <div class="grid2"><label>Amount from (Rs)<input id="hf-min" inputmode="decimal" value="${esc(f.min)}"></label><label>Up to (Rs)<input id="hf-max" inputmode="decimal" value="${esc(f.max)}"></label></div>
-    <div class="opts" style="margin-top:14px"><button class="opt${f.photo?' on':''}" data-act="hfB" data-k="photo">Has bill photo</button><button class="opt${f.split?' on':''}" data-act="hfB" data-k="split">Split bills only</button></div>
-    <div class="btns"><button class="btn" data-act="hfClear">Clear</button><button class="btn primary grow" data-act="hfGo">Show results</button></div>`,
-    p=>{p.querySelector('#hf-min').addEventListener('input',e=>f.min=e.target.value.trim());p.querySelector('#hf-max').addEventListener('input',e=>f.max=e.target.value.trim())});
+    const used=usage('exp','cat'),cats=byUse(S.cats.filter(c=>!c.hidden||f.cats.includes(c.id)),used),top=st.allCats?cats:cats.filter((c,i)=>i<8||f.cats.includes(c.id));
+    sheet(`<h2>Filter</h2>
+    <p class="lbl">When</p><div class="seg" style="margin-top:8px">${[['period','This month'],['all','All time'],['custom','Pick dates']].map(([v,l])=>`<button data-act="hfR" data-v="${v}" aria-pressed="${st.range===v}">${l}</button>`).join('')}</div>
+    ${st.range==='custom'?`<div class="grid2"><label>From<input type="date" id="hf-from" value="${st.from}"></label><label>To<input type="date" id="hf-to" value="${st.to}"></label></div>`:''}
+    <p class="lbl">Category</p><div class="opts">${top.map(c=>ch('cats',c.id,c.name)).join('')}${cats.length>top.length?`<button class="opt" data-act="hfAll">All ${cats.length} categories</button>`:''}</div>
+    <p class="lbl">Account</p><div class="opts">${S.accounts.filter(a=>!a.archived||f.accs.includes(a.id)).map(a=>ch('accs',a.id,a.name)).join('')}</div>
+    ${st.more?`<p class="lbl">Paid with</p><div class="opts">${Object.entries(METHODS).map(([v,l])=>ch('methods',v,l)).join('')}</div>
+      <div class="grid2"><label>Amount from (Rs)<input id="hf-min" inputmode="decimal" value="${esc(f.min)}"></label><label>Up to (Rs)<input id="hf-max" inputmode="decimal" value="${esc(f.max)}"></label></div>
+      <p class="lbl">Show only</p><div class="opts"><button class="opt${f.photo?' on':''}" data-act="hfB" data-k="photo">With bill photo</button><button class="opt${f.split?' on':''}" data-act="hfB" data-k="split">Split bills</button>${['settle','adj'].map(v=>ch('types',v,TYPES[v])).join('')}</div>`
+      :`<button class="link" data-act="hfMore" style="margin-top:12px">More filters: amount, payment method, photos</button>`}
+    <div class="btns"><button class="btn" data-act="hfClear">Reset</button><button class="btn primary grow" data-act="hfGo">Show results</button></div>`,
+    p=>{const on=(id,fn)=>{const e=p.querySelector(id);if(e) e.addEventListener('input',fn)};
+      on('#hf-min',e=>f.min=e.target.value.trim());on('#hf-max',e=>f.max=e.target.value.trim());
+      on('#hf-from',e=>st.from=e.target.value);on('#hf-to',e=>st.to=e.target.value)});
   };
-  actions.hfT=d=>{const a=f[d.k];const i=a.indexOf(d.v);i>=0?a.splice(i,1):a.push(d.v);const y=$('.panel').scrollTop;draw();$('.panel').scrollTop=y};
-  actions.hfB=d=>{f[d.k]=!f[d.k];const y=$('.panel').scrollTop;draw();$('.panel').scrollTop=y};
-  actions.hfClear=()=>{Object.assign(f,{types:[],cats:[],accs:[],methods:[],min:'',max:'',photo:false,split:false});draw()};
-  actions.hfGo=()=>{H.f=f;H.mode='entries';actions.close();renderHistory()};
+  const keep=fn=>d=>{const y=$('.panel')?.scrollTop||0;fn(d);draw();if($('.panel')) $('.panel').scrollTop=y};
+  actions.hfT=keep(d=>{const a=f[d.k],i=a.indexOf(d.v);i>=0?a.splice(i,1):a.push(d.v)});
+  actions.hfB=keep(d=>{f[d.k]=!f[d.k]});
+  actions.hfR=keep(d=>{st.range=d.v;if(d.v==='custom'&&!st.from){const q=period(H.off);st.from=q.start;st.to=q.end<today()?q.end:today()}});
+  actions.hfAll=keep(()=>{st.allCats=true});
+  actions.hfMore=keep(()=>{st.more=true});
+  actions.hfClear=keep(()=>{Object.assign(f,{cats:[],accs:[],methods:[],min:'',max:'',photo:false,split:false,types:f.types.filter(t=>t!=='settle'&&t!=='adj')});st.range='period'});
+  actions.hfGo=()=>{if(st.range==='custom'&&st.from&&st.to&&st.from>st.to){const t=st.from;st.from=st.to;st.to=t}
+    H.f=f;H.range=st.range==='custom'&&!(st.from&&st.to)?'period':st.range;H.from=st.from;H.to=st.to;H.mode='entries';actions.close();renderHistory()};
   draw();
 };
 actions.itemEdit=d=>{const lt=d.k==='tx'&&S.tx.find(t=>t.id===d.id);if(lt&&lt.vlog&&S.vlogs.some(v=>v.id===lt.vlog)){actions.vlogEdit({id:lt.vlog});return}if(d.k==='tx') txEdit(d.id);else if(d.k==='gb') gbillEdit(d.id);else gpayEdit(d.id)};
@@ -940,6 +983,7 @@ actions.groupSave=d=>{
     const ex=id&&g.members.find(m=>m.id===id);if(ex){ex.name=n;next.push(ex)}else next.push({id:uid(),name:n})}
   if(!next.length){toast('Add at least one person.');return}
   g.name=name;g.members=next;if(!d.id) S.groups.push(g);persist();
+  if(d.then==='billsplit'){actions.close();setTimeout(actions.billSplit,0);return}
   if(d.then==='split'){A.split={group:g.id,payer:'me',members:['me',...g.members.map(m=>m.id)],mode:'equal',custom:{}};drawSplit();return}
   actions.close();render();toast(d.id?'Saved changes.':`Made ${name}.`);
 };
@@ -968,7 +1012,7 @@ function gbillEdit(id){
   <div style="margin-top:10px">${Object.entries(b.shares).map(([k,v])=>`<div class="kv"><span>${esc(who(g,k))}</span><span>${money(v)}</span></div>`).join('')}</div>
   <label>Total${b.mode==='exact'?' (delete and re-add to change exact amounts)':''}<input id="f-amt" inputmode="decimal" value="${b.total/100}" ${b.mode==='exact'?'disabled':''}></label>
   <div class="grid2"><label>Category<select id="f-cat">${S.cats.filter(c=>c.kind==='exp').map(c=>opt(c.id,c.name,b.cat)).join('')}</select></label><label>Date<input id="f-date" type="date" value="${b.date}"></label></div>
-  <label>Note<input id="f-note" value="${esc(b.note)}"></label>${thumbs(b.photos)}
+  <label>Note<input id="f-note" value="${esc(b.note)}"></label>${b.items&&b.items.length?`<p class="lbl">Items</p><div class="card" style="margin-top:6px">${b.items.map(i=>`<div class="kv"><span>${esc(i.name||'Item')}<span class="sub" style="display:block">${esc(i.who.map(p=>who(g,p)).join(', '))}</span></span><span>${money(Math.round(i.price*100))}</span></div>`).join('')}</div>`:''}${thumbs(b.photos)}
   <div class="btns"><button class="btn danger" data-act="gbDel" data-id="${b.id}">Delete</button><button class="btn primary grow" data-act="gbSave" data-id="${b.id}">Save changes</button></div>`);
 }
 actions.gbSave=d=>{const b=S.gbills.find(x=>x.id===d.id);
@@ -1128,10 +1172,12 @@ actions.settings=()=>{const lb=S.set.lastBackup;
     <div class="btns">${meta.locked?'<button class="btn grow" data-act="lockSet">Change PIN</button><button class="btn grow" data-act="lockNow">Lock now</button><button class="btn danger grow" data-act="lockOff">Turn off</button>':'<button class="btn primary grow" data-act="lockSet">Set a PIN</button>'}</div>
     ${meta.locked?`<label>Lock again after leaving the app<select id="f-autolock">${[[0,'Immediately'],[1,'1 minute'],[5,'5 minutes'],[15,'15 minutes']].map(([v,l])=>opt(String(v),l,String(S.set.autolock))).join('')}</select></label>`:''}
     <label class="opt" style="margin-top:14px;color:var(--ink)"><input type="checkbox" id="f-hideopen" ${S.set.hideOnOpen?'checked':''}>Hide amounts when the app opens</label>
-    <p class="help">Khata never connects to the internet. Your entries stay in this browser on this phone.</p></div>
+    <p class="help">Your entries stay in this browser on this phone. Khata only goes online to download the bill reader once, and to send a bill photo to Claude if you turn on AI reading.</p></div>
+  <div id="bill-set"></div>
   <div class="card"><h3>Month</h3><label style="margin-top:0">Month starts on day<input id="f-start" inputmode="numeric" value="${S.set.startDay}"><small>Use your salary day to budget payday to payday (1 to 28).</small></label></div>
-  <div class="btns"><button class="btn danger" data-act="wipe">Erase everything</button><button class="btn primary grow" data-act="settingsSave">Done</button></div>`)};
-actions.settingsSave=()=>{const sd=parseInt($('#f-start').value);S.set.startDay=sd>=1&&sd<=28?sd:1;S.set.hideOnOpen=$('#f-hideopen').checked;if($('#f-autolock')) S.set.autolock=Number($('#f-autolock').value);persist();actions.close();render()};
+  <div class="btns"><button class="btn danger" data-act="wipe">Erase everything</button><button class="btn primary grow" data-act="settingsSave">Done</button></div>`);
+  billSettingsHtml().then(h=>{const el=$('#bill-set');if(!el) return;el.outerHTML=h;const c=$('#f-aion');if(c) c.addEventListener('change',()=>{$('#ai-box').hidden=!c.checked})})};
+actions.settingsSave=()=>{if($('#f-aion')){const ai=aiSet();ai.on=$('#f-aion').checked;ai.key=($('#f-aikey').value||'').trim();ai.model=$('#f-aimodel').value}const sd=parseInt($('#f-start').value);S.set.startDay=sd>=1&&sd<=28?sd:1;S.set.hideOnOpen=$('#f-hideopen').checked;if($('#f-autolock')) S.set.autolock=Number($('#f-autolock').value);persist();actions.close();render()};
 actions.lockSet=()=>{if(!window.crypto||!crypto.subtle){toast('Encryption needs the app opened over https.');return}
   sheet(`<h2>${meta.locked?'Change PIN':'Set a PIN'}</h2><p class="help">Your data is encrypted with this. A short PIN keeps out someone who picks up your phone. Against someone who copies the phone's data, only a long passphrase holds up. There's no recovery: forget it and the data is gone unless you have a backup.</p>
   <label>PIN or passphrase<input id="f-p1" type="password" autocomplete="new-password"></label><label>Again<input id="f-p2" type="password" autocomplete="new-password"></label><p class="danger small" id="f-perr"></p>
@@ -1160,7 +1206,7 @@ async function shareOrDownload(blob,name){
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);return true;
 }
 actions.exportBackup=async()=>{persist();await saving;
-  const data=snapshot(),photos={};for(const id of photoRefs()){const b=await photoBytes(id);if(b) photos[id]=b64(b)}data.photos=photos;
+  const data=exportSnapshot(),photos={};for(const id of photoRefs()){const b=await photoBytes(id);if(b) photos[id]=b64(b)}data.photos=photos;
   const payload=cryptoKey?{app:'khata',v:3,enc:true,salt:meta.salt,...await encrypt(cryptoKey,data)}:{app:'khata',v:3,enc:false,data};
   if(await shareOrDownload(new Blob([JSON.stringify(payload)],{type:'application/json'}),`khata-backup-${today()}.json`)){S.set.lastBackup=today();persist();actions.close();toast(cryptoKey?'Saved an encrypted backup.':'Saved a backup file.')}};
 
@@ -1192,7 +1238,7 @@ function excelModel(){
   return{vehicles,fuel,service,exportedLabel:fmtD(today())+' '+parseD(today()).getFullYear(),periodStart:p.start,periodEnd:p.end,cats,
     methods:Object.entries(byM).sort((a,b)=>b[1]-a[1]).map(([name,v])=>({name,spent:R(v)})),months,entries,accounts,groups,
     income:R(sum(items(p).filter(x=>x.t==='inc'))),have:accounts.filter(a=>a.kind==='Money').reduce((s,a)=>s+a.balance,0),owe:accounts.reduce((s,a)=>s+a.owed,0),friends:R(myGroupNet()),
-    backup:JSON.stringify({app:'khata',v:2,data:snapshot()})};
+    backup:JSON.stringify({app:'khata',v:2,data:exportSnapshot()})};
 }
 actions.exportXlsx=async()=>{
   if(meta.locked&&!confirm('The Excel file is not encrypted. Anyone who opens it can read your finances. Continue?')) return;
@@ -1221,7 +1267,7 @@ async function restore(data){
   const n=data.tx.length+(data.gbills||[]).length+(data.vlogs||[]).length,ph=data.photos||{};delete data.photos;
   if(!confirm(`Replace everything on this phone with this backup (${n} entries${Object.keys(ph).length?', '+Object.keys(ph).length+' photos':''})?`)) return;
   for(const[id,b] of Object.entries(ph)){try{await storePhoto(new Blob([unb64(b)]),id)}catch{}}
-  S=data;migrate();persist();actions.close();show('add');toast('Restored from backup.'+(n&&!Object.keys(ph).length&&(data.vlogs||[]).some(l=>l.photos&&l.photos.length)?' Bill photos aren\u2019t in this file.':''));
+  const keepAI=S&&S.set&&S.set.ai;S=data;migrate();if(keepAI&&keepAI.key) S.set.ai={...(S.set.ai||{}),key:keepAI.key,on:keepAI.on,model:(S.set.ai&&S.set.ai.model)||keepAI.model};persist();actions.close();show('add');toast('Restored from backup.'+(n&&!Object.keys(ph).length&&(data.vlogs||[]).some(l=>l.photos&&l.photos.length)?' Bill photos aren\u2019t in this file.':''));
 }
 
 /* ================= lifecycle ================= */
@@ -1265,9 +1311,9 @@ function forgetPhotoURLs(){photoURL.forEach(u=>URL.revokeObjectURL(u));photoURL.
 function photoRefs(){const s=new Set(),add=o=>(o.photos||[]).forEach(p=>s.add(p));S.tx.forEach(add);S.gbills.forEach(add);S.vlogs.forEach(add);return s}
 async function gcPhotos(){try{const used=photoRefs();for(const id of await IDB.keys()) if(!used.has(id)) await IDB.del(id)}catch{}}
 function pickImages(camera){return new Promise(res=>{const i=document.createElement('input');i.type='file';i.accept='image/*';if(camera) i.setAttribute('capture','environment');else i.multiple=true;i.onchange=()=>res([...i.files]);i.click()})}
-async function addPhotosTo(list,camera){
+async function addPhotosTo(list,camera,onFile){
   const files=await pickImages(camera);let n=0;if(!files.length) return 0;
-  for(const f of files){try{list.push(await storePhoto(await compressImage(f)));n++}catch{toast('Couldn\u2019t read that image.')}}
+  for(const f of files){try{list.push(await storePhoto(await compressImage(f)));n++;onFile&&onFile(f)}catch{toast('Couldn\u2019t read that image.')}}
   return n;
 }
 let PH=null; /* the photo list being edited, and how to redraw */
@@ -1289,9 +1335,10 @@ actions.addPhoto=()=>{
   PH={list:A.photos,redraw:()=>{actions.addPhoto();updatePhotoCount()}};
   sheet(`<h2>Bill photo</h2><p class="help">Saved small (about 100 to 200 KB) and only on this phone. It attaches to the entry you save next.</p>
   ${thumbs(A.photos,true)}<div class="btns"><button class="btn primary grow" data-act="addPhotoGo" data-cam="1">Take photo</button><button class="btn grow" data-act="addPhotoGo">Choose photo</button></div>
-  ${A.photos.length?'<div class="btns"><button class="btn grow" data-act="close">Done</button></div>':''}`);hydrate($('#sheet'));
+  ${A.photos.length?`<p class="lbl">Read the bill</p><div class="btns" style="margin-top:8px"><button class="btn grow" data-act="readBill" data-how="phone">Read total${A.split||S.groups.length?' and items':''}</button>${aiSet().on&&aiSet().key?'<button class="btn grow" data-act="readBill" data-how="ai">Read with AI</button>':''}</div>
+  <div class="btns"><button class="btn grow" data-act="close">Done</button></div>`:''}`);hydrate($('#sheet'));
 };
-actions.addPhotoGo=d=>{addPhotosTo(A.photos,!!d.cam).then(n=>{if(n) actions.addPhoto();updatePhotoCount()})};
+actions.addPhotoGo=d=>{addPhotosTo(A.photos,!!d.cam,f=>A.lastOriginal=f).then(n=>{if(n) actions.addPhoto();updatePhotoCount()})};
 function updatePhotoCount(){const el=$('#ph-n');if(el) el.textContent=A.photos&&A.photos.length?String(A.photos.length):''}
 /* photos on an existing entry */
 function txPhotosBlock(list){return`<p class="lbl">Bill photos</p>${thumbs(list,true)}<div class="btns" style="margin-top:8px"><button class="btn grow" data-act="entryPhoto" data-cam="1">Take photo</button><button class="btn grow" data-act="entryPhoto">Choose photo</button></div>`}
@@ -1574,6 +1621,170 @@ function insightsHtml(p){
     if(nw.length>1) h+=`<div class="card"><h3>Your money over time</h3>${lineSvg(nw.map(x=>x.v),nw.map(x=>x.l),{color:'#3B6EA5'})}<p class="help">Everything in your accounts minus card debt, at the end of each month. Built from the balances you entered, so months before you started are rough.</p></div>`}
   return h||'<div class="card"><p class="empty">Log a few weeks of spending and insights show up here.</p></div>';
 }
+/* ================= bill reading: offline OCR (tesseract) or optional AI ================= */
+let OCRW=null,BILL=null;
+const AI_MODELS=[['claude-haiku-5-5','Haiku (fast, cheapest)'],['claude-sonnet-5-5','Sonnet (more accurate)']];
+function aiSet(){return S.set.ai||(S.set.ai={on:false,key:'',model:'claude-haiku-5-5'})}
+async function loadOCR(progress){
+  if(OCRW) return OCRW;
+  if(!window.Tesseract) await new Promise((res,rej)=>{const s=document.createElement('script');s.src='ocr/tesseract.min.js';s.onload=res;s.onerror=()=>rej(new Error('The bill reader files are missing from the app.'));document.head.appendChild(s)});
+  const U=p=>new URL(p,location.href).href;
+  OCRW=await Tesseract.createWorker('eng',1,{workerPath:U('ocr/worker.min.js'),corePath:U('ocr/core'),langPath:U('ocr/lang'),workerBlobURL:false,cacheMethod:'none',gzip:true,
+    logger:m=>{if(progress&&m.status) progress(m.status,m.progress)},errorHandler:()=>{}});
+  return OCRW;
+}
+async function ocrReady(){try{return !!(await caches.match(new URL('ocr/lang/eng.traineddata.gz',location.href).href))}catch{return false}}
+async function prepImage(blob,max,gray){
+  const bmp=await createImageBitmap(blob),sc=Math.min(1,max/Math.max(bmp.width,bmp.height)),c=document.createElement('canvas');
+  c.width=Math.round(bmp.width*sc);c.height=Math.round(bmp.height*sc);const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);
+  if(gray) g.filter='grayscale(1) contrast(1.35)';g.drawImage(bmp,0,0,c.width,c.height);if(bmp.close) bmp.close();
+  return new Promise(r=>c.toBlob(r,'image/jpeg',gray?0.92:0.85));
+}
+/* ---- turn OCR text into a total, charges and items ---- */
+function billNum(s){const m=String(s).replace(/[Oo](?=[\d.,])|(?<=[\d.,])[Oo]/g,'0').match(/(\d{1,3}(?:,\d{2,3})+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)\s*\/?-?\s*$/);if(!m) return null;const v=parseFloat(m[1].replace(/,/g,''));return isFinite(v)?v:null}
+function parseBillText(text){
+  const lines=String(text).split(/\r?\n/).map(l=>l.replace(/[|_]+/g,' ').replace(/\s+/g,' ').trim()).filter(l=>l.length>1);
+  const pick=(re,skip)=>{const vals=[];lines.forEach(l=>{if(re.test(l)&&!(skip&&skip.test(l))){const v=billNum(l);if(v!=null) vals.push(v)}});return vals};
+  const totals=pick(/grand\s*total|net\s*(amount|total|payable)|total\s*(amount|payable|due|rs|npr)?|amount\s*(due|payable)|bill\s*amount|payable/i,/sub\s*-?\s*total|total\s*(qty|quantity|items?|discount)|tender|change/i);
+  const sub=pick(/sub\s*-?\s*total|gross\s*(amount|total)/i)[0]??null;
+  const svc=pick(/service\s*(charge|chg|ch)?|\bs\.?\s?c\.?\b/i,/total/i)[0]??null;
+  const vat=pick(/\bvat\b|\btax\b/i,/total|pan|reg|no\b|no\./i)[0]??null;
+  const disc=pick(/discount|\bdisc\b|\bless\b/i,/total/i)[0]??null;
+  let total=totals.length?Math.max(...totals):null;
+  if(total==null&&sub!=null) total=Math.round((sub+(svc||0)+(vat||0)-(disc||0))*100)/100;
+  const SUMMARY=/total|vat|tax|service|discount|cash|change|tender|paid|balance|round|amount|qty|pan|bill\s*no|invoice|date|time|table|cashier|thank/i;
+  const stop=lines.findIndex(l=>/sub\s*-?\s*total|\btotal\b/i.test(l));
+  const items=[];
+  for(const l of lines.slice(0,stop<0?lines.length:stop)){
+    if(SUMMARY.test(l)) continue;
+    const m=l.match(/^(.*?[A-Za-z\u0900-\u097F]{2}.*?)\s+(?:(\d{1,2})\s*(?:x|X|@|\*)\s*)?(?:(\d{1,2})\s+)?(?:[\d,]+(?:\.\d{1,2})?\s+)?([\d,]+(?:\.\d{1,3})?)\s*\/?-?$/);
+    if(!m) continue;
+    const name=m[1].replace(/[^\w\u0900-\u097F &().'/+-]/g,'').replace(/\s+\d+$/,'').trim(),price=Math.trunc(parseFloat(m[4].replace(/,/g,''))*100)/100;
+    if(name.length>=2&&price>0&&price<1e6) items.push({name,qty:+(m[2]||m[3]||1),price});
+  }
+  const merchant=(lines.find(l=>/[A-Za-z\u0900-\u097F]{3}/.test(l)&&!/pan|vat|tel|phone|invoice|bill|tax|date|^\d/i.test(l))||'').slice(0,40);
+  const IDS=/pan|vat\s*no|reg|tel|phone|mobile|bill\s*no|invoice|date|table|time|no\.|#|cash|change|tender|paid|balance|card/i;
+  const nums=[...new Set(lines.filter(l=>!IDS.test(l)&&/\d\.\d{2}\s*\/?-?\s*$/.test(l)).map(billNum).filter(v=>v!=null&&v>=10&&v<1e7))].sort((a,b)=>b-a);
+  const cands=[...new Set([total,...totals.sort((a,b)=>b-a),sub,...nums.slice(0,3)].filter(v=>v!=null&&v>0))].slice(0,4);
+  return{total,sub,svc,vat,disc,items,merchant,cands,source:'phone'};
+}
+/* ---- AI reading ---- */
+async function readBillAI(blob){
+  const ai=aiSet();if(!ai.key) throw new Error('Add your Anthropic API key in Settings first.');
+  const img=await prepImage(blob,1568,false),b64img=b64(new Uint8Array(await img.arrayBuffer()));
+  const prompt='Read this bill or receipt. Reply with JSON only, no other text, in this shape: {"merchant":string,"date":"YYYY-MM-DD" or null,"items":[{"name":string,"qty":number,"price":number}],"subtotal":number|null,"service_charge":number|null,"vat":number|null,"discount":number|null,"total":number|null,"currency":string}. "price" is the line total for that item (quantity already multiplied). Use plain numbers without commas. If something is not on the bill, use null.';
+  const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':ai.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:ai.model||'claude-haiku-5-5',max_tokens:1500,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64img}},{type:'text',text:prompt}]}]})});
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok) throw new Error(res.status===401?'The API key was rejected. Check it in Settings.':res.status===429?'Too many requests or no credit left on the API account.':(data.error&&data.error.message)||('AI reading failed ('+res.status+').'));
+  const txt=(data.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('').replace(/```json|```/g,'').trim();
+  let j;try{j=JSON.parse(txt.slice(txt.indexOf('{'),txt.lastIndexOf('}')+1))}catch{throw new Error('The AI reply could not be read. Try again.')}
+  const n=v=>v==null||v===''?null:(isFinite(+v)?+v:null);
+  const items=(Array.isArray(j.items)?j.items:[]).map(i=>({name:String(i.name||'Item').slice(0,40),qty:n(i.qty)||1,price:n(i.price)})).filter(i=>i.price>0);
+  const total=n(j.total);
+  return{total,sub:n(j.subtotal),svc:n(j.service_charge),vat:n(j.vat),disc:n(j.discount),items,merchant:String(j.merchant||'').slice(0,40),date:/^\d{4}-\d{2}-\d{2}$/.test(j.date||'')?j.date:null,cands:[total,n(j.subtotal)].filter(v=>v>0),source:'ai'};
+}
+/* ---- UI: read the photo just attached ---- */
+async function billBlob(){if(A.lastOriginal) return A.lastOriginal;const id=A.photos[A.photos.length-1];if(!id) return null;const b=await photoBytes(id);return b?new Blob([b],{type:'image/jpeg'}):null}
+function billStatus(msg,pct){sheet(`<h2>Reading the bill</h2><p class="help">${esc(msg)}</p><div class="bar-t" style="margin-top:14px"><i style="width:${Math.round((pct||0)*100)}%"></i></div>`)}
+actions.readBill=async d=>{
+  const blob=await billBlob();if(!blob){toast('Add a bill photo first.');return}
+  const useAI=d.how==='ai';
+  try{
+    let r;
+    if(useAI){billStatus('Sending the photo to Claude…',.3);r=await readBillAI(blob)}
+    else{
+      const first=!(await ocrReady());
+      billStatus(first?'Getting the bill reader ready. The first time downloads about 7 MB, then it works offline.':'Reading on your phone…',.05);
+      const w=await loadOCR((s,p)=>{const lbl=/recogniz/.test(s)?'Reading the text…':/load|initializ/.test(s)?(first?'Downloading the bill reader (first time only)…':'Starting the bill reader…'):'Working…';billStatus(lbl,p)});
+      const img=await prepImage(blob,2000,true);const out=await w.recognize(img);r=parseBillText(out.data.text);r.raw=out.data.text;
+    }
+    BILL=r;showBillResult();
+  }catch(e){actions.close();toast(e.message||'Couldn\u2019t read that bill.')}
+};
+function showBillResult(){
+  const r=BILL,ai=aiSet(),f=v=>v==null?'–':money(Math.round(v*100),{hide:false});
+  const none=!r.cands.length;
+  sheet(`<h2>From the bill</h2>
+  ${none?'<p class="help">No amounts found. Try a sharper, straight-on photo with good light'+(ai.on&&ai.key&&r.source!=='ai'?', or read it with AI':'')+'.</p>':
+  `<p class="lbl">Total ${r.source==='phone'?'(tap the right one)':''}</p><div class="opts">${r.cands.map((v,i)=>`<button class="opt${i===0?' on':''}" data-act="billUse" data-v="${v}">${f(v)}</button>`).join('')}</div>`}
+  ${r.svc||r.vat||r.disc?`<div class="card" style="margin-top:12px">${r.sub?`<div class="kv"><span>Subtotal</span><span>${f(r.sub)}</span></div>`:''}${r.svc?`<div class="kv"><span>Service charge</span><span>${f(r.svc)}</span></div>`:''}${r.vat?`<div class="kv"><span>VAT</span><span>${f(r.vat)}</span></div>`:''}${r.disc?`<div class="kv"><span>Discount</span><span>−${f(r.disc)}</span></div>`:''}</div>`:''}
+  ${r.merchant?`<p class="lbl">Shop</p><div class="opts"><button class="opt" data-act="billNote">${esc(r.merchant)}</button></div>`:''}
+  <p class="help">${r.items.length?`${r.items.length} items found. `:''}${r.source==='phone'?'Read on your phone. Check the numbers before saving.':'Read by Claude. Check the numbers before saving.'}</p>
+  <div class="btns">${r.items.length||!none?`<button class="btn grow" data-act="billSplit">Split by items</button>`:''}${r.source==='phone'&&ai.on&&ai.key?'<button class="btn grow" data-act="readBill" data-how="ai">Read with AI</button>':''}
+  ${!none?`<button class="btn primary grow" data-act="billUse" data-v="${r.cands[0]}">Use ${f(r.cands[0])}</button>`:''}</div>`);
+}
+actions.billUse=d=>{A.amt=String(Math.round(+d.v*100)/100);if(!A.note&&BILL&&BILL.merchant) A.note=BILL.merchant;if(BILL&&BILL.date&&BILL.date<=today()) A.date=BILL.date;actions.close();updateAdd();toast('Amount filled from the bill. Check it, then save.')};
+actions.billNote=()=>{A.note=BILL.merchant;$('#note').value=A.note;toast('Shop name added to the note.')};
+/* ---- split by items ---- */
+let SPL=null;
+actions.billSplit=()=>{
+  const gs=S.groups.filter(g=>!g.archived);
+  if(!gs.length){actions.groupEdit({then:'billsplit'});return}
+  const g=A.split?grp(A.split.group):grp(S.set.lastGroup)&&!grp(S.set.lastGroup).archived?grp(S.set.lastGroup):gs[0];
+  const people=['me',...g.members.map(m=>m.id)];
+  const r=BILL||{items:[],cands:[]};
+  SPL={sub:r.sub??null,group:g.id,payer:A.split&&A.split.group===g.id?A.split.payer:'me',total:r.total??r.cands[0]??null,
+    items:(r.items.length?r.items:[{name:'Item',qty:1,price:0}]).map(i=>({name:i.name,price:i.price,who:people.slice()}))};
+  drawSplitItems();
+};
+function splitItemsMath(){
+  const g=grp(SPL.group),people=['me',...g.members.map(m=>m.id)],per={};people.forEach(p=>per[p]=0);
+  let itemsTotal=0;
+  for(const it of SPL.items){const pr=+it.price||0;itemsTotal+=pr;if(!it.who.length) continue;it.who.forEach(p=>per[p]+=pr/it.who.length)}
+  const grand=SPL.total!=null&&SPL.total!==''?+SPL.total:itemsTotal;
+  const factor=itemsTotal>0?grand/itemsTotal:0,share={};
+  let sumP=0;people.forEach(p=>{share[p]=Math.round(per[p]*factor*100);sumP+=share[p]});
+  const gp=Math.round(grand*100),diff=gp-sumP;if(diff&&itemsTotal>0){const tgt=share[SPL.payer]>0?SPL.payer:people.find(p=>share[p]>0);if(tgt) share[tgt]+=diff}
+  const unassigned=SPL.items.filter(i=>!i.who.length&&+i.price>0).length;
+  return{people,share,itemsTotal,grand,extra:grand-itemsTotal,unassigned};
+}
+function drawSplitItems(keepScroll){
+  const g=grp(SPL.group),m=splitItemsMath(),y=keepScroll?($('.panel')?.scrollTop||0):0;
+  sheet(`<h2>Split by items</h2>
+  <p class="lbl">Group</p><div class="opts">${S.groups.filter(x=>!x.archived).map(x=>`<button class="opt${x.id===g.id?' on':''}" data-act="siGroup" data-id="${x.id}">${esc(x.name)}</button>`).join('')}</div>
+  <p class="lbl">Who paid?</p><div class="opts">${m.people.map(id=>`<button class="opt${SPL.payer===id?' on':''}" data-act="siPayer" data-id="${id}">${esc(who(g,id))}</button>`).join('')}</div>
+  <p class="help">Tap names under each item to choose who had it. Shared items are split evenly between the people ticked.</p>
+  ${SPL.items.map((it,i)=>`<div class="card siitem"><div style="display:flex;gap:8px"><input class="siname" data-i="${i}" value="${esc(it.name)}" aria-label="Item name"><input class="siprice" data-i="${i}" inputmode="decimal" value="${it.price||''}" placeholder="Rs" aria-label="Item price"><button class="x2" data-act="siDel" data-i="${i}" aria-label="Remove item">✕</button></div>
+    <div class="opts" style="margin-top:8px">${m.people.map(id=>`<button class="opt sm${it.who.includes(id)?' on':''}" data-act="siWho" data-i="${i}" data-id="${id}">${esc(who(g,id))}</button>`).join('')}</div></div>`).join('')}
+  <button class="link" data-act="siAdd">Add an item</button>
+  <label>Bill total (with tax and service)<input id="si-total" inputmode="decimal" value="${SPL.total??''}" placeholder="${nf.format(m.itemsTotal)}"><small>Items add up to ${money(Math.round(m.itemsTotal*100),{hide:false})}${Math.abs(m.extra)>=0.01?`; the ${m.extra>0?'extra':'difference'} ${money(Math.round(Math.abs(m.extra)*100),{hide:false})} (tax, service, discount) is shared in proportion to what each person had`:''}.</small></label>
+  <div class="card" style="margin-top:12px"><h3>Each person pays</h3>${m.people.map(id=>`<div class="kv"><span>${esc(who(g,id))}</span><span>${money(m.share[id],{hide:false})}</span></div>`).join('')}</div>
+  ${SPL.sub&&Math.abs(SPL.sub-m.itemsTotal)>=1?`<p class="help warn">Items add up to ${money(Math.round(m.itemsTotal*100),{hide:false})} but the bill's subtotal is ${money(Math.round(SPL.sub*100),{hide:false})}. Check for a misread price or a missing item.</p>`:''}
+  ${m.unassigned?`<p class="help warn">${m.unassigned} item${m.unassigned>1?'s have':' has'} nobody ticked and won't be counted.</p>`:''}
+  <div class="btns"><button class="btn primary grow" data-act="siDone">Use this split</button></div>`,
+  p=>{p.querySelectorAll('.siname').forEach(e=>e.addEventListener('input',()=>SPL.items[e.dataset.i].name=e.value));
+      p.querySelectorAll('.siprice').forEach(e=>e.addEventListener('change',()=>{SPL.items[e.dataset.i].price=parseFloat(e.value.replace(/,/g,''))||0;drawSplitItems(true)}));
+      p.querySelector('#si-total').addEventListener('change',e=>{const v=e.target.value.replace(/,/g,'').trim();SPL.total=v===''?null:parseFloat(v)||null;drawSplitItems(true)});
+      if(y) p.scrollTop=y});
+}
+actions.siGroup=d=>{const g=grp(d.id),people=['me',...g.members.map(m=>m.id)];SPL.group=g.id;SPL.payer='me';SPL.items.forEach(i=>i.who=people.slice());drawSplitItems(true)};
+actions.siPayer=d=>{SPL.payer=d.id;drawSplitItems(true)};
+actions.siWho=d=>{const it=SPL.items[d.i],k=it.who.indexOf(d.id);k>=0?it.who.splice(k,1):it.who.push(d.id);drawSplitItems(true)};
+actions.siDel=d=>{SPL.items.splice(+d.i,1);if(!SPL.items.length) SPL.items.push({name:'Item',price:0,who:['me']});drawSplitItems(true)};
+actions.siAdd=()=>{const g=grp(SPL.group);SPL.items.push({name:'',price:0,who:['me',...g.members.map(m=>m.id)]});drawSplitItems(true);setTimeout(()=>{const p=$('.panel');p.scrollTop=p.scrollHeight;const n=[...document.querySelectorAll('.siname')].pop();n&&n.focus()},50)};
+actions.siDone=()=>{
+  const m=splitItemsMath();
+  if(!(m.grand>0)){toast('Add item prices or a bill total first.');return}
+  const members=m.people.filter(p=>m.share[p]>0);if(!members.length){toast('Tick at least one person.');return}
+  const custom={};members.forEach(p=>custom[p]=String(m.share[p]/100));
+  A.t='exp';A.amt=String(Math.round(m.grand*100)/100);A.split={group:SPL.group,payer:SPL.payer,members,mode:'exact',custom,items:SPL.items.map(i=>({name:i.name,price:+i.price||0,who:i.who.slice()}))};
+  if(!A.cat) A.cat=cat('food')?'food':null;if(!A.note&&BILL&&BILL.merchant) A.note=BILL.merchant;
+  S.set.lastGroup=SPL.group;actions.close();show('add');toast('Split ready. Check the category, then save.');
+};
+/* ---- settings card ---- */
+async function billSettingsHtml(){
+  const ai=aiSet(),ready=await ocrReady();
+  return`<div class="card"><h3>Reading bills</h3>
+  <div class="kv"><span>On your phone</span><span>${ready?'<span class="good">Ready offline</span>':'Not downloaded'}</span></div>
+  ${ready?'':'<div class="btns"><button class="btn grow" data-act="ocrDownload">Download bill reader (about 7 MB)</button></div>'}
+  <label class="opt" style="margin-top:14px"><input type="checkbox" id="f-aion" ${ai.on?'checked':''}>Also offer reading with AI (Claude)</label>
+  <div id="ai-box" ${ai.on?'':'hidden'}><label>Anthropic API key<input id="f-aikey" type="password" autocomplete="off" value="${esc(ai.key)}" placeholder="sk-ant-…"></label>
+  <label>Model<select id="f-aimodel">${AI_MODELS.map(([v,l])=>opt(v,l,ai.model)).join('')}</select></label>
+  <p class="help">AI reading sends the bill photo to Anthropic and uses your API credit. Nothing else leaves the phone. The key stays on this phone${meta.locked?', encrypted with your PIN':'; set a PIN to encrypt it'}, and is never put in backups.</p></div></div>`;
+}
+actions.ocrDownload=async()=>{toast('Downloading the bill reader…');try{await loadOCR();toast('Bill reader is ready. It now works offline.');if(!$('#sheet').hidden&&$('#f-start')) actions.settings()}catch(e){toast('Download failed. Check your internet and try again.')}};
+
 boot();gcPhotos();
 </script>
 

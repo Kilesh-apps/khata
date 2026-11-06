@@ -1,6 +1,6 @@
 # Khata — how it works
 
-A personal money ledger. Static PWA on GitHub Pages. No server, no database, no network calls: the page's Content-Security-Policy sets `connect-src 'none'`, so it can't send data anywhere even by accident.
+A personal money ledger. Static PWA on GitHub Pages. No server, no database. The Content-Security-Policy only allows connections to this site and, for optional AI bill reading, api.anthropic.com.
 
 ## First-time setup
 
@@ -16,7 +16,8 @@ A personal money ledger. Static PWA on GitHub Pages. No server, no database, no 
 |---|---|
 | `index.html` | The whole app. Data lives in `localStorage` on the phone. |
 | `xlsx.js` | Builds the Excel export (formulas, charts, hidden backup sheet) and reads it back for restore. No libraries. |
-| `sw.js` | Caches the app for offline use. **Bump `CACHE` (`khata-v7` → `khata-v8`) on every update.** |
+| `ocr/` | Offline bill reader (tesseract.js, Apache-2.0). Keep the folder structure. |
+| `sw.js` | Caches the app for offline use. **Bump `CACHE` (`khata-v10` → `khata-v11`) on every update.** |
 | `manifest.webmanifest` | Install info, home-screen shortcuts, and the Android share target for bank SMS. |
 | `icon-*.png` | App icons. |
 
@@ -54,7 +55,14 @@ A personal money ledger. Static PWA on GitHub Pages. No server, no database, no 
 
 - Resized to 1400 px and saved as JPEG (about 70 KB each in testing) in IndexedDB on the phone, encrypted with the PIN when a lock is set.
 - Included in the backup (.json) file; not in the Excel file.
-- Share sends a copy to any app (e.g. Telegram Saved Messages). Khata never uploads anything itself.
+- Share sends a copy to any app (e.g. Telegram Saved Messages). Khata never uploads photos itself, except a bill photo you choose to read with AI.
+
+## Reading bills
+
+- **On the phone (default):** Tesseract OCR in `ocr/` (tesseract.js 7.0.0, core 7.0.0, English `best_int` model). Loaded only when first used, about 7 MB, then cached by `sw.js` in its own cache (`khata-ocr-v1`) that survives app updates. Settings → Reading bills → Download makes it ready offline in advance.
+- **AI (optional):** Settings → Reading bills → turn on, paste an Anthropic API key. The bill photo is sent to `api.anthropic.com` directly from the phone. The key is stored on the phone (encrypted when a PIN is set) and stripped from every backup and Excel file.
+- Results are always suggestions: pick the total, or open **Split by items**, tick who had each item; tax, service charge and discount are shared in proportion.
+- CSP allows `'wasm-unsafe-eval'` (needed for the OCR engine) and `connect-src https://api.anthropic.com` (only used when AI reading is on).
 
 ## Excel export
 
