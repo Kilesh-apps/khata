@@ -18,7 +18,7 @@ A personal money ledger. Static PWA on GitHub Pages. No server, no database. The
 | `xlsx.js` | Builds the Excel export (formulas, charts, hidden backup sheet) and reads it back for restore. No libraries. |
 | `tesseract*.js`, `eng.traineddata.gz` | Offline bill reader (tesseract.js 7, Apache-2.0, see `LICENSE-tesseract.md`). Kept next to `index.html` (no folders) so they can be uploaded from a phone. |
 | `Code.gs` | Apps Script for the optional Google Sheets sync. Not used by the app itself. |
-| `sw.js` | Caches the app for offline use. **Bump `CACHE` (`khata-v20` → `khata-v21`) on every update.** |
+| `sw.js` | Caches the app for offline use. **Bump `CACHE` (`khata-v21` → `khata-v22`) on every update.** |
 | `manifest.webmanifest` | Install info, home-screen shortcuts, and the Android share target for bank SMS. |
 | `icon-*.png` | App icons. |
 
@@ -36,7 +36,7 @@ A personal money ledger. Static PWA on GitHub Pages. No server, no database. The
 - Every account has a balance. Credit cards hold a negative balance (what you owe).
 - Spending counts when you swipe or scan, not when you pay the card bill. Paying a card is a transfer, so it never double-counts.
 - Card dues: Khata takes the statement day and "days to pay after it", reads what you owed at the last statement, subtracts payments since, and shows what's left and by when.
-- ATM withdrawal = transfer from bank to Cash, with an optional fee logged under Fees & charges.
+- Transfers (including ATM withdrawals and card payments) have a Fee or charge field. The fee comes out of the sending account and is logged as Fees & charges spending, linked to the transfer (edited and deleted with it). Khata suggests the last fee used on the same route.
 
 ## Groups (bill splitting)
 
@@ -58,6 +58,16 @@ A personal money ledger. Static PWA on GitHub Pages. No server, no database. The
 - Changing the PIN, turning the lock off and restoring from a file also need the current PIN or fingerprint.
 - Five wrong PINs on the lock screen start a wait (30 s, doubling each miss, up to 1 hour).
 - Closing a popup only ever steps back over the popup's own history entry, so it can't leave the app.
+
+## PIN reset (recovery key)
+
+- Setting the first PIN shows a recovery key (8 groups of 4). Settings → Privacy → Recovery key makes a new one.
+- How it works: an RSA key pair is made on the phone. The public half encrypts the current PIN, and every new PIN when it changes, so the key keeps working. The private half is stored encrypted with the recovery key.
+- Lock screen → Forgot your PIN? → Reset it: use the recovery key (or fingerprint, if fingerprint unlock is on), then set a new PIN. Wrong keys count towards the same wait as wrong PINs.
+
+## Transfer fees
+
+- Transfers and ATM withdrawals have a Fee or charge field. The fee comes out of the sending account and is logged as Fees & charges spending, linked to the transfer (edit or delete together). The last fee for the same route is suggested.
 
 ## Fingerprint unlock
 

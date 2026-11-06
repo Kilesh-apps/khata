@@ -190,6 +190,8 @@ label.sel{cursor:text}
 .cday.fut{opacity:.4}.cday.today{box-shadow:inset 0 0 0 2px var(--ink)}.cday.sel{outline:2px solid var(--accent);outline-offset:1px}
 .cday .inc{position:absolute;top:4px;right:4px;width:6px;height:6px;border-radius:50%;background:#C2912E}
 .gs-help{margin-top:12px}.gs-help summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14px;padding:6px 0}.gs-help ol{padding-left:18px;margin:6px 0}.gs-help li{margin:4px 0}
+.reckey{font:600 20px/1.5 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.04em;text-align:center;padding:16px;margin-top:12px;border-radius:12px;background:var(--surface);border:1px dashed var(--line);user-select:all;-webkit-user-select:all;word-break:break-word}
+#lock:not([hidden])~#sheet{z-index:50}#lock:not([hidden])~#toast{z-index:55}
 .pills{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:4px}
 .tbtn{height:44px;flex:none;padding:0 14px}.tbtn.on{border-color:var(--accent);color:var(--accent)}
 .filter{display:inline-flex;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;align-items:center;gap:8px;margin-top:6px;height:34px;padding:0 12px;border-radius:17px;background:var(--accent-soft);color:var(--accent);font-size:14px;font-weight:550}
@@ -301,7 +303,7 @@ main{padding-bottom:22px}
   <p id="lock-err" class="danger"></p>
   <button class="btn primary full" data-act="unlock">Unlock</button>
   <button class="btn full" id="lock-bio" data-act="bioUnlock" style="margin-top:10px" hidden>Use fingerprint</button>
-  <p class="help">Forgot your PIN? It can’t be reset or recovered. Keep a backup file somewhere safe.</p>
+  <p class="help" id="lock-forgot">Forgot your PIN? <button class="link" data-act="forgotPin">Reset it</button></p>
 </div></div>
 
 <main id="main">
@@ -669,6 +671,12 @@ function updateAdd(){
       <label class="sel"><small>ODO${st.cur!=null?' (last '+nf.format(st.cur)+')':''}</small><input id="af-odo" inputmode="numeric" value="${esc(A.fuel.odo)}" placeholder="km"></label>
       <label class="sel"><small>Litres${L&&amt?', Rs '+Math.round(amt/100/L)+'/L':''}</small><input id="af-lit" inputmode="decimal" value="${esc(A.fuel.litres)}" placeholder="L"></label>`;
     $('#af-odo').addEventListener('input',e=>A.fuel.odo=e.target.value);$('#af-lit').addEventListener('input',e=>A.fuel.litres=e.target.value);
+  }else if(A.t==='xfer'){
+    const lf=lastFee(A.acc,A.to);
+    $('#v-add').classList.add('has-fuel');fr.hidden=false;fr.innerHTML=`<label class="sel wide"><small>Fee or charge${lf&&!A.fee?', last time '+money(lf,{hide:false}):''}</small><input id="af-fee" inputmode="decimal" value="${esc(A.fee)}" placeholder="${lf?nf.format(lf/100)+' (tap to use)':'Rs 0'}"></label>
+      <button class="sel" data-act="cycleXferMethod"><small>How</small><span>${METHODS[A.method]||'Bank transfer'}</span></button>`;
+    const fi=$('#af-fee');fi.addEventListener('input',e=>{A.fee=e.target.value;updateSave()});
+    if(lf) fi.addEventListener('focus',()=>{if(!A.fee){A.fee=String(lf/100);fi.value=A.fee;updateSave()}});
   }else{$('#v-add').classList.remove('has-fuel');fr.hidden=true;fr.innerHTML=''}
   updatePhotoCount();
   $('#date-in').addEventListener('change',e=>{A.date=e.target.value||null;updateAdd()});
@@ -677,7 +685,7 @@ function updateAdd(){
 function saveState(){
   const amt=toP(A.amt);
   if(!amt) return[false,'Enter an amount'];
-  if(A.t==='xfer'){if(!A.acc||!A.to) return[false,'Choose both accounts'];if(A.acc===A.to) return[false,'Pick two different accounts'];return[true,`Move ${money(amt,{hide:false})}`]}
+  if(A.t==='xfer'){if(!A.acc||!A.to) return[false,'Choose both accounts'];if(A.acc===A.to) return[false,'Pick two different accounts'];const fee=toP(A.fee);if(A.fee&&fee<0) return[false,'Fee can\u2019t be negative'];return[true,`Move ${money(amt,{hide:false})}${fee>0?' + '+money(fee,{hide:false})+' fee':''}`]}
   if(!A.cat) return[false,'Choose a category'];
   if(!A.acc&&!(A.split&&A.split.payer!=='me')) return[false,'Choose an account'];
   if(A.split&&A.split.mode==='exact'){const s=sum(A.split.members,m=>toP(A.split.custom[m]));if(s!==amt) return[false,`Split adds up to ${money(s,{hide:false})}`]}
@@ -690,6 +698,9 @@ function fabState(){const f=document.querySelector('.fab');if(!f) return;const o
   if(onAdd&&ok&&was){f.classList.remove('pop');void f.offsetWidth;f.classList.add('pop')}
   f.setAttribute('aria-label',onAdd?(ok?saveState()[1]:saveState()[1]+' first'):'Add an entry')}
 actions.fab=()=>{if(view==='add') actions.save();else show('add')};
+function lastFee(from,to){if(!from||!to) return 0;const xs=S.tx.filter(t=>t.t==='xfer'&&t.acc===from&&t.to===to).sort((a,b)=>b.ts-a.ts);
+  for(const x of xs.slice(0,5)){const f=S.tx.find(t=>t.link===x.id);if(f) return f.amt}return 0}
+actions.cycleXferMethod=()=>{const ms=['bank','atm','qr','cash'];A.method=ms[(ms.indexOf(A.method)+1)%ms.length];updateAdd()};
 actions.cycleVeh=()=>{const vs=S.vehicles.filter(v=>!v.archived),i=vs.findIndex(v=>v.id===A.fuel.veh);A.fuel.veh=vs[(i+1)%vs.length].id;updateAdd()};
 actions.type=d=>{const keep=A.amt;A=blankAdd(d.v);A.amt=keep;updateAdd()};
 actions.key=d=>{
@@ -744,7 +755,7 @@ actions.save=()=>{
     const fee=A.t==='xfer'?toP(A.fee):0;
     if(fee>0){const f={id:uid(),t:'exp',amt:fee,acc:A.acc,cat:cat('fees')?'fees':'other',date,ts:ts+1,method:A.method,note:METHODS[A.method]+' fee',link:tx.id};S.tx.push(f);ids.push(f.id)}
     undo=()=>{S.tx=S.tx.filter(x=>!ids.includes(x.id));if(vl) S.vlogs=S.vlogs.filter(x=>x!==vl)};
-    label=A.t==='xfer'?`Moved ${money(amt,{hide:false})} to ${acc(A.to).name}`:`Saved ${money(amt,{hide:false})} in ${cat(A.cat).name}`;
+    label=A.t==='xfer'?`Moved ${money(amt,{hide:false})} to ${acc(A.to).name}${fee>0?', fee '+money(fee,{hide:false})+' logged as Fees & charges':''}`:`Saved ${money(amt,{hide:false})} in ${cat(A.cat).name}`;
   }
   if(A.acc) S.set.lastAcc[A.t]=A.acc;if(A.t==='xfer') S.set.lastAcc.xferTo=A.to;
   let warn='';const ac=acc(A.acc);if(A.t!=='inc'&&isCredit(ac)&&ac.limit&&cardStatus(ac).avail<0) warn=' Over the card limit.';
@@ -908,7 +919,7 @@ function itemSub(x){
   const g=x.group&&grp(x.group);
   if(x.k==='gb') return`${g?g.name+', ':''}${x.payer==='me'?'you paid '+money(x.amt):who(g,x.payer)+' paid'}`;
   if(x.k==='gp') return`${g?g.name:''}${x.acc?', '+(acc(x.acc)?.name||''):''}`;
-  if(x.t==='xfer') return METHODS[x.method]||'';
+  if(x.t==='xfer'){const f=x.k==='tx'&&S.tx.find(t=>t.link===x.id);return (METHODS[x.method]||'')+(f?', fee '+money(f.amt):'')}
   return`${acc(x.acc)?.name||'?'}${x.method&&!(x.method==='cash'&&acc(x.acc)?.kind==='cash')?', '+METHODS[x.method]:''}`;
 }
 function rangeOf(){
@@ -1006,6 +1017,7 @@ function txEdit(id){
   ${t.t==='exp'||t.t==='inc'?`<label>Category<select id="f-cat">${cats.map(c=>opt(c.id,c.name,t.cat)).join('')}</select></label>`:''}
   <div class="grid2"><label>${t.t==='xfer'?'From':'Account'}<select id="f-acc">${S.accounts.map(a=>opt(a.id,a.name,t.acc)).join('')}</select></label>
   ${t.t==='xfer'?`<label>To<select id="f-to">${S.accounts.map(a=>opt(a.id,a.name,t.to)).join('')}</select></label>`:t.t!=='adj'?`<label>Paid with<select id="f-method">${['qr','card','online','cash','bank'].map(k=>opt(k,METHODS[k],t.method)).join('')}</select></label>`:''}</div>
+  ${t.t==='xfer'?`<div class="grid2"><label>Fee or charge (Rs)<input id="f-fee" inputmode="decimal" value="${(S.tx.find(x=>x.link===t.id)||{}).amt/100||''}" placeholder="0"></label><label>How<select id="f-xm">${['bank','atm','qr','cash'].map(k=>opt(k,METHODS[k],t.method)).join('')}</select></label></div>`:''}
   <label>Date<input id="f-date" type="date" value="${t.date}"></label><label>Note<input id="f-note" value="${esc(t.note)}"></label>
   ${t.t==='exp'||t.t==='inc'?txPhotosBlock(t.photos||(t.photos=[])):''}
   <div class="btns"><button class="btn danger" data-act="txDel" data-id="${t.id}">Delete</button><button class="btn primary grow" data-act="txSave" data-id="${t.id}">Save changes</button></div>`);
@@ -1013,6 +1025,10 @@ function txEdit(id){
 actions.txSave=d=>{
   const t=S.tx.find(x=>x.id===d.id),v=s=>$(s)?.value;let amt=toP(v('#f-amt'));if(t.t!=='adj') amt=Math.abs(amt);
   if(!amt){toast('Enter an amount.');return}if(t.t==='xfer'&&v('#f-acc')===v('#f-to')){toast('Pick two different accounts.');return}
+  if(t.t==='xfer'){const fee=Math.abs(toP(v('#f-fee'))),f=S.tx.find(x=>x.link===t.id);t.method=v('#f-xm')||t.method;
+    if(fee>0){if(f) Object.assign(f,{amt:fee,acc:v('#f-acc'),date:v('#f-date')||t.date,method:t.method,note:(METHODS[t.method]||'Transfer')+' fee'});
+      else S.tx.push({id:uid(),t:'exp',amt:fee,acc:v('#f-acc'),cat:cat('fees')?'fees':'other',date:v('#f-date')||t.date,ts:t.ts+1,method:t.method,note:(METHODS[t.method]||'Transfer')+' fee',link:t.id})}
+    else if(f) S.tx=S.tx.filter(x=>x!==f)}
   Object.assign(t,{amt,acc:v('#f-acc'),date:v('#f-date')||t.date,note:v('#f-note').trim()});if($('#f-cat')) t.cat=v('#f-cat');if($('#f-to')) t.to=v('#f-to');if($('#f-method')) t.method=v('#f-method');
   persist();actions.close();render();toast('Saved changes.');
 };
@@ -1273,6 +1289,7 @@ function renderSettings(){
   <div class="card"><h3>Privacy</h3>
     <div class="srow"><span>PIN lock<small>${meta.locked?'On. Your data is encrypted.':'Off'}</small></span>${meta.locked?'<button class="btn" data-act="lockNow">Lock now</button>':'<button class="btn primary" data-act="lockSet">Set a PIN</button>'}</div>
     ${meta.locked?`<div class="srow"><span>Lock again after leaving</span><select id="f-autolock" class="ssel">${[[0,'Immediately'],[1,'1 minute'],[5,'5 minutes'],[15,'15 minutes']].map(([v,l])=>opt(String(v),l,String(S.set.autolock))).join('')}</select></div>
+      <div class="srow"><span>Recovery key<small>${meta.rec?'Set. Lets you reset a forgotten PIN.':'Not set. Without it, a forgotten PIN means your data is gone.'}</small></span><button class="btn${meta.rec?'':' primary'}" data-act="recNew">${meta.rec?'New key':'Create'}</button></div>
       <div class="srow"><span>Unlock with fingerprint<small>${meta.bio?'On. Your PIN still works too.':'Open Khata with your fingerprint or face instead of typing the PIN.'}</small></span><label class="switch"><input type="checkbox" id="f-bioun" ${meta.bio?'checked':''} aria-label="Unlock with fingerprint"><i></i></label></div>
       <div class="btns"><button class="btn grow" data-act="lockSet">Change PIN</button><button class="btn danger grow" data-act="lockOff">Turn lock off</button></div>`:''}
     <div class="srow"><span>Always hide amounts<small>Hidden every time you open or come back to the app. Tap the eye to show them.</small></span><label class="switch"><input type="checkbox" id="f-hideopen" ${S.set.hideOnOpen?'checked':''} aria-label="Always hide amounts"><i></i></label></div>
@@ -1299,7 +1316,7 @@ function renderSettings(){
     $('#f-aikey').addEventListener('change',e=>{aiSet().key=e.target.value.trim();save();toast(aiSet().key?'API key saved on this phone.':'API key removed.')});
     $('#f-aimodel').addEventListener('change',e=>{aiSet().model=e.target.value;save()})});
 }
-const APP_VERSION='v20';
+const APP_VERSION='v21';
 actions.settingsSave=()=>{if($('#f-aion')){const ai=aiSet();ai.on=$('#f-aion').checked;ai.key=($('#f-aikey').value||'').trim();ai.model=$('#f-aimodel').value}const sd=parseInt($('#f-start').value);S.set.startDay=sd>=1&&sd<=28?sd:1;S.set.hideOnOpen=$('#f-hideopen').checked;if($('#f-autolock')) S.set.autolock=Number($('#f-autolock').value);persist();actions.close();render()};
 actions.lockSet=async()=>{if(!window.crypto||!crypto.subtle){toast('Encryption needs the app opened over https.');return}
   if(meta.locked&&!(await requireAuth('Change PIN'))) return;
@@ -1309,13 +1326,17 @@ actions.lockSet=async()=>{if(!window.crypto||!crypto.subtle){toast('Encryption n
 actions.lockSave=async()=>{const a=$('#f-p1').value,b=$('#f-p2').value,err=$('#f-perr');
   if(a.length<4){err.textContent='Use at least 4 characters.';return}if(a!==b){err.textContent='The two entries don\u2019t match.';return}
   const oldMeta=meta;err.textContent='Encrypting…';const salt=crypto.getRandomValues(new Uint8Array(16)),oldKey=cryptoKey;cryptoKey=await deriveKey(a,salt);await rekeyPhotos(oldKey,cryptoKey);
-  meta={locked:true,salt:b64(salt),numeric:/^\d+$/.test(a)};localStorage.setItem(K_META,JSON.stringify(meta));persist();await saving;localStorage.removeItem(K_PLAIN);
-  const hadBio=!!oldMeta.bio;actions.close();render();toast(hadBio?'New PIN saved. Turn fingerprint unlock on again in Settings.':'Locked with your PIN. Data is now encrypted.')};
+  meta={locked:true,salt:b64(salt),numeric:/^\d+$/.test(a)};
+  if(oldMeta.rec){meta.rec={...oldMeta.rec,pinCt:await recWrapPin(oldMeta.rec.pub,a)}}
+  localStorage.setItem(K_META,JSON.stringify(meta));persist();await saving;localStorage.removeItem(K_PLAIN);
+  const hadBio=!!oldMeta.bio,first=!oldMeta.locked;actions.close();render();
+  if(first&&!meta.rec){await recCreate(a,true);return}
+  toast(hadBio?'New PIN saved. Turn fingerprint unlock on again in Settings.':first?'Locked with your PIN. Data is now encrypted.':'New PIN saved.'+(meta.rec?' Your recovery key still works.':''))};
 actions.lockOff=async()=>{if(!(await requireAuth('Turn off the lock'))) return;if(!confirm('Turn off the lock? Your data will be stored unencrypted on this phone.')) return;
   if(guard().mode!=='off'&&!guard().pinHash){toast('Amounts still need a PIN. Set one for that.');if(!(await setGuardPin())) return}
   await rekeyPhotos(cryptoKey,null);cryptoKey=null;meta={};localStorage.setItem(K_META,'{}');persist();await saving;localStorage.removeItem(K_ENC);actions.close();render();toast('Lock turned off.')};
 actions.lockNow=()=>showLock();
-function showLock(msg){if(S) persist();S=null;cryptoKey=null;actions.close();if(typeof forgetPhotoURLs==='function'){forgetPhotoURLs();actions.viewerClose()}
+function showLock(msg){hideToast();if(S) persist();S=null;cryptoKey=null;actions.close();if(typeof forgetPhotoURLs==='function'){forgetPhotoURLs();actions.viewerClose()}
   ['add','history','groups','garage','accounts','plan','settings'].forEach(v=>$('#v-'+v).innerHTML='');built=false;
   const inp=$('#lock-in');inp.value='';inp.setAttribute('inputmode',meta.numeric?'numeric':'text');$('#lock-err').textContent=msg||'';$('#lock').hidden=false;if(lockWait()>0) showWait();const lb=$('#lock-bio');lb.hidden=!meta.bio;if(meta.bio&&!msg) setTimeout(()=>actions.bioUnlock(),300);else setTimeout(()=>inp.focus(),60)}
 /* wrong-PIN throttle: after 5 misses, wait 30 s, doubling each miss (max 1 hour) */
@@ -2149,6 +2170,54 @@ actions.gsRestore=async()=>{const g=gs(),u=$('#gs-url');if(u&&u.value.trim()!==g
 window.addEventListener('online',()=>{if(S&&S.set.gs&&S.set.gs.dirty&&S.set.gs.auto) gsSchedule(3000)});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&S&&S.set.gs&&S.set.gs.dirty&&S.set.gs.auto&&gsValid(S.set.gs.url)&&navigator.onLine) gsPush(false)});
 setInterval(()=>{if(S&&S.set.gs&&S.set.gs.auto&&gsValid(S.set.gs.url)&&(S.set.gs.dirty||Date.now()-(S.set.gs.last||0)>6*3600e3)&&!gsBusy&&navigator.onLine&&!document.hidden){S.set.gs.dirty=true;gsPush(false)}},60000);
+
+/* ================= PIN reset: recovery key (RSA-OAEP keeps it working through PIN changes) =================
+   Creating a key: an RSA key pair is made on the phone. The public half encrypts the current PIN (and every
+   future PIN). The private half is encrypted with the recovery key and stored. Only the recovery key can open it. */
+const B32='0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+function recFormat(u){let bits=0,v=0,o='';for(const x of u){v=(v<<8)|x;bits+=8;while(bits>=5){o+=B32[(v>>>(bits-5))&31];bits-=5}}if(bits) o+=B32[(v<<(5-bits))&31];return o.match(/.{1,4}/g).join('-')}
+const recNorm=s=>String(s||'').toUpperCase().replace(/[\s-]/g,'').replace(/O/g,'0').replace(/[IL]/g,'1').replace(/U/g,'V');
+async function recAes(code,salt){const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(recNorm(code)),'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:200000,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt'])}
+async function recWrapPin(pubB64,pin){const pub=await crypto.subtle.importKey('spki',unb64(pubB64),{name:'RSA-OAEP',hash:'SHA-256'},false,['encrypt']);
+  return b64(new Uint8Array(await crypto.subtle.encrypt({name:'RSA-OAEP'},pub,new TextEncoder().encode(pin))))}
+async function recCreate(pin,afterFirstPin){
+  const pair=await crypto.subtle.generateKey({name:'RSA-OAEP',modulusLength:2048,publicExponent:new Uint8Array([1,0,1]),hash:'SHA-256'},true,['encrypt','decrypt']);
+  const pub=b64(new Uint8Array(await crypto.subtle.exportKey('spki',pair.publicKey))),priv=new Uint8Array(await crypto.subtle.exportKey('pkcs8',pair.privateKey));
+  const raw=crypto.getRandomValues(new Uint8Array(20)),code=recFormat(raw),salt=crypto.getRandomValues(new Uint8Array(16));
+  const iv=crypto.getRandomValues(new Uint8Array(12)),ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},await recAes(code,salt),priv));
+  meta.rec={pub,salt:b64(salt),iv:b64(iv),ct:b64(ct),pinCt:await recWrapPin(pub,pin)};saveMeta();
+  sheet(`<h2>Your recovery key</h2><p class="help">${afterFirstPin?'Your data is now encrypted. ':''}If you forget your PIN, this key resets it. Write it down or save it in a password manager. Khata can\u2019t show it again.</p>
+  <div class="reckey" id="rec-code">${code}</div>
+  <div class="btns"><button class="btn grow" data-act="recCopy">Copy</button><button class="btn primary grow" data-act="recDone">I\u2019ve saved it</button></div>
+  <p class="help">Anyone with this key and your phone could reset your PIN, so keep it private.</p>`);
+  actions.recCopy=async()=>{try{await navigator.clipboard.writeText(code);toast('Copied. Paste it somewhere safe, then clear your clipboard.')}catch{toast('Long-press the key to copy it.')}};
+  actions.recDone=()=>{actions.close();render();toast('Recovery key set.')};
+}
+actions.recNew=async()=>{if(!(await requireAuth(meta.rec?'Make a new recovery key':'Create a recovery key'))) return;
+  const pin=await askAppPin(meta.rec?'Make a new recovery key':'Create a recovery key');if(!pin) return;
+  if(meta.rec&&!confirm('Make a new key? The old recovery key will stop working.')) return;await recCreate(pin,false)};
+/* lock screen: forgot PIN */
+actions.forgotPin=()=>{
+  if(!meta.rec&&!meta.bio){sheet(`<h2>Forgot your PIN?</h2><p class="help">No recovery key or fingerprint unlock was set up, so the PIN can\u2019t be reset. Your data stays encrypted on this phone.</p>
+    <p class="help">If you saved an Excel file or a Google Sheet sync, you can rebuild from those on a fresh install.</p><div class="btns"><button class="btn primary grow" data-act="close">OK</button></div>`);return}
+  sheet(`<h2>Reset your PIN</h2>${meta.bio?'<p class="help">Use your fingerprint to open Khata, then set a new PIN.</p><div class="btns"><button class="btn primary grow" data-act="recBio">Use fingerprint</button></div>':''}
+  ${meta.rec?`<label>Recovery key<input id="rec-in" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX-…"></label><p class="danger small" id="rec-err"></p>
+  <div class="btns"><button class="btn" data-act="close">Cancel</button><button class="btn ${meta.bio?'':'primary '}grow" data-act="recGo">Reset with key</button></div>`:'<div class="btns"><button class="btn grow" data-act="close">Cancel</button></div>'}`,
+  p=>{const i=p.querySelector('#rec-in');if(i&&!meta.bio) i.focus()});
+};
+async function unlockThenNewPin(pin){actions.close();$('#lock-in').value=pin;await actions.unlock();if(!S) return;
+  sheet(`<h2>Set a new PIN</h2><p class="help">You\u2019re in. Choose a new PIN now.</p><label>New PIN<input id="f-p1" type="password" autocomplete="new-password"></label><label>Again<input id="f-p2" type="password" autocomplete="new-password"></label><p class="danger small" id="f-perr"></p>
+  <div class="btns"><button class="btn primary grow" data-act="lockSave">Save new PIN</button></div>`,p=>p.querySelector('input').focus())}
+actions.recBio=async()=>{try{const out=await prfGet(meta.bio.credId,unb64(meta.bio.salt));const {pin}=await decrypt(await prfKey(out),meta.bio);await unlockThenNewPin(pin)}catch{toast('Fingerprint didn\u2019t work.')}};
+actions.recGo=async()=>{
+  const code=$('#rec-in').value,err=$('#rec-err');if(recNorm(code).length<30){err.textContent='That key looks too short. It has 8 groups of 4.';return}
+  if(lockWait()>0){err.textContent='Too many wrong tries. Wait a bit.';return}err.textContent='Checking…';
+  try{const r=meta.rec,priv=await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(r.iv)},await recAes(code,unb64(r.salt)),unb64(r.ct));
+    const pk=await crypto.subtle.importKey('pkcs8',priv,{name:'RSA-OAEP',hash:'SHA-256'},false,['decrypt']);
+    const pin=new TextDecoder().decode(await crypto.subtle.decrypt({name:'RSA-OAEP'},pk,unb64(r.pinCt)));clearFails();await unlockThenNewPin(pin)}
+  catch{noteFail();err.textContent=lockWait()>0?'Too many wrong tries. Wait a bit.':'That recovery key doesn\u2019t match.'}
+};
 
 boot();gcPhotos();
 </script>
