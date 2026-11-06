@@ -1299,7 +1299,7 @@ function renderSettings(){
     $('#f-aikey').addEventListener('change',e=>{aiSet().key=e.target.value.trim();save();toast(aiSet().key?'API key saved on this phone.':'API key removed.')});
     $('#f-aimodel').addEventListener('change',e=>{aiSet().model=e.target.value;save()})});
 }
-const APP_VERSION='v19';
+const APP_VERSION='v20';
 actions.settingsSave=()=>{if($('#f-aion')){const ai=aiSet();ai.on=$('#f-aion').checked;ai.key=($('#f-aikey').value||'').trim();ai.model=$('#f-aimodel').value}const sd=parseInt($('#f-start').value);S.set.startDay=sd>=1&&sd<=28?sd:1;S.set.hideOnOpen=$('#f-hideopen').checked;if($('#f-autolock')) S.set.autolock=Number($('#f-autolock').value);persist();actions.close();render()};
 actions.lockSet=async()=>{if(!window.crypto||!crypto.subtle){toast('Encryption needs the app opened over https.');return}
   if(meta.locked&&!(await requireAuth('Change PIN'))) return;
@@ -2100,7 +2100,7 @@ async function gsPush(manual){
     const res=await fetch(g.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body,signal:ctl.signal});clearTimeout(t);
     const j=await res.json().catch(()=>null);
     if(!j||!j.ok) throw new Error((j&&j.error)||'The sheet didn\u2019t answer properly. Check the link, and that access is set to \u201cAnyone\u201d.');
-    g.last=Date.now();g.dirty=false;g.error='';
+    g.last=Date.now();g.dirty=false;g.error='';if(j.sheet) g.sheet=j.sheet;
     if(manual) toast('Synced to your Google Sheet.');
   }catch(e){g.error=e&&e.name==='AbortError'?'The sheet took too long to answer. Will try again.':(e&&e.message)||'Sync failed.';if(manual) toast(g.error)}
   finally{gsBusy=false;const keep=g.dirty;persistQuiet();g.dirty=keep;gsStatus()}
@@ -2111,7 +2111,7 @@ function gsStatus(msg){const el=$('#gs-status');if(!el) return;const g=gs();
   el.textContent=msg||(!gsValid(g.url)?'Not connected.':g.error?'Last sync failed: '+g.error:g.last?`Synced ${agoText(g.last)}${g.dirty?'. Newer changes are waiting.':'.'}`:'Connected. Not synced yet.')}
 const agoText=t=>{const m=Math.round((Date.now()-t)/60000);return m<1?'just now':m<60?m+' min ago':m<1440?Math.round(m/60)+' h ago':Math.round(m/1440)+' days ago'};
 function gsCardHtml(){const g=gs();
-  return`<h3>Google Sheet</h3><p id="gs-status" class="small muted"></p>
+  return`<h3>Google Sheet</h3><p id="gs-status" class="small muted"></p>${g.sheet&&/^https:\/\/docs\.google\.com\//.test(g.sheet)?`<a class="link" href="${esc(g.sheet)}" target="_blank" rel="noopener">Open the sheet</a>`:''}
   ${meta.locked?'':'<p class="help warn">Set a PIN lock first. The full backup is encrypted with it before it leaves your phone.</p>'}
   <label class="flabel">Sheet\u2019s web-app link<input id="gs-url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://script.google.com/macros/s/…/exec" value="${esc(g.url)}"></label>
   <div class="srow"><span>Sync automatically<small>About 20 seconds after a change, while the app is open and online.</small></span><label class="switch"><input type="checkbox" id="gs-auto" ${g.auto?'checked':''} aria-label="Sync automatically"><i></i></label></div>

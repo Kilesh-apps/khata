@@ -18,7 +18,7 @@ A personal money ledger. Static PWA on GitHub Pages. No server, no database. The
 | `xlsx.js` | Builds the Excel export (formulas, charts, hidden backup sheet) and reads it back for restore. No libraries. |
 | `tesseract*.js`, `eng.traineddata.gz` | Offline bill reader (tesseract.js 7, Apache-2.0, see `LICENSE-tesseract.md`). Kept next to `index.html` (no folders) so they can be uploaded from a phone. |
 | `Code.gs` | Apps Script for the optional Google Sheets sync. Not used by the app itself. |
-| `sw.js` | Caches the app for offline use. **Bump `CACHE` (`khata-v19` → `khata-v20`) on every update.** |
+| `sw.js` | Caches the app for offline use. **Bump `CACHE` (`khata-v20` → `khata-v21`) on every update.** |
 | `manifest.webmanifest` | Install info, home-screen shortcuts, and the Android share target for bank SMS. |
 | `icon-*.png` | App icons. |
 
