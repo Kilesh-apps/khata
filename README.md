@@ -17,7 +17,7 @@ A personal money ledger. Static PWA on GitHub Pages. No server, no database. The
 | `index.html` | The whole app. Data lives in `localStorage` on the phone. |
 | `xlsx.js` | Builds the Excel export (formulas, charts, hidden backup sheet) and reads it back for restore. No libraries. |
 | `tesseract*.js`, `eng.traineddata.gz` | Offline bill reader (tesseract.js 7, Apache-2.0, see `LICENSE-tesseract.md`). Kept next to `index.html` (no folders) so they can be uploaded from a phone. |
-| `sw.js` | Caches the app for offline use. **Bump `CACHE` (`khata-v16` → `khata-v17`) on every update.** |
+| `sw.js` | Caches the app for offline use. **Bump `CACHE` (`khata-v17` → `khata-v18`) on every update.** |
 | `manifest.webmanifest` | Install info, home-screen shortcuts, and the Android share target for bank SMS. |
 | `icon-*.png` | App icons. |
 
@@ -50,6 +50,11 @@ A personal money ledger. Static PWA on GitHub Pages. No server, no database. The
 - Mileage is fill-to-fill: the litres you put in at a fill cover the distance since the previous fill. The average (total km ÷ litres, first fill excluded) is the reliable figure.
 - Fuel on the Add screen: choose Fuel and a vehicle row appears (ODO, litres). One save logs both.
 - Import from Diarium: Word (.docx) export. Reads Petrol / Servicing / Bike / Car tags, ODO, Rate, Litres, Total price, and attached photos. Journal entries are skipped.
+
+## Fingerprint unlock
+
+- Settings → Privacy → Unlock with fingerprint (needs PIN lock on). Uses the WebAuthn PRF extension: the fingerprint check returns a secret only this phone's authenticator can produce; that secret encrypts a copy of the PIN in `khata.meta`. Unlocking decrypts the PIN and opens the data as usual.
+- If the browser doesn't support PRF, the app says so and the PIN keeps working. Changing the PIN turns fingerprint unlock off (turn it on again).
 
 ## Bill photos
 

@@ -299,6 +299,7 @@ main{padding-bottom:22px}
   <input id="lock-in" type="password" autocomplete="current-password" aria-label="PIN or passphrase">
   <p id="lock-err" class="danger"></p>
   <button class="btn primary full" data-act="unlock">Unlock</button>
+  <button class="btn full" id="lock-bio" data-act="bioUnlock" style="margin-top:10px" hidden>Use fingerprint</button>
   <p class="help">Forgot it? The data is encrypted and can't be recovered. <button class="link" data-act="wipeFromLock">Erase and start over</button></p>
 </div></div>
 
@@ -1270,6 +1271,7 @@ function renderSettings(){
   <div class="card"><h3>Privacy</h3>
     <div class="srow"><span>PIN lock<small>${meta.locked?'On. Your data is encrypted.':'Off'}</small></span>${meta.locked?'<button class="btn" data-act="lockNow">Lock now</button>':'<button class="btn primary" data-act="lockSet">Set a PIN</button>'}</div>
     ${meta.locked?`<div class="srow"><span>Lock again after leaving</span><select id="f-autolock" class="ssel">${[[0,'Immediately'],[1,'1 minute'],[5,'5 minutes'],[15,'15 minutes']].map(([v,l])=>opt(String(v),l,String(S.set.autolock))).join('')}</select></div>
+      <div class="srow"><span>Unlock with fingerprint<small>${meta.bio?'On. Your PIN still works too.':'Open Khata with your fingerprint or face instead of typing the PIN.'}</small></span><label class="switch"><input type="checkbox" id="f-bioun" ${meta.bio?'checked':''} aria-label="Unlock with fingerprint"><i></i></label></div>
       <div class="btns"><button class="btn grow" data-act="lockSet">Change PIN</button><button class="btn danger grow" data-act="lockOff">Turn lock off</button></div>`:''}
     <div class="srow"><span>Always hide amounts<small>Hidden every time you open or come back to the app. Tap the eye to show them.</small></span><label class="switch"><input type="checkbox" id="f-hideopen" ${S.set.hideOnOpen?'checked':''} aria-label="Always hide amounts"><i></i></label></div>
     <div class="srow"><span>To show amounts, ask for<small>${guardSummary()}</small></span><select id="f-guard" class="ssel">${[['off','Nothing'],['pin','PIN'],['bio','Fingerprint or face']].map(([v,l])=>opt(v,l,guard().mode)).join('')}</select></div>
@@ -1285,6 +1287,7 @@ function renderSettings(){
   $('#f-xinc').addEventListener('change',e=>{S.set.excelIncome=e.target.checked;save()});
   $('#f-start').addEventListener('change',e=>{S.set.startDay=+e.target.value;save();toast('Month now starts on the '+ord(+e.target.value)+'.')});
   if($('#f-autolock')) $('#f-autolock').addEventListener('change',e=>{S.set.autolock=+e.target.value;save()});
+  if($('#f-bioun')) $('#f-bioun').addEventListener('change',e=>{e.target.checked?bioUnlockSetup():bioUnlockOff()});
   if(navigator.storage&&navigator.storage.estimate) navigator.storage.estimate().then(e=>{const el=$('#f-store');if(el) el.textContent=(e.usage/1048576).toFixed(1)+' MB'}).catch(()=>{});
   billSettingsHtml().then(h=>{const el=$('#bill-set');if(!el) return;el.outerHTML=h;
     const c=$('#f-aion');if(!c) return;
@@ -1292,7 +1295,7 @@ function renderSettings(){
     $('#f-aikey').addEventListener('change',e=>{aiSet().key=e.target.value.trim();save();toast(aiSet().key?'API key saved on this phone.':'API key removed.')});
     $('#f-aimodel').addEventListener('change',e=>{aiSet().model=e.target.value;save()})});
 }
-const APP_VERSION='v16';
+const APP_VERSION='v17';
 actions.settingsSave=()=>{if($('#f-aion')){const ai=aiSet();ai.on=$('#f-aion').checked;ai.key=($('#f-aikey').value||'').trim();ai.model=$('#f-aimodel').value}const sd=parseInt($('#f-start').value);S.set.startDay=sd>=1&&sd<=28?sd:1;S.set.hideOnOpen=$('#f-hideopen').checked;if($('#f-autolock')) S.set.autolock=Number($('#f-autolock').value);persist();actions.close();render()};
 actions.lockSet=()=>{if(!window.crypto||!crypto.subtle){toast('Encryption needs the app opened over https.');return}
   sheet(`<h2>${meta.locked?'Change PIN':'Set a PIN'}</h2><p class="help">Your data is encrypted with this. A short PIN keeps out someone who picks up your phone. Against someone who copies the phone's data, only a long passphrase holds up. There's no recovery: forget it and the data is gone unless you have a backup.</p>
@@ -1300,16 +1303,16 @@ actions.lockSet=()=>{if(!window.crypto||!crypto.subtle){toast('Encryption needs 
   <div class="btns"><button class="btn primary grow" data-act="lockSave">Save and encrypt</button></div>`,p=>p.querySelector('input').focus())};
 actions.lockSave=async()=>{const a=$('#f-p1').value,b=$('#f-p2').value,err=$('#f-perr');
   if(a.length<4){err.textContent='Use at least 4 characters.';return}if(a!==b){err.textContent='The two entries don\u2019t match.';return}
-  err.textContent='Encrypting…';const salt=crypto.getRandomValues(new Uint8Array(16)),oldKey=cryptoKey;cryptoKey=await deriveKey(a,salt);await rekeyPhotos(oldKey,cryptoKey);
+  const oldMeta=meta;err.textContent='Encrypting…';const salt=crypto.getRandomValues(new Uint8Array(16)),oldKey=cryptoKey;cryptoKey=await deriveKey(a,salt);await rekeyPhotos(oldKey,cryptoKey);
   meta={locked:true,salt:b64(salt),numeric:/^\d+$/.test(a)};localStorage.setItem(K_META,JSON.stringify(meta));persist();await saving;localStorage.removeItem(K_PLAIN);
-  actions.close();render();toast('Locked with your PIN. Data is now encrypted.')};
+  const hadBio=!!oldMeta.bio;actions.close();render();toast(hadBio?'New PIN saved. Turn fingerprint unlock on again in Settings.':'Locked with your PIN. Data is now encrypted.')};
 actions.lockOff=async()=>{if(!confirm('Turn off the lock? Your data will be stored unencrypted on this phone.')) return;
   if(guard().mode!=='off'&&!guard().pinHash){toast('Amounts still need a PIN. Set one for that.');if(!(await setGuardPin())) return}
   await rekeyPhotos(cryptoKey,null);cryptoKey=null;meta={};localStorage.setItem(K_META,'{}');persist();await saving;localStorage.removeItem(K_ENC);actions.close();render();toast('Lock turned off.')};
 actions.lockNow=()=>showLock();
 function showLock(msg){if(S) persist();S=null;cryptoKey=null;actions.close();if(typeof forgetPhotoURLs==='function'){forgetPhotoURLs();actions.viewerClose()}
   ['add','history','groups','garage','accounts','plan','settings'].forEach(v=>$('#v-'+v).innerHTML='');built=false;
-  const inp=$('#lock-in');inp.value='';inp.setAttribute('inputmode',meta.numeric?'numeric':'text');$('#lock-err').textContent=msg||'';$('#lock').hidden=false;setTimeout(()=>inp.focus(),60)}
+  const inp=$('#lock-in');inp.value='';inp.setAttribute('inputmode',meta.numeric?'numeric':'text');$('#lock-err').textContent=msg||'';$('#lock').hidden=false;const lb=$('#lock-bio');lb.hidden=!meta.bio;if(meta.bio&&!msg) setTimeout(()=>actions.bioUnlock(),300);else setTimeout(()=>inp.focus(),60)}
 actions.unlock=async()=>{const p=$('#lock-in').value;if(!p) return;$('#lock-err').textContent='Unlocking…';
   try{const key=await deriveKey(p,unb64(meta.salt));S=await decrypt(key,JSON.parse(localStorage.getItem(K_ENC)));cryptoKey=key;migrate();start()}
   catch{$('#lock-err').textContent='Wrong PIN or passphrase.';$('#lock-in').select()}};
@@ -1976,6 +1979,53 @@ async function revealAmounts(){
   if(g.mode==='off'){S.set.hide=false;render();return}
   if(await askGuard('Show amounts')){S.set.hide=false;render();toast('Amounts shown until you leave the app.')}
 }
+
+/* ================= fingerprint unlock (WebAuthn PRF wraps the PIN) =================
+   The fingerprint check returns a secret that only this phone's authenticator can produce (PRF extension).
+   That secret encrypts a copy of your PIN; unlocking decrypts the PIN and then opens the data as usual. */
+async function prfKey(out){const base=await crypto.subtle.importKey('raw',out,'HKDF',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'HKDF',hash:'SHA-256',salt:new TextEncoder().encode('khata-unlock'),info:new Uint8Array()},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt'])}
+async function prfGet(credId,salt){
+  const a=await navigator.credentials.get({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),rpId:location.hostname,
+    allowCredentials:[{type:'public-key',id:unb64(credId)}],userVerification:'required',timeout:60000,extensions:{prf:{eval:{first:salt}}}}});
+  const r=a.getClientExtensionResults&&a.getClientExtensionResults().prf;
+  if(!r||!r.results||!r.results.first) throw new Error('nprf');
+  return new Uint8Array(r.results.first);
+}
+function askAppPin(title){return new Promise(res=>{
+  sheet(`<h2>${esc(title)}</h2><p class="help">Type your app PIN once so Khata can link it to your fingerprint.</p><label>App PIN<input id="b-pin" type="password" inputmode="${meta.numeric?'numeric':'text'}" autocomplete="current-password"></label><p class="danger small" id="b-err"></p>
+  <div class="btns"><button class="btn" data-act="bNo">Cancel</button><button class="btn primary grow" data-act="bGo">Continue</button></div>`,p=>p.querySelector('input').focus());
+  actions.bNo=()=>{actions.close();res(null)};
+  actions.bGo=async()=>{const v=$('#b-pin').value;if(!v) return;$('#b-err').textContent='Checking…';
+    try{const key=await deriveKey(v,unb64(meta.salt));await decrypt(key,JSON.parse(localStorage.getItem(K_ENC)));actions.close();res(v)}catch{$('#b-err').textContent='Wrong PIN.';$('#b-pin').select()}};
+})}
+async function bioUnlockSetup(){
+  const back=()=>{if(view==='settings') renderSettings()};
+  if(!(await bioSupported())){toast('This phone has no fingerprint or face unlock the browser can use.');back();return}
+  const pin=await askAppPin('Turn on fingerprint unlock');if(!pin){back();return}
+  try{
+    const salt=crypto.getRandomValues(new Uint8Array(32));
+    const cred=await navigator.credentials.create({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),rp:{name:'Khata',id:location.hostname},
+      user:{id:crypto.getRandomValues(new Uint8Array(16)),name:'khata-unlock',displayName:'Khata unlock'},pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
+      authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required',residentKey:'preferred'},timeout:60000,attestation:'none',extensions:{prf:{eval:{first:salt}}}}});
+    const ext=cred.getClientExtensionResults&&cred.getClientExtensionResults().prf;
+    if(!ext||ext.enabled===false){toast('Your phone\u2019s browser can\u2019t do fingerprint unlock yet. Your PIN still works.');back();return}
+    const credId=b64(new Uint8Array(cred.rawId));
+    let out=ext.results&&ext.results.first?new Uint8Array(ext.results.first):null;
+    if(!out){toast('Touch the sensor once more to finish.');out=await prfGet(credId,salt)}
+    const enc=await encrypt(await prfKey(out),{pin});
+    meta.bio={credId,salt:b64(salt),iv:enc.iv,ct:enc.ct};localStorage.setItem(K_META,JSON.stringify(meta));
+    back();toast('Fingerprint unlock is on.');
+  }catch(e){toast(e&&e.name==='NotAllowedError'?'Fingerprint setup was cancelled.':e&&e.message==='nprf'?'Your phone\u2019s browser can\u2019t do fingerprint unlock yet. Your PIN still works.':'Couldn\u2019t set up fingerprint unlock: '+((e&&e.message)||'error'));back()}
+}
+function bioUnlockOff(){delete meta.bio;localStorage.setItem(K_META,JSON.stringify(meta));if(view==='settings') renderSettings();toast('Fingerprint unlock is off. Use your PIN.')}
+let bioBusy=false;
+actions.bioUnlock=async()=>{
+  if(!meta.bio||bioBusy) return;bioBusy=true;$('#lock-err').textContent='';
+  try{const out=await prfGet(meta.bio.credId,unb64(meta.bio.salt));const {pin}=await decrypt(await prfKey(out),meta.bio);$('#lock-in').value=pin;await actions.unlock()}
+  catch(e){$('#lock-err').textContent=e&&e.name==='NotAllowedError'?'Fingerprint didn\u2019t unlock. Tap \u201cUse fingerprint\u201d to try again, or type your PIN.':'Fingerprint isn\u2019t working right now. Type your PIN.';setTimeout(()=>$('#lock-in').focus(),60)}
+  finally{bioBusy=false}
+};
 
 boot();gcPhotos();
 </script>
