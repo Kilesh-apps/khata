@@ -17,8 +17,8 @@ A personal money ledger. Static PWA on GitHub Pages. No server, no database. The
 | `index.html` | The whole app. Data lives in `localStorage` on the phone. |
 | `xlsx.js` | Builds the Excel export (formulas, charts, hidden backup sheet) and reads it back for restore. No libraries. |
 | `tesseract*.js`, `eng.traineddata.gz` | Offline bill reader (tesseract.js 7, Apache-2.0, see `LICENSE-tesseract.md`). Kept next to `index.html` (no folders) so they can be uploaded from a phone. |
-| `Code.gs` | Apps Script for the optional Google Sheets sync. Not used by the app itself. |
-| `sw.js` | Caches the app for offline use. **Bump `CACHE` (`khata-v24` → `khata-v25`) on every update.** |
+| `Code.gs` | Apps Script (version 3) for the optional Google Sheets sync and Drive backups. Not used by the app itself. |
+| `sw.js` | Caches the app for offline use. **Bump `CACHE` (`khata-v25` → `khata-v26`) on every update.** |
 | `manifest.webmanifest` | Install info, home-screen shortcuts, and the Android share target for bank SMS. |
 | `icon-*.png` | App icons. |
 
@@ -98,13 +98,26 @@ A personal money ledger. Static PWA on GitHub Pages. No server, no database. The
 - Results are always suggestions: pick the total, or open **Split by items**, tick who had each item; tax, service charge and discount are shared in proportion.
 - CSP allows `'wasm-unsafe-eval'` (needed for the OCR engine) and `connect-src https://api.anthropic.com` (only used when AI reading is on).
 
-## Google Sheets sync (optional)
+## Google Sheets sync and Drive backups (optional)
 
-- `Code.gs` goes into the sheet's Apps Script (Deploy → Web app, Execute as Me, access Anyone). Paste the `/exec` link in Settings → Google Sheet.
-- Readable tabs: Entries, Monthly, Budgets, Groups, Fuel, Service. Same redaction as Excel: never bank, wallet or cash balances; income only if switched on.
-- Hidden tab: the full backup, encrypted on the phone with the PIN (PIN lock is required). Bill photos are not synced.
-- Auto sync about 20 seconds after a change, when leaving the app, and every 6 hours while open, only while online. The first phone to connect locks the sheet with a recovery code; a new phone needs that code (Settings → Google Sheet → Set up) to restore.
-- CSP allows `script.google.com` and `script.googleusercontent.com` for this.
+`Code.gs` (script version 3) runs as a web app in your Google account. Setup steps are at the top of the file. **After any change to Code.gs: paste it, Save, then Deploy → Manage deployments → ✏️ → Version: New version → Deploy.** Saving alone keeps the old version running.
+
+**What is stored**
+- Drive folder **Khata backups**: `latest.json`, `daily-YYYY-MM-DD.json` (last 14 days) and `monthly-YYYY-MM.json` (last 12 months). Each file is the full backup encrypted on the phone with the PIN (AES-GCM, PBKDF2 key), plus plain metadata: time, app version, entry count, SHA-256 of the encrypted backup. Daily and monthly files are the **first** good sync of that day or month and are never overwritten; `latest.json` follows every sync. Older files are moved to the Drive trash automatically. On the first v3 sync, the old single-tab backup is saved as `before-v3-DATE.json` before anything is written.
+- Drive folder **Khata photos**: one file per bill photo, `{salt, iv, ct}` encrypted on the phone with the PIN key. Only new photos are uploaded (batches of 8). Photos no longer used are removed once a month. After a PIN change, photos are re-uploaded under the new PIN.
+- Sheet tabs Entries, Monthly, Budgets, Groups, Fuel, Service (readable; never bank balances; income only if switched on) and **Backup log** (time, kind, version, entry count, hash). Tabs are written only after the backup is stored.
+- Script properties: the recovery code, the latest metadata, folder ids.
+
+**Safety rules**
+- Recovery code required for every read and write. Hash checked on upload (script) and on download (phone).
+- Shrink guard, both sides: if the entry count (entries + split bills + payments + vehicle logs) drops more than 10% or to zero against the last backup, the phone doesn't sync and asks "Your data looks smaller than your last backup. Sync anyway?"; the script refuses too unless the request has `force: true`, which the phone only sends after the PIN or fingerprint. This also stops a fresh phone from overwriting the backup.
+- No upload when nothing changed (hash of the data without sync settings), except a daily heartbeat so "last successful sync" stays meaningful.
+- Restoring keeps an encrypted copy of the replaced data on the phone (Settings → Data → Undo last restore).
+
+**Phone side**
+- Settings → Google Sheet backup: last successful sync, last backup test, Sync now, **Test my backup** (downloads latest, checks the hash, decrypts in memory, compares entry count and newest entry; never changes local data), **Restore a backup** (pick any version, preview, then PIN or fingerprint), bill photo backup switch and progress.
+- Home screen banner if the last successful sync is more than 3 days old or sync is paused by the shrink guard.
+- Limits: Apps Script stops a single run after 6 minutes, so photos go in batches; Drive storage is about 75 KB per photo and about 330 KB per backup copy at 1,300 entries.
 
 ## Excel export
 

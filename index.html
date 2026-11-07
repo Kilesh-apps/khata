@@ -457,7 +457,7 @@ function cardStatus(a){
 function billDue(b,p){const s=parseD(p.start);let d=mk(s.getFullYear(),s.getMonth(),b.day);if(d<p.start) d=mk(s.getFullYear(),s.getMonth()+1,b.day);return d}
 const billPaid=(b,p)=>S.tx.some(t=>t.bill===b.id&&inP(t,p));
 function alerts(){
-  const out=[],td=today();
+  const out=[],td=today();{const sh=typeof syncHealth==='function'&&syncHealth();if(sh) out.push(sh)}
   for(const a of activeAccs()) if(isCredit(a)){const c=cardStatus(a);
     if(c.remaining>0&&c.daysToDue<=5) out.push({cls:c.overdue?'danger':'warn',text:`${a.name}: pay ${money(c.remaining)} ${c.overdue?'(overdue since '+fmtD(c.due)+')':'by '+fmtD(c.due)}`,go:'accounts'})}
   const p=period(0);
@@ -1376,6 +1376,7 @@ function renderSettings(){
   <div id="bill-set" class="card"><h3>Reading bills</h3><p class="muted small">Checking…</p></div>
   <div class="card"><h3>Month</h3><div class="srow" style="border:0"><span>Month starts on<small>Use your salary day to budget payday to payday.</small></span><select id="f-start" class="ssel">${Array.from({length:28},(_,i)=>opt(String(i+1),ord(i+1),String(S.set.startDay))).join('')}</select></div></div>
   <div class="card"><h3>Data</h3><div class="srow"><span>Entries on this phone</span><span>${nf.format(n)}</span></div><div class="srow" style="border:0"><span>Storage used</span><span id="f-store">…</span></div>
+    ${localStorage.getItem('khata.undo')?`<div class="srow"><span>Undo last restore<small>Puts back the ${nf.format(safeJSON(localStorage.getItem('khata.undo')).count||0)} entries you had before restoring on ${fmtD(ds(new Date(safeJSON(localStorage.getItem('khata.undo')).at||Date.now())))}.</small></span><button class="btn" data-act="undoRestore">Undo</button></div>`:''}
     <div class="btns"><button class="btn danger grow" data-act="wipe">Erase everything</button></div></div>
   <p class="help" style="text-align:center">Khata, version ${APP_VERSION}</p>`;
   const save=()=>{persist();};
@@ -1393,7 +1394,7 @@ function renderSettings(){
     $('#f-aikey').addEventListener('change',e=>{aiSet().key=e.target.value.trim();save();toast(aiSet().key?'API key saved on this phone.':'API key removed.')});
     $('#f-aimodel').addEventListener('change',e=>{aiSet().model=e.target.value;save()})});
 }
-const APP_VERSION='v24';
+const APP_VERSION='v25';
 actions.settingsSave=()=>{if($('#f-aion')){const ai=aiSet();ai.on=$('#f-aion').checked;ai.key=($('#f-aikey').value||'').trim();ai.model=$('#f-aimodel').value}const sd=parseInt($('#f-start').value);S.set.startDay=sd>=1&&sd<=28?sd:1;S.set.hideOnOpen=$('#f-hideopen').checked;if($('#f-autolock')) S.set.autolock=Number($('#f-autolock').value);persist();actions.close();render()};
 actions.lockSet=async()=>{if(!window.crypto||!crypto.subtle){toast('Encryption needs the app opened over https.');return}
   if(meta.locked&&!(await requireAuth('Change PIN'))) return;
@@ -1436,6 +1437,13 @@ actions.wipe=async()=>{
   <div class="btns"><button class="btn" data-act="close">Cancel</button><button class="btn danger grow" data-act="wipeGo">Erase everything</button></div>`,p=>p.querySelector('input').focus());
 };
 actions.wipeGo=()=>{if(($('#w-conf').value||'').trim().toUpperCase()!=='ERASE'){toast('Type ERASE to confirm.');return}wipeAll()};
+/* keep the data being replaced, so a wrong restore can be undone */
+async function saveUndoCopy(){try{if(!S||!dataCount(S)) return;const snap=snapshot();
+  const v=cryptoKey?{enc:true,salt:meta.salt,...await encrypt(cryptoKey,snap)}:{enc:false,data:snap};v.at=Date.now();v.count=dataCount(S);
+  localStorage.setItem('khata.undo',JSON.stringify(v))}catch{}}
+actions.undoRestore=async()=>{const v=safeJSON(localStorage.getItem('khata.undo'));if(!v) return;if(!(await requireAuth('Undo the last restore'))) return;
+  let d=v.data;if(v.enc){try{d=await decrypt(cryptoKey&&meta.salt===v.salt?cryptoKey:null,v)}catch{d=null}if(!d){const r=await decryptPayload({app:'khata',...v},'Undo the last restore');if(!r) return;d=r.data}}
+  const keep=localStorage.getItem('khata.undo');await restore(d,{preConfirmed:true});localStorage.setItem('khata.undo',keep);toast('Your data from before the restore is back.')};
 let WIPING=false;
 function wipeAll(){WIPING=true;S=null;cryptoKey=null;saving.then(()=>{[K_PLAIN,K_ENC,K_META].forEach(k=>localStorage.removeItem(k));Object.keys(localStorage).filter(k=>k.startsWith('khata.')).forEach(k=>localStorage.removeItem(k));const del=()=>{const r=indexedDB.deleteDatabase('khata');r.onsuccess=r.onerror=()=>location.reload();setTimeout(()=>location.reload(),3000)};(typeof IDB!=='undefined'&&IDB.p?IDB.p.then(db=>db.close()).catch(()=>{}):Promise.resolve()).then(del)})}
 async function shareOrDownload(blob,name){
@@ -1506,11 +1514,12 @@ function importPayload(p){
   <div class="btns"><button class="btn primary grow" data-act="importGo">Restore</button></div>`,pp=>pp.querySelector('input').focus());
   actions.importGo=async()=>{$('#f-berr').textContent='Opening…';let d;try{const key=await deriveKey($('#f-bp').value,unb64(p.salt));d=await decrypt(key,p)}catch{$('#f-berr').textContent='Wrong PIN or passphrase for this backup.';return}actions.close();restore(d)};
 }
-async function restore(data){
+async function restore(data,opts={}){
   if(!data||!Array.isArray(data.tx)){toast('That backup looks damaged.');return}
-  if(!(await requireAuth('Replace your data'))) return;
+  if(!opts.preConfirmed&&!(await requireAuth('Replace your data'))) return;
   const n=data.tx.length+(data.gbills||[]).length+(data.vlogs||[]).length,ph=data.photos||{};delete data.photos;
-  if(!confirm(`Replace everything on this phone with this backup (${n} entries${Object.keys(ph).length?', '+Object.keys(ph).length+' photos':''})?`)) return;
+  if(!opts.preConfirmed&&!confirm(`Replace everything on this phone with this backup (${n} entries${Object.keys(ph).length?', '+Object.keys(ph).length+' photos':''})?`)) return;
+  await saveUndoCopy();
   const fileNoInc=!!data.noIncome,noIncFile=fileNoInc&&!(S&&S.tx.some(t=>t.t==='inc'));delete data.noIncome;
   for(const[id,b] of Object.entries(ph)){try{await storePhoto(new Blob([unb64(b)]),id)}catch{}}
   let missingBal=false;
@@ -2236,13 +2245,19 @@ actions.bioUnlock=async()=>{
   finally{bioBusy=false}
 };
 
-/* ================= Google Sheets sync (readable tabs + encrypted full backup) ================= */
-function gs(){return S.set.gs||(S.set.gs={url:'',secret:'',auto:true,last:0,dirty:false,error:''})}
+/* ================= Google Sheets sync: encrypted, versioned Drive backups + readable tabs ================= */
+function gs(){return S.set.gs||(S.set.gs={url:'',secret:'',auto:true,last:0,dirty:false,error:'',photos:true})}
 const gsValid=u=>/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(u||'');
 function gsSecret(){const g=gs();if(!g.secret){g.secret=b64(crypto.getRandomValues(new Uint8Array(24))).replace(/[+/=]/g,c=>({'+':'-','/':'_','=':''}[c]))}return g.secret}
 let gsTimer=null,gsBusy=false;
 function gsDirty(){const g=S.set.gs;if(!g||!gsValid(g.url)) return;g.dirty=true;if(g.auto) gsSchedule(20000)}
 function gsSchedule(ms){clearTimeout(gsTimer);gsTimer=setTimeout(()=>gsPush(false),ms)}
+/* what counts as an "entry" for the shrink guard, the preview and the backup test */
+const dataCount=d=>(d.tx||[]).length+(d.gbills||[]).length+(d.gpays||[]).length+(d.vlogs||[]).length;
+function dataNewest(d){let n=null;const see=(x,k)=>{if(!x||!x.date) return;if(!n||x.date>n.date||(x.date===n.date&&(x.ts||0)>(n.ts||0))) n={date:x.date,ts:x.ts||0,id:x.id,kind:k}};
+  (d.tx||[]).forEach(x=>see(x,'tx'));(d.gbills||[]).forEach(x=>see(x,'gb'));(d.gpays||[]).forEach(x=>see(x,'gp'));(d.vlogs||[]).forEach(x=>see(x,'vl'));return n}
+const hex=u=>[...u].map(b=>b.toString(16).padStart(2,'0')).join('');
+async function sha256hex(text){return hex(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text))))}
 function gsTabs(){
   const m=excelModel(),T={};
   T.Entries=[['Date','Type','Category','Subcategory','Account','To / with','Amount (Rs)','My share (Rs)','Paid with','Group','Note']].concat(m.entries.map(e=>[e.date,e.type,e.cat||'',e.sub||'',e.acc||'',e.to||'',e.amt,e.share==null?'':e.share,e.method||'',e.group||'',e.note||'']));
@@ -2253,69 +2268,185 @@ function gsTabs(){
   T.Service=[['Vehicle','Date','ODO (km)','Type','Cost (Rs)','Service no.','Note']].concat((m.service||[]).map(x=>[x.veh,x.date,x.odo??'',x.type,x.cost??'',x.no||'',x.note||'']));
   return T;
 }
-async function gsPayload(){
-  if(!cryptoKey||!meta.locked) throw new Error('Turn on PIN lock first, so the backup in your sheet is encrypted.');
-  const enc=await encrypt(cryptoKey,exportSnapshot());
-  return JSON.stringify({secret:gsSecret(),tabs:gsTabs(),backup:JSON.stringify({app:'khata',v:3,enc:true,salt:meta.salt,...enc})});
-}
-async function gsPush(manual){
+async function gsFetch(url,opts={},ms=45000){const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),ms);
+  try{const res=await fetch(url,{...opts,signal:ctl.signal});const j=await res.json().catch(()=>null);
+    if(!j) throw new Error('The sheet didn\u2019t answer properly. Check the link, and that access is set to \u201cAnyone\u201d.');return j}
+  catch(e){if(e&&e.name==='AbortError') throw new Error('The sheet took too long to answer.');throw e}finally{clearTimeout(t)}}
+const gsGet=(params,ms)=>gsFetch(gs().url+'?'+new URLSearchParams({secret:gs().secret,...params}),{},ms);
+const gsPost=(body,ms)=>gsFetch(gs().url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({secret:gsSecret(),...body})},ms);
+/* is the local data much smaller than what we last backed up? */
+function shrinkCheck(){const g=gs(),n=dataCount(S),last=g.lastCount;
+  return last>0&&(n===0||n<last*0.9)?{n,last}:null}
+async function gsPush(manual,force){
   const g=S&&S.set.gs;if(!g||!gsValid(g.url)){if(manual) toast('Paste your sheet\u2019s web-app link first.');return}
   if(!navigator.onLine){if(manual) toast('You\u2019re offline. Khata will sync when you\u2019re back online.');return}
-  if(gsBusy) return;gsBusy=true;if(manual) gsStatus('Syncing…');
+  if(!cryptoKey||!meta.locked){g.error='Turn on PIN lock first, so the backup is encrypted.';gsStatus();if(manual) toast(g.error);return}
+  if(gsBusy) return;
+  gsSecret();
+  const sh=!force&&shrinkCheck();
+  if(sh){g.blocked={n:sh.n,last:sh.last,at:Date.now()};persistQuiet();gsStatus();if(manual||!document.hidden) shrinkPrompt(sh.n,sh.last);return}
+  const snap=exportSnapshot(),plainSha=await sha256hex(JSON.stringify({...snap,set:{...snap.set,gs:null}}));
+  if(!manual&&!force&&g.lastPlainSha===plainSha&&Date.now()-(g.last||0)<24*3600e3){g.dirty=false;persistQuiet();return}   // nothing changed since a recent good sync
+  gsBusy=true;if(manual) gsStatus('Syncing…');
   try{
-    const body=await gsPayload(),ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),45000);
-    const res=await fetch(g.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body,signal:ctl.signal});clearTimeout(t);
-    const j=await res.json().catch(()=>null);
-    if(!j||!j.ok) throw new Error((j&&j.error)||'The sheet didn\u2019t answer properly. Check the link, and that access is set to \u201cAnyone\u201d.');
-    g.last=Date.now();g.dirty=false;g.error='';if(j.sheet) g.sheet=j.sheet;
-    if(manual) toast('Synced to your Google Sheet.');
-  }catch(e){g.error=e&&e.name==='AbortError'?'The sheet took too long to answer. Will try again.':(e&&e.message)||'Sync failed.';if(manual) toast(g.error)}
-  finally{gsBusy=false;const keep=g.dirty;persistQuiet();g.dirty=keep;gsStatus()}
+    const backup=JSON.stringify({app:'khata',v:3,enc:true,salt:meta.salt,...await encrypt(cryptoKey,snap)});
+    const count=dataCount(S),sha=await sha256hex(backup);
+    const j=await gsPost({action:'sync',tabs:gsTabs(),backup,sha,count,newest:dataNewest(S),version:APP_VERSION,force:!!force});
+    if(!j.ok&&j.code==='shrink'){g.blocked={n:j.sent,last:j.last,at:Date.now(),server:true};g.error='';shrinkPrompt(j.sent,j.last,true);return}
+    if(!j.ok) throw new Error(j.error||'Sync failed.');
+    Object.assign(g,{last:Date.now(),dirty:false,error:'',lastCount:count,lastPlainSha:plainSha,lastSha:sha,blocked:null,scriptV:j.v||0});if(j.sheet) g.sheet=j.sheet;
+    if(manual) toast('Synced. Your backup is saved in Drive.');
+    if(g.photos!==false) setTimeout(()=>gsPhotosPush(false),1500);
+  }catch(e){g.error=(e&&e.message)||'Sync failed.';if(manual) toast(g.error)}
+  finally{gsBusy=false;const keep=g.dirty;persistQuiet();g.dirty=keep;gsStatus();if(view==='add') updateAdd()}
 }
+function shrinkPrompt(n,last,server){
+  sheet(`<h2>Your data looks smaller than your last backup</h2>
+  <p class="help">This phone has <b>${nf.format(n)}</b> entries. Your last backup has <b>${nf.format(last)}</b>. Syncing now would make the smaller set your latest backup.</p>
+  <p class="help">If you didn\u2019t delete those entries on purpose, restore instead. Your older daily and monthly copies are kept either way.</p>
+  <div class="btns"><button class="btn primary grow" data-act="gsRestore">Restore instead</button><button class="btn grow" data-act="gsForce">Sync anyway</button></div>`);
+}
+actions.gsForce=async()=>{if(!(await requireAuth('Sync the smaller data'))) return;actions.close();gsPush(true,true)};
 function persistQuiet(){const f=window.gsDirty;window.gsDirty=null;try{persist()}finally{window.gsDirty=f}}
-function gsStatus(msg){const el=$('#gs-status');if(!el) return;const g=gs();
-  el.className='small '+(msg?'muted':g.error?'warn':'muted');
-  el.textContent=msg||(!gsValid(g.url)?'Not connected.':g.error?'Last sync failed: '+g.error:g.last?`Synced ${agoText(g.last)}${g.dirty?'. Newer changes are waiting.':'.'}`:'Connected. Not synced yet.')}
 const agoText=t=>{const m=Math.round((Date.now()-t)/60000);return m<1?'just now':m<60?m+' min ago':m<1440?Math.round(m/60)+' h ago':Math.round(m/1440)+' days ago'};
+const whenText=t=>{const d=new Date(t);return fmtD(ds(d))+' '+d.getFullYear()+', '+pad(d.getHours())+':'+pad(d.getMinutes())};
+function gsStatus(msg){const el=$('#gs-status');if(!el) return;const g=gs();
+  el.className='small '+(msg?'muted':g.error||g.blocked?'warn':'muted');
+  el.textContent=msg||(!gsValid(g.url)?'Not connected.':g.blocked?`Paused: this phone has ${nf.format(g.blocked.n)} entries, the last backup has ${nf.format(g.blocked.last)}. Tap Sync now to decide.`:g.error?'Last sync failed: '+g.error:g.last?`Last successful sync ${whenText(g.last)} (${agoText(g.last)})${g.dirty?'. Newer changes are waiting.':'.'}`:'Connected. Not synced yet.');
+  const t=$('#gs-test');if(t) t.innerHTML=g.lastTest?`<span class="${g.lastTest.ok?'good':'warn'}">Last backup test ${g.lastTest.ok?'passed':'failed'} ${fmtD(ds(new Date(g.lastTest.at)))}</span>${g.lastTest.ok?'':': '+esc(g.lastTest.msg)}`:'Backup not tested yet.';
+  const ph=$('#gs-ph');if(ph) ph.textContent=g.photoStat&&!g.photoStat.total?'No bill photos to back up yet.':g.photoStat?`${nf.format(g.photoStat.done)} of ${nf.format(g.photoStat.total)} bill photos backed up${g.photoStat.at?', checked '+agoText(g.photoStat.at):''}.`:'Bill photos not backed up yet.'}
 function gsCardHtml(){const g=gs();
-  return`<h3>Google Sheet</h3><p id="gs-status" class="small muted"></p>${g.sheet&&/^https:\/\/docs\.google\.com\//.test(g.sheet)?`<a class="link" href="${esc(g.sheet)}" target="_blank" rel="noopener">Open the sheet</a>`:''}
-  ${meta.locked?'':'<p class="help warn">Set a PIN lock first. The full backup is encrypted with it before it leaves your phone.</p>'}
+  return`<h3>Google Sheet backup</h3><p id="gs-status" class="small muted"></p><p id="gs-test" class="small" style="margin-top:4px"></p>${g.sheet&&/^https:\/\/docs\.google\.com\//.test(g.sheet)?`<a class="link" href="${esc(g.sheet)}" target="_blank" rel="noopener">Open the sheet</a>`:''}
+  ${meta.locked?'':'<p class="help warn">Set a PIN lock first. Your backup is encrypted with it before it leaves the phone.</p>'}
   <label class="flabel">Sheet\u2019s web-app link<input id="gs-url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://script.google.com/macros/s/…/exec" value="${esc(g.url)}"></label>
   <div class="srow"><span>Sync automatically<small>About 20 seconds after a change, while the app is open and online.</small></span><label class="switch"><input type="checkbox" id="gs-auto" ${g.auto?'checked':''} aria-label="Sync automatically"><i></i></label></div>
-  <div class="btns"><button class="btn primary grow" data-act="gsNow" ${meta.locked?'':'disabled'}>Sync now</button><button class="btn grow" data-act="gsRestore">Restore from sheet</button></div>
+  <div class="srow"><span>Back up bill photos<small id="gs-ph"></small></span><label class="switch"><input type="checkbox" id="gs-photos" ${g.photos!==false?'checked':''} aria-label="Back up bill photos"><i></i></label></div>
+  <div class="btns"><button class="btn primary grow" data-act="gsNow" ${meta.locked?'':'disabled'}>Sync now</button><button class="btn grow" data-act="gsTest">Test my backup</button></div>
+  <div class="btns" style="margin-top:8px"><button class="btn grow" data-act="gsRestore">Restore a backup</button></div>
   <details class="gs-help"><summary>Set up (once, about 3 minutes)</summary><ol class="help">
     <li>Create a new Google Sheet, then open Extensions → Apps Script.</li>
     <li>Delete what\u2019s there and paste the script: <button class="link" data-act="gsCopyScript">Copy the script</button></li>
-    <li>Save, then Deploy → New deployment → type: Web app. Execute as: Me. Who has access: Anyone. Deploy and allow access.</li>
+    <li>Save, then Deploy → New deployment → type: Web app. Execute as: Me. Who has access: Anyone. Deploy and allow access (Sheets and Drive).</li>
     <li>Copy the Web app link (ends in /exec) and paste it above, then tap Sync now.</li></ol>
-    <p class="help">The sheet gets readable tabs (spending, monthly totals, budgets, groups, fuel, service; never bank balances, income only if you included it) and one hidden tab with your full backup, encrypted with your PIN. Bill photos stay on the phone.</p>
-    <p class="lbl">Recovery code</p><p class="help" style="margin-top:4px">Only this code can read the backup from the sheet. Save it somewhere safe; a new phone needs it.</p>
+    <p class="help">Updating the script? Paste it, Save, then Deploy → Manage deployments → ✏️ → Version: New version → Deploy.</p>
+    <p class="help">Your Drive gets a folder of backups encrypted with your PIN: the latest, one per day for 14 days and one per month for 12 months, plus a folder of encrypted bill photos. The sheet gets readable tabs (never bank balances; income only if you included it) and a Backup log with dates and entry counts only.</p>
+    <p class="lbl">Recovery code</p><p class="help" style="margin-top:4px">Only this code can read your backups. Save it somewhere safe; a new phone needs it.</p>
     <div class="btns"><button class="btn grow" data-act="gsShowCode">Show recovery code</button><button class="btn grow" data-act="gsUseCode">Use a code from another phone</button></div></details>`;
 }
 function gsWire(){const u=$('#gs-url');if(!u) return;gsStatus();
   u.addEventListener('change',()=>{const v=u.value.trim(),g=gs();
     if(v&&!gsValid(v)){gsStatus(/\/dev\/?$/.test(v)?'That\u2019s the test (/dev) link. Copy the Web app link that ends in /exec.':'That doesn\u2019t look like a web-app link. It should start https://script.google.com/macros/s/ and end in /exec.');return}
-    g.url=v;g.error='';g.dirty=!!v;persistQuiet();gsStatus()});
-  $('#gs-auto').addEventListener('change',e=>{gs().auto=e.target.checked;persistQuiet();if(e.target.checked&&gs().dirty) gsSchedule(1500)})}
+    if(v!==g.url){g.url=v;g.error='';g.dirty=!!v;g.lastPlainSha='';persistQuiet()}gsStatus()});
+  $('#gs-auto').addEventListener('change',e=>{gs().auto=e.target.checked;persistQuiet();if(e.target.checked&&gs().dirty) gsSchedule(1500)});
+  $('#gs-photos').addEventListener('change',e=>{gs().photos=e.target.checked;persistQuiet();if(e.target.checked) gsPhotosPush(true)})}
 actions.gsNow=()=>{const u=$('#gs-url');if(u) u.dispatchEvent(new Event('change'));gsPush(true)};
 actions.gsCopyScript=async()=>{try{const t=await (await fetch('Code.gs',{cache:'no-store'})).text();await navigator.clipboard.writeText(t);toast('Script copied. Paste it in Apps Script.')}catch{toast('Couldn\u2019t copy. Open Code.gs from the GitHub repo and copy it from there.')}};
 actions.gsShowCode=async()=>{if(!(await requireAuth('Show recovery code'))) return;const c=gsSecret();persistQuiet();
-  sheet(`<h2>Recovery code</h2><p class="help">Anyone with this code and your sheet link can download the encrypted backup. They still need your PIN to open it.</p><label>Code<input readonly value="${esc(c)}" onfocus="this.select()"></label>
+  sheet(`<h2>Recovery code</h2><p class="help">Anyone with this code and your sheet link can download your encrypted backups. They still need your PIN to open them.</p><label>Code<input readonly value="${esc(c)}" onfocus="this.select()"></label>
   <div class="btns"><button class="btn primary grow" data-act="gsCopyCode">Copy</button><button class="btn grow" data-act="close">Done</button></div>`);
   actions.gsCopyCode=async()=>{try{await navigator.clipboard.writeText(c);toast('Copied.')}catch{toast('Long-press the code to copy it.')}}};
-actions.gsUseCode=()=>{sheet(`<h2>Use a recovery code</h2><p class="help">Paste the code from your old phone. This phone will then sync to that sheet, and you can restore from it.</p><label>Recovery code<input id="gs-code" autocomplete="off" spellcheck="false"></label>
+actions.gsUseCode=()=>{sheet(`<h2>Use a recovery code</h2><p class="help">Paste the code from your old phone. Then tap Restore a backup.</p><label>Recovery code<input id="gs-code" autocomplete="off" spellcheck="false"></label>
   <div class="btns"><button class="btn" data-act="close">Cancel</button><button class="btn primary grow" data-act="gsCodeSave">Use this code</button></div>`,p=>p.querySelector('input').focus());
-  actions.gsCodeSave=()=>{const v=$('#gs-code').value.trim();if(v.length<24){toast('That code looks too short.');return}gs().secret=v;gs().error='';persistQuiet();actions.close();renderSettings();toast('Code saved. Now tap Restore from sheet.')}};
-actions.gsRestore=async()=>{const g=gs(),u=$('#gs-url');if(u&&u.value.trim()!==g.url) u.dispatchEvent(new Event('change'));
-  if(!gsValid(g.url)){toast('Paste your sheet\u2019s web-app link first.');return}if(!g.secret){toast('Enter the recovery code first (Set up → Use a code from another phone).');return}
-  if(!navigator.onLine){toast('Restoring needs internet.');return}gsStatus('Fetching your backup…');
-  try{const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),30000);
-    const j=await (await fetch(g.url+'?secret='+encodeURIComponent(g.secret),{signal:ctl.signal})).json();clearTimeout(t);
-    if(!j.ok) throw new Error(j.error||'No backup found.');gsStatus();importPayload(JSON.parse(j.backup))}
-  catch(e){gsStatus('Couldn\u2019t restore: '+((e&&e.name==='AbortError')?'the sheet took too long.':(e&&e.message)||'unknown error'))}};
+  actions.gsCodeSave=()=>{const v=$('#gs-code').value.trim();if(v.length<24){toast('That code looks too short.');return}gs().secret=v;gs().error='';persistQuiet();actions.close();renderSettings();toast('Code saved. Now tap Restore a backup.')}};
+function gsReady(){const g=gs(),u=$('#gs-url');if(u&&u.value.trim()!==g.url) u.dispatchEvent(new Event('change'));
+  if(!gsValid(g.url)){toast('Paste your sheet\u2019s web-app link first.');return false}
+  if(!g.secret){toast('Enter the recovery code first (Set up → Use a code from another phone).');return false}
+  if(!navigator.onLine){toast('This needs internet.');return false}return true}
+/* fetch one snapshot, check its hash, decrypt it in memory */
+async function gsFetchSnapshot(id){
+  const j=await gsGet(id?{action:'get',id}:{},60000);if(!j.ok) throw new Error(j.error||'No backup found.');
+  if(j.meta&&j.meta.sha&&await sha256hex(j.backup)!==j.meta.sha) throw new Error('This backup file is damaged (its fingerprint doesn\u2019t match). Pick another one.');
+  return{payload:JSON.parse(j.backup),meta:j.meta||{},name:j.name||''};
+}
+async function decryptPayload(p,title){
+  if(!p||p.app!=='khata') throw new Error('That isn\u2019t a Khata backup.');
+  if(!p.enc) return{data:p.data,key:null};
+  if(cryptoKey&&meta.salt===p.salt){try{return{data:await decrypt(cryptoKey,p),key:cryptoKey}}catch{}}
+  return new Promise(res=>{
+    sheet(`<h2>${esc(title||'Open backup')}</h2><p class="help">Enter the PIN that was set when this backup was made.</p><label>PIN<input id="dp-pin" type="password" autocomplete="off"></label><p class="danger small" id="dp-err"></p>
+    <div class="btns"><button class="btn" data-act="dpNo">Cancel</button><button class="btn primary grow" data-act="dpGo">Open</button></div>`,pp=>pp.querySelector('input').focus());
+    actions.dpNo=()=>{actions.close();res(null)};
+    actions.dpGo=async()=>{$('#dp-err').textContent='Opening…';try{const key=await deriveKey($('#dp-pin').value,unb64(p.salt));const data=await decrypt(key,p);actions.close();res({data,key})}catch{$('#dp-err').textContent='Wrong PIN for this backup.'}};
+  });
+}
+const KIND={latest:'Latest',daily:'Daily',monthly:'Monthly',before:'Before the update'};
+actions.gsRestore=async()=>{
+  if(!gsReady()) return;actions.close();gsStatus('Fetching your backups…');
+  try{const j=await gsGet({action:'list'},30000);gsStatus();
+    if(!j.ok) throw new Error(j.error||'Couldn\u2019t list backups.');
+    if(!j.snapshots){if(confirm('Your sheet runs an older script with only one backup. Restore that one?')) gsRestorePick({id:''});return}
+    if(!j.snapshots.length){toast('No backups in this sheet yet.');return}
+    GSL=j.snapshots;
+    sheet(`<h2>Restore a backup</h2><p class="help">Pick one. You\u2019ll see what\u2019s in it before anything on this phone changes.</p>
+    ${j.snapshots.map((s,i)=>`<button class="pick" data-act="gsRestorePick" data-i="${i}"><div><b>${KIND[s.kind]||esc(s.kind)}</b><small>${whenText(s.time)}${s.version?', app '+esc(s.version):''}</small></div><span class="muted">${s.count==null?'':nf.format(s.count)+' entries'}</span></button>`).join('')}`);
+  }catch(e){gsStatus();toast('Couldn\u2019t load backups: '+((e&&e.message)||'error'))}
+};
+let GSL=[];
+async function gsRestorePick(d){
+  const s=d.id===''?{id:'',kind:'latest',time:''}:GSL[+d.i];actions.close();toast('Downloading the backup…');
+  try{const snap=await gsFetchSnapshot(s.id);const r=await decryptPayload(snap.payload,'Open this backup');if(!r) return;
+    const data=r.data,nw=dataNewest(data),n=dataCount(data),phs=new Set();['tx','gbills','vlogs'].forEach(k=>(data[k]||[]).forEach(x=>(x.photos||[]).forEach(p=>phs.add(p))));
+    sheet(`<h2>Restore this backup?</h2><p class="muted small">${KIND[s.kind]||''}${snap.meta.time?', saved '+whenText(snap.meta.time):''}</p>
+    <div class="card"><div class="kv"><span>Entries</span><span>${nf.format(n)}</span></div><div class="kv"><span>Newest entry</span><span>${nw?fmtD(nw.date)+' '+nw.date.slice(0,4):'none'}</span></div>
+    <div class="kv"><span>Accounts</span><span>${(data.accounts||[]).length}</span></div><div class="kv"><span>Groups</span><span>${(data.groups||[]).length}</span></div><div class="kv"><span>Vehicles</span><span>${(data.vehicles||[]).length}</span></div><div class="kv"><span>Bill photos</span><span>${phs.size}</span></div></div>
+    <p class="help">This phone now has ${nf.format(S?dataCount(S):0)} entries. They will be replaced. A copy of them is kept on this phone so you can undo.</p>
+    <div class="btns"><button class="btn" data-act="close">Cancel</button><button class="btn primary grow" data-act="gsRestoreGo">Replace my data</button></div>`);
+    actions.gsRestoreGo=async()=>{if(!(await requireAuth('Replace your data'))) return;actions.close();
+      const link={url:gs().url,secret:gs().secret,auto:gs().auto};
+      await restore(data,{preConfirmed:true});Object.assign(gs(),link,{lastCount:n,lastPlainSha:'',blocked:null,error:''});persistQuiet();
+      if(phs.size) gsPhotosPull([...phs],r.key)}}
+  catch(e){toast('Couldn\u2019t restore: '+((e&&e.message)||'error'))}
+}
+actions.gsRestorePick=gsRestorePick;
+/* D. test the latest backup without touching local data */
+actions.gsTest=async()=>{
+  if(!gsReady()) return;const g=gs();gsStatus('Testing your backup…');
+  const done=(ok,msg)=>{g.lastTest={at:Date.now(),ok,msg};persistQuiet();gsStatus();
+    sheet(`<h2>${ok?'Backup test passed':'Backup test failed'}</h2><p class="${ok?'good':'warn'}">${esc(msg)}</p><div class="btns"><button class="btn primary grow" data-act="close">OK</button></div>`)};
+  try{const snap=await gsFetchSnapshot('');const r=await decryptPayload(snap.payload,'Test my backup');if(!r){gsStatus();return}
+    const b=r.data,bn=dataCount(b),ln=dataCount(S),bw=dataNewest(b),lw=dataNewest(S);
+    if(!Array.isArray(b.tx)) return done(false,'The backup opened, but it doesn\u2019t contain Khata data.');
+    if(bn===ln&&((!bw&&!lw)||(bw&&lw&&bw.id===lw.id))) return done(true,`The latest backup opens with your PIN and matches this phone: ${nf.format(bn)} entries, newest ${bw?fmtD(bw.date)+' '+bw.date.slice(0,4):'none'}.`);
+    if(bn<ln) return done(false,`The backup opens, but it\u2019s behind: ${nf.format(bn)} entries in the backup, ${nf.format(ln)} on this phone. Tap Sync now, then test again.`);
+    done(false,`The backup opens, but it doesn\u2019t match this phone: ${nf.format(bn)} entries in the backup (newest ${bw?fmtD(bw.date):'none'}), ${nf.format(ln)} here (newest ${lw?fmtD(lw.date):'none'}).`);
+  }catch(e){done(false,(e&&e.message)||'Couldn\u2019t download the backup.')}
+};
+/* F. bill photos: encrypted with the PIN key, one Drive file each, only new ones uploaded */
+let phBusy=false;
+async function gsPhotosPush(manual){
+  const g=gs();if(phBusy||!gsValid(g.url)||!g.secret||!cryptoKey||!meta.locked||g.photos===false||!navigator.onLine) return;phBusy=true;
+  try{const refs=[...photoRefs()],j=await gsGet({action:'photos'},30000);if(!j.ok) throw new Error(j.error||'');
+    const have=new Set(g.photoSalt===meta.salt?(j.ids||[]):[]),todo=refs.filter(id=>!have.has(id));let done=refs.length-todo.length;
+    g.photoStat={done,total:refs.length,at:Date.now()};gsStatus();
+    for(let i=0;i<todo.length;i+=8){
+      const batch=[];for(const id of todo.slice(i,i+8)){const b=await photoBytes(id);if(!b) continue;const iv=crypto.getRandomValues(new Uint8Array(12));
+        const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},cryptoKey,b));batch.push({id,data:JSON.stringify({salt:meta.salt,iv:b64(iv),ct:b64(ct)})})}
+      if(!batch.length) continue;const r=await gsPost({action:'photo-put',photos:batch},90000);if(!r.ok) throw new Error(r.error||'Photo upload failed.');
+      done+=r.saved.length;g.photoStat={done,total:refs.length,at:Date.now()};gsStatus()}
+    g.photoSalt=meta.salt;
+    if(refs.length&&(!g.photoPruned||Date.now()-g.photoPruned>30*864e5)){const r=await gsPost({action:'photo-prune',keep:refs},60000);if(r.ok) g.photoPruned=Date.now()}
+    if(manual) toast('Bill photos are backed up.');
+  }catch(e){if(manual) toast('Photo backup paused: '+((e&&e.message)||'error'))}
+  finally{phBusy=false;persistQuiet();gsStatus()}
+}
+async function gsPhotosPull(ids,key){
+  let ok=0,bad=0;toast(`Getting ${ids.length} bill photos…`);
+  for(const id of ids){try{const have=await IDB.get(id);if(have){ok++;continue}
+      const j=await gsGet({action:'photo',id},30000);if(!j.ok) {bad++;continue}
+      const p=JSON.parse(j.data);if(!key){bad++;continue}
+      const bytes=await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(p.iv)},key,unb64(p.ct));await storePhoto(new Blob([bytes]),id);ok++}
+    catch{bad++}}
+  toast(bad?`Got ${ok} bill photos; ${bad} couldn\u2019t be restored.`:`All ${ok} bill photos restored.`);render();
+}
+/* E. sync health */
+function syncHealth(){const g=S&&S.set.gs;if(!g||!gsValid(g.url)) return null;
+  if(g.blocked) return{cls:'warn',text:'Google Sheet backup paused: your data looks smaller than the last backup',go:'settings'};
+  const days=g.last?Math.floor((Date.now()-g.last)/864e5):null;
+  if(days==null||days>3) return{cls:'warn',text:days==null?'Not backed up to your Google Sheet yet':`Not backed up to your Google Sheet for ${days} days`,go:'settings'};
+  return null}
 window.addEventListener('online',()=>{if(S&&S.set.gs&&S.set.gs.dirty&&S.set.gs.auto) gsSchedule(3000)});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&S&&S.set.gs&&S.set.gs.dirty&&S.set.gs.auto&&gsValid(S.set.gs.url)&&navigator.onLine) gsPush(false)});
-setInterval(()=>{if(S&&S.set.gs&&S.set.gs.auto&&gsValid(S.set.gs.url)&&(S.set.gs.dirty||Date.now()-(S.set.gs.last||0)>6*3600e3)&&!gsBusy&&navigator.onLine&&!document.hidden){S.set.gs.dirty=true;gsPush(false)}},60000);
+setInterval(()=>{const g=S&&S.set.gs;if(g&&g.auto&&gsValid(g.url)&&(g.dirty||Date.now()-(g.last||0)>24*3600e3)&&!g.blocked&&!gsBusy&&navigator.onLine&&!document.hidden) gsPush(false)},60000);
 
 /* ================= PIN reset: recovery key (RSA-OAEP keeps it working through PIN changes) =================
    Creating a key: an RSA key pair is made on the phone. The public half encrypts the current PIN (and every
