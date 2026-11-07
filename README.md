@@ -18,7 +18,7 @@ A personal money ledger. Static PWA on GitHub Pages. No server, no database. The
 | `xlsx.js` | Builds the Excel export (formulas, charts, hidden backup sheet) and reads it back for restore. No libraries. |
 | `tesseract*.js`, `eng.traineddata.gz` | Offline bill reader (tesseract.js 7, Apache-2.0, see `LICENSE-tesseract.md`). Kept next to `index.html` (no folders) so they can be uploaded from a phone. |
 | `Code.gs` | Apps Script (version 3) for the optional Google Sheets sync and Drive backups. Not used by the app itself. |
-| `sw.js` | Caches the app for offline use. **Bump `CACHE` (`khata-v26` → `khata-v27`) on every update.** |
+| `sw.js` | Caches the app for offline use. **Bump `CACHE` (`khata-v27` → `khata-v28`) on every update.** |
 | `manifest.webmanifest` | Install info, home-screen shortcuts, and the Android share target for bank SMS. |
 | `icon-*.png` | App icons. |
 
@@ -64,6 +64,12 @@ A personal money ledger. Static PWA on GitHub Pages. No server, no database. The
 - Setting the first PIN shows a recovery key (8 groups of 4). Settings → Privacy → Recovery key makes a new one.
 - How it works: an RSA key pair is made on the phone. The public half encrypts the current PIN, and every new PIN when it changes, so the key keeps working. The private half is stored encrypted with the recovery key.
 - Lock screen → Forgot your PIN? → Reset it: use the recovery key (or fingerprint, if fingerprint unlock is on), then set a new PIN. Wrong keys count towards the same wait as wrong PINs.
+
+## Safe to spend today
+
+- `S.set.flex`: `{on, name, amt (paisa), cats: [category ids], subs: [type ids from other categories]}`. Defaults: "Snacks and friends", Rs 8,500, Food & drinks and Going out (all their types, including the new Junk food type).
+- Add screen card: (amount − my share of this period's spending in those categories) ÷ days left including today, rounded down to whole rupees, never negative. Over the amount: "Over by Rs X this month." While typing an amount in a counted category, the card shows the effect: "Safe today Rs 340 → Rs 115 after this".
+- Uses the month start day, respects hidden amounts, recalculates on every add, edit, delete and undo. Settings live on the Plan tab (Safe to spend card). Included in all backups; the Sheet's Budgets tab and the Excel Summary get a "(safe to spend)" row.
 
 ## Category types (subcategories)
 

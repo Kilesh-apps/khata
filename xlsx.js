@@ -240,6 +240,7 @@ function build(m){
   const tb=m.cats.reduce((s,c)=>s+(c.budget||0),0);
   if(m.cats.length) S.set(r,0,'Total',ST.totL).set(r,1,tb,ST.totM,`SUM(B${c0}:B${c1})`).set(r,2,spentCached,ST.totM,`SUM(C${c0}:C${c1})`).set(r,3,'',ST.totM).set(r,4,'',ST.totP);
   else S.set(r,0,'No spending in this period yet.',ST.sub);
+  if(m.flex){r++;S.set(r,0,m.flex.name+' (safe to spend)',ST.text).set(r,1,m.flex.amt,ST.money).set(r,2,m.flex.spent,ST.money).set(r,3,m.flex.left,m.flex.left<0?ST.moneyR:ST.money);r++;S.set(r,0,'Safe to spend counts your share of chosen categories; it overlaps the rows above.',ST.note)}
   r+=2;
   if(m.cats.length){
     S.charts.push({r1:r-1,r2:r-1+Math.max(12,m.cats.length+5),c1:0,c2:6,xml:barChart({t:'Spending by category',dir:'bar',gap:45,

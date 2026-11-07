@@ -209,6 +209,18 @@ label.sel{cursor:text}
 .ctip{position:absolute;top:-6px;transform:translateY(-100%);background:var(--ink);color:var(--bg);font-size:12.5px;line-height:1.4;padding:7px 10px;border-radius:9px;pointer-events:none;white-space:nowrap;z-index:2;box-shadow:0 4px 12px rgba(0,0,0,.25)}
 .ctip .danger{color:#ffb4a8}
 .dseg{cursor:pointer}
+.safe{display:block;margin-top:6px;border-radius:16px;background:var(--surface);padding:8px 14px 9px;position:relative}
+.safe-row{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+.safe-row .safe-sub{text-align:right;flex:none;margin:0 0 4px;line-height:1.3}
+.safe-main{display:block;width:100%;text-align:left}
+.safe-main small{display:block;font-size:12.5px;color:var(--muted);font-weight:550}
+.safe-num{display:block;min-width:0;font-size:clamp(28px,8.6vw,36px);font-weight:650;letter-spacing:-.02em;line-height:1.15;margin-top:2px;color:var(--accent)}
+.safe-num.over{font-size:clamp(20px,5.6vw,24px);color:var(--danger);margin:4px 0 2px}
+.safe-sub{display:block;font-size:13px;color:var(--muted);margin-top:2px}
+.schipalert{position:absolute;top:8px;right:10px;max-width:52%;font-size:11.5px;font-weight:600;padding:3px 8px;border-radius:8px;background:var(--warn-soft);color:var(--warn);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.schipalert.danger{background:var(--danger-soft);color:var(--danger)}
+@media (max-height:780px){.safe{padding:7px 12px 9px}.safe-num{font-size:28px;line-height:1.1}.safe-sub{font-size:12.5px;margin-top:0}}
+.safe.compact{display:block;width:100%;text-align:left;margin-top:6px;border-radius:10px;background:var(--surface);padding:9px 12px;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pills{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:4px}
 .tbtn{height:44px;flex:none;padding:0 14px}.tbtn.on{border-color:var(--accent);color:var(--accent)}
 .filter{display:inline-flex;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;align-items:center;gap:8px;margin-top:6px;height:34px;padding:0 12px;border-radius:17px;background:var(--accent-soft);color:var(--accent);font-size:14px;font-weight:550}
@@ -307,7 +319,7 @@ main{padding-bottom:22px}
 #lock input{width:100%;height:56px;border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:0 16px;font-size:22px;letter-spacing:.2em}
 #lock-err{min-height:22px;margin:8px 0;font-size:14px}
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(76px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:12px 16px;border-radius:12px;font-size:14px;display:flex;gap:16px;align-items:center;z-index:30;width:max-content;max-width:calc(100% - 32px)}
-#toast button{color:var(--bg);font-weight:700;text-decoration:underline;text-underline-offset:3px}
+#toast button{color:var(--bg);font-weight:700;text-decoration:underline;text-underline-offset:3px;white-space:nowrap;flex:none}
 #toast .tx{text-decoration:none;opacity:.7;padding:0 2px 0 4px;font-weight:400}
 #toast{touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}
 @media (prefers-reduced-motion:no-preference){.panel{animation:up .2s ease-out}@keyframes up{from{transform:translateY(30px);opacity:.5}}}
@@ -369,18 +381,18 @@ let H={day:null,off:0,mode:'overview',q:'',range:'period',from:'',to:'',sort:'ne
 let G={open:null};
 
 function safeJSON(s){try{return s?JSON.parse(s):null}catch{return null}}
-const SEED_SUBS=[{"id": "s-restaurants", "parent": "food", "name": "Restaurants", "icon": "food"}, {"id": "s-snacks", "parent": "food", "name": "Snacks & tea", "icon": "coffee"}, {"id": "s-delivery", "parent": "food", "name": "Delivery", "icon": "box"}, {"id": "s-drinks", "parent": "food", "name": "Drinks & bar", "icon": "out"}, {"id": "s-veg", "parent": "groc", "name": "Vegetables & fruit", "icon": "leaf"}, {"id": "s-meat", "parent": "groc", "name": "Meat & fish", "icon": "fish"}, {"id": "s-household", "parent": "groc", "name": "Household supplies", "icon": "home"}, {"id": "s-bus", "parent": "trans", "name": "Bus & micro", "icon": "trans"}, {"id": "s-ride", "parent": "trans", "name": "Taxi & ride apps", "icon": "car"}, {"id": "s-flight", "parent": "trans", "name": "Flights", "icon": "travel"}, {"id": "s-parking", "parent": "trans", "name": "Parking & tolls", "icon": "parking"}, {"id": "s-elec", "parent": "util", "name": "Electricity", "icon": "util"}, {"id": "s-water", "parent": "util", "name": "Water", "icon": "drop"}, {"id": "s-gas", "parent": "util", "name": "Cooking gas", "icon": "flame"}, {"id": "s-recharge", "parent": "net", "name": "Mobile recharge", "icon": "net"}, {"id": "s-internet", "parent": "net", "name": "Internet", "icon": "wifi"}, {"id": "s-clothes", "parent": "shop", "name": "Clothes & shoes", "icon": "shirt"}, {"id": "s-electronics", "parent": "shop", "name": "Electronics", "icon": "laptop"}, {"id": "s-equipment", "parent": "shop", "name": "Equipment & tools", "icon": "vehicle"}, {"id": "s-furniture", "parent": "shop", "name": "Home & furniture", "icon": "sofa"}, {"id": "s-care", "parent": "shop", "name": "Personal care", "icon": "beauty"}, {"id": "s-online", "parent": "shop", "name": "Online orders", "icon": "box"}, {"id": "s-books", "parent": "shop", "name": "Books", "icon": "learn"}, {"id": "s-doctor", "parent": "health", "name": "Doctor & hospital", "icon": "doctor"}, {"id": "s-medicine", "parent": "health", "name": "Medicine", "icon": "pill"}, {"id": "s-fitness", "parent": "health", "name": "Gym & fitness", "icon": "gym"}, {"id": "s-insurance", "parent": "health", "name": "Insurance", "icon": "other"}, {"id": "s-kids", "parent": "family", "name": "Kids", "icon": "kids"}, {"id": "s-parents", "parent": "family", "name": "Parents", "icon": "family"}, {"id": "s-pets", "parent": "family", "name": "Pets", "icon": "pets"}, {"id": "s-movies", "parent": "out", "name": "Movies", "icon": "film"}, {"id": "s-events", "parent": "out", "name": "Events", "icon": "ticket"}, {"id": "s-trips", "parent": "out", "name": "Trips & travel", "icon": "travel"}, {"id": "s-streaming", "parent": "subs", "name": "Streaming", "icon": "play"}, {"id": "s-software", "parent": "subs", "name": "Apps & software", "icon": "code"}, {"id": "s-member", "parent": "subs", "name": "Memberships", "icon": "card"}, {"id": "s-bankfee", "parent": "fees", "name": "Bank charges", "icon": "bank"}, {"id": "s-cardfee", "parent": "fees", "name": "Card fees", "icon": "card"}, {"id": "s-latefee", "parent": "fees", "name": "Late fees", "icon": "clock"}, {"id": "s-games", "parent": "out", "name": "Games", "icon": "game"}, {"id": "s-concerts", "parent": "out", "name": "Music & concerts", "icon": "music"}, {"id": "s-dentist", "parent": "health", "name": "Dentist", "icon": "tooth"}, {"id": "s-eyes", "parent": "health", "name": "Eye care", "icon": "glasses"}, {"id": "s-repairs", "parent": "util", "name": "Repairs", "icon": "hammer"}, {"id": "s-cleaning", "parent": "util", "name": "Cleaning & laundry", "icon": "laundry"}, {"id": "s-temple", "parent": "give", "name": "Temple & puja", "icon": "temple"}, {"id": "s-charity", "parent": "give", "name": "Charity", "icon": "heart"}, {"id": "s-haircut", "parent": "shop", "name": "Haircut & salon", "icon": "scissors"}, {"id": "s-school", "parent": "family", "name": "School fees", "icon": "learn"}];
+const SEED_SUBS=[{"id": "s-restaurants", "parent": "food", "name": "Restaurants", "icon": "food"}, {"id": "s-snacks", "parent": "food", "name": "Snacks & tea", "icon": "coffee"}, {"id": "s-delivery", "parent": "food", "name": "Delivery", "icon": "box"}, {"id": "s-drinks", "parent": "food", "name": "Drinks & bar", "icon": "out"}, {"id": "s-veg", "parent": "groc", "name": "Vegetables & fruit", "icon": "leaf"}, {"id": "s-meat", "parent": "groc", "name": "Meat & fish", "icon": "fish"}, {"id": "s-household", "parent": "groc", "name": "Household supplies", "icon": "home"}, {"id": "s-bus", "parent": "trans", "name": "Bus & micro", "icon": "trans"}, {"id": "s-ride", "parent": "trans", "name": "Taxi & ride apps", "icon": "car"}, {"id": "s-flight", "parent": "trans", "name": "Flights", "icon": "travel"}, {"id": "s-parking", "parent": "trans", "name": "Parking & tolls", "icon": "parking"}, {"id": "s-elec", "parent": "util", "name": "Electricity", "icon": "util"}, {"id": "s-water", "parent": "util", "name": "Water", "icon": "drop"}, {"id": "s-gas", "parent": "util", "name": "Cooking gas", "icon": "flame"}, {"id": "s-recharge", "parent": "net", "name": "Mobile recharge", "icon": "net"}, {"id": "s-internet", "parent": "net", "name": "Internet", "icon": "wifi"}, {"id": "s-clothes", "parent": "shop", "name": "Clothes & shoes", "icon": "shirt"}, {"id": "s-electronics", "parent": "shop", "name": "Electronics", "icon": "laptop"}, {"id": "s-equipment", "parent": "shop", "name": "Equipment & tools", "icon": "vehicle"}, {"id": "s-furniture", "parent": "shop", "name": "Home & furniture", "icon": "sofa"}, {"id": "s-care", "parent": "shop", "name": "Personal care", "icon": "beauty"}, {"id": "s-online", "parent": "shop", "name": "Online orders", "icon": "box"}, {"id": "s-books", "parent": "shop", "name": "Books", "icon": "learn"}, {"id": "s-doctor", "parent": "health", "name": "Doctor & hospital", "icon": "doctor"}, {"id": "s-medicine", "parent": "health", "name": "Medicine", "icon": "pill"}, {"id": "s-fitness", "parent": "health", "name": "Gym & fitness", "icon": "gym"}, {"id": "s-insurance", "parent": "health", "name": "Insurance", "icon": "other"}, {"id": "s-kids", "parent": "family", "name": "Kids", "icon": "kids"}, {"id": "s-parents", "parent": "family", "name": "Parents", "icon": "family"}, {"id": "s-pets", "parent": "family", "name": "Pets", "icon": "pets"}, {"id": "s-movies", "parent": "out", "name": "Movies", "icon": "film"}, {"id": "s-events", "parent": "out", "name": "Events", "icon": "ticket"}, {"id": "s-trips", "parent": "out", "name": "Trips & travel", "icon": "travel"}, {"id": "s-streaming", "parent": "subs", "name": "Streaming", "icon": "play"}, {"id": "s-software", "parent": "subs", "name": "Apps & software", "icon": "code"}, {"id": "s-member", "parent": "subs", "name": "Memberships", "icon": "card"}, {"id": "s-bankfee", "parent": "fees", "name": "Bank charges", "icon": "bank"}, {"id": "s-cardfee", "parent": "fees", "name": "Card fees", "icon": "card"}, {"id": "s-latefee", "parent": "fees", "name": "Late fees", "icon": "clock"}, {"id": "s-games", "parent": "out", "name": "Games", "icon": "game"}, {"id": "s-concerts", "parent": "out", "name": "Music & concerts", "icon": "music"}, {"id": "s-dentist", "parent": "health", "name": "Dentist", "icon": "tooth"}, {"id": "s-eyes", "parent": "health", "name": "Eye care", "icon": "glasses"}, {"id": "s-repairs", "parent": "util", "name": "Repairs", "icon": "hammer"}, {"id": "s-cleaning", "parent": "util", "name": "Cleaning & laundry", "icon": "laundry"}, {"id": "s-temple", "parent": "give", "name": "Temple & puja", "icon": "temple"}, {"id": "s-charity", "parent": "give", "name": "Charity", "icon": "heart"}, {"id": "s-haircut", "parent": "shop", "name": "Haircut & salon", "icon": "scissors"}, {"id": "s-school", "parent": "family", "name": "School fees", "icon": "learn"}, {"id": "s-junk", "parent": "food", "name": "Junk food", "icon": "pizza"}];
 function fresh(){return{subs:SEED_SUBS.map(x=>({...x})),v:2,accounts:[{id:'cash',name:'Cash',kind:'cash',open:0}],
   cats:SEED.map(([id,name],i)=>({id,name,kind:'exp',budget:0,color:PAL[i%PAL.length]})).concat(SEED_INC.map(([id,name],i)=>({id,name,kind:'inc',color:PAL[(i+3)%PAL.length]}))),
   tx:[],bills:[],quick:[],groups:[],gbills:[],gpays:[],vehicles:[],vlogs:[],
-  set:{subsV:2,startDay:1,autolock:1,hide:false,hideOnOpen:false,lastBackup:null,lastAcc:{}}}}
+  set:{subsV:3,startDay:1,autolock:1,hide:false,hideOnOpen:false,lastBackup:null,lastAcc:{}}}}
 function migrate(){
   const f=fresh();
   for(const k of ['accounts','cats','tx','bills','quick','groups','gbills','gpays','vehicles','vlogs']) if(!Array.isArray(S[k])) S[k]=f[k];
   S.set=Object.assign(f.set,S.set||{});if(!S.set.lastAcc) S.set.lastAcc={};
   S.cats.forEach((c,i)=>{if(!c.color) c.color=PAL[i%PAL.length]});
   if(!Array.isArray(S.subs)){S.subs=SEED_SUBS.filter(x=>S.cats.some(c=>c.id===x.parent)).map(x=>({...x}))}
-  if(!S.set.subsV||S.set.subsV<2){SEED_SUBS.forEach(x=>{if(!S.subs.some(y=>y.id===x.id)&&S.cats.some(c=>c.id===x.parent)) S.subs.push({...x})});S.set.subsV=2}
+  if(!S.set.subsV||S.set.subsV<3){SEED_SUBS.forEach(x=>{if(!S.subs.some(y=>y.id===x.id)&&S.cats.some(c=>c.id===x.parent)) S.subs.push({...x})});S.set.subsV=3}
   if(S.set.hideOnOpen||(S.set.guard&&S.set.guard.mode!=='off')) S.set.hide=true;S.v=2;
 }
 
@@ -652,6 +664,7 @@ function updateAdd(){
   /* status */
   const al=alerts(),st=$('#add-status');
   if(activeAccs().length<2&&!S.tx.length) st.innerHTML=`<button class="status" data-act="tab" data-v="accounts">Add your bank accounts and cards first. <b class="good">Set up accounts</b></button>`;
+  else if(renderSafe()){}
   else if(al.length) st.innerHTML=`<button class="status ${al[0].cls}" data-act="tab" data-v="${al[0].go}">${esc(al[0].text)}${al.length>1?`, and ${al.length-1} more`:''}</button>`;
   else{const p=period(0),spent=sum(spends(p),x=>x.share),budget=S.cats.reduce((s,c)=>s+(c.kind==='exp'&&!c.hidden?c.budget||0:0),0);
     if(budget){const left=budget-spent,days=diffDays(today(),p.end)+1;
@@ -717,6 +730,33 @@ function saveState(){
   if(A.split&&A.split.mode==='exact'){const s=sum(A.split.members,m=>toP(A.split.custom[m]));if(s!==amt) return[false,`Split adds up to ${money(s,{hide:false})}`]}
   return[true,`Save ${money(amt,{hide:false})}${A.split?' split':''}`];
 }
+/* ===== Safe to spend today (flexible spending pool) ===== */
+function flex(){return S.set.flex||(S.set.flex={on:true,name:'Snacks and friends',amt:850000,cats:['food','out'],subs:[]})}
+const inFlex=(cat,sub)=>{const f=flex();return f.cats.includes(cat)||(!!sub&&f.subs.includes(sub))};
+function flexState(extra=0){
+  const f=flex(),p=period(0),spent=sum(spends(p).filter(x=>inFlex(x.cat,x.sub)),x=>x.share)+extra;
+  const left=f.amt-spent,days=diffDays(today(),p.end)+1,safe=left>0?Math.floor(left/days/100)*100:0;
+  return{f,p,spent,left,days,safe};
+}
+/* the amount being typed, as it would count toward the pool (my share for splits) */
+function pendingFlex(){
+  if(A.t!=='exp'||!A.cat||!inFlex(A.cat,A.sub)) return 0;const amt=toP(A.amt);if(!amt) return 0;
+  const p=period(0);if(A.date&&(A.date<p.start||A.date>p.end)) return 0;
+  if(A.split){const sp=A.split;try{const sh=computeShares(amt,sp.members,sp.payer,sp.mode,sp.custom);return sh.me||0}catch{return 0}}
+  return amt;
+}
+function renderSafe(){
+  const box=$('#add-status');if(!box||!S) return;const f=flex();if(!f.on||!f.amt) return false;
+  const st=flexState(),al=alerts(),chip=al.length?`<button class="schipalert ${al[0].cls}" data-act="tab" data-v="${al[0].go}">${esc(al[0].text)}${al.length>1?` +${al.length-1}`:''}</button>`:'';
+  const pend=pendingFlex(),typing=!!toP(A.amt);
+  if(typing){const now=st.safe,af=flexState(pend),over=af.left<0;
+    box.innerHTML=`<button class="safe compact" data-act="flexOpen"><span>Safe today <b>${money(now)}</b>${pend?` → <b class="${over?'danger':'good'}">${over?'over by '+money(-af.left):money(af.safe)}</b> after this`:''}</span></button>`;return true}
+  const num=st.left<0?`<b class="safe-num over">Over by ${money(-st.left)} this month</b>`:`<b class="safe-num">${money(st.safe)}</b>`;
+  box.innerHTML=`<div class="safe">${chip}<button class="safe-main" data-act="flexOpen"><small>Safe to spend today</small><span class="safe-row">${num}
+    <span class="safe-sub">${money(Math.max(0,st.left))} left of ${money(f.amt)},<br>${st.days} day${st.days===1?'':'s'} to go</span></span></button></div>`;
+  return true;
+}
+actions.flexOpen=()=>{show('plan');setTimeout(()=>{const c=$('#flex-card');if(c) c.scrollIntoView({block:'start'})},50)};
 function updateSave(){const[ok,label]=saveState(),s=$('#save');s.classList.toggle('wait',!ok);s.textContent=ok?label.replace(/^Save /,'Ready to save ').replace(/^Move /,'Ready to move ')+'. Tap ✓':label;s.setAttribute('aria-disabled',!ok);fabState()}
 const FAB_PLUS='M12 5v14M5 12h14',FAB_OK='M5 12.5l4.5 4.5L19 7.5';
 function fabState(){const f=document.querySelector('.fab');if(!f) return;const onAdd=view==='add'&&S,ok=onAdd&&saveState()[0];
@@ -734,7 +774,7 @@ actions.key=d=>{
   if(k==='del') a=a.slice(0,-1);else if(k==='C') a='';
   else if(k==='.'){if(!a.includes('.')) a=(a||'0')+'.'}
   else{if(a.includes('.')){if(a.split('.')[1].length>=2) return}else if(a.replace(/^0+/,'').length>=9) return;a=(a==='0'?'':a)+k}
-  const was=!!A.amt;A.amt=a;if(document.activeElement?.id==='note') document.activeElement.blur();if(was!==!!A.amt&&S.quick.length) updateAdd();else{updateAmt();updateSave()}
+  const was=!!A.amt;A.amt=a;if(document.activeElement?.id==='note') document.activeElement.blur();if(was!==!!A.amt&&S.quick.length) updateAdd();else{updateAmt();updateSave();if(!(activeAccs().length<2&&!S.tx.length)) renderSafe()}
 };
 actions.pickSub=d=>{A.sub=A.sub===d.id?null:d.id;A.autoCat=false;updateAdd()};
 actions.pickCat=d=>{if(A.cat!==d.id) A.sub=null;A.cat=A.cat===d.id?null:d.id;A.autoCat=false;actions.close();updateAdd()};
@@ -1289,11 +1329,28 @@ actions.accArchive=d=>{const a=acc(d.id);a.archived=!a.archived;persist();action
 actions.accDelete=d=>{if(!confirm('Delete this account?')) return;S.accounts=S.accounts.filter(a=>a.id!==d.id);persist();actions.close();render()};
 
 /* ================= PLAN ================= */
+function flexCardHtml(){const f=flex(),st=flexState(),cats=S.cats.filter(c=>c.kind==='exp'&&!c.hidden);
+  const others=S.subs.filter(x=>!x.hidden&&!f.cats.includes(x.parent)&&cat(x.parent)&&!cat(x.parent).hidden);
+  const pct=f.amt?Math.min(100,st.spent/f.amt*100):0;
+  return`<div class="card" id="flex-card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h3 style="margin:0">Safe to spend</h3><label class="switch"><input type="checkbox" id="fx-on" ${f.on?'checked':''} aria-label="Show safe to spend on the Add screen"><i></i></label></div>
+  <p class="help" style="margin-top:4px">A monthly amount for flexible spending. The Add screen shows how much you can spend today and still stay inside it.</p>
+  ${f.on?`<p class="lede" style="font-size:15px;margin-top:8px">${st.left>=0?`<b>${money(st.safe)}</b> today. ${money(st.left)} left of ${money(f.amt)}, ${st.days} days to go.`:`<b class="danger">Over by ${money(-st.left)} this month.</b>`}</p>${bar(st.spent,f.amt)}`:''}
+  <div class="grid2"><label class="flabel">Name<input id="fx-name" value="${esc(f.name)}" maxlength="40"></label><label class="flabel">Per month (Rs)<input id="fx-amt" inputmode="decimal" value="${f.amt/100}"></label></div>
+  <p class="lbl">Counts toward it</p><div class="opts">${cats.map(c=>`<button class="opt${f.cats.includes(c.id)?' on':''}" data-act="fxCat" data-id="${c.id}">${esc(c.name)}</button>`).join('')}</div>
+  ${others.length?`<details class="gs-help"><summary>Also count single types from other categories${f.subs.length?` (${f.subs.length})`:''}</summary><div class="opts">${others.map(x=>`<button class="opt${f.subs.includes(x.id)?' on':''}" data-act="fxSub" data-id="${x.id}">${esc(cat(x.parent).name)}: ${esc(x.name)}</button>`).join('')}</div></details>`:''}
+  <p class="help">${pct>=100?'You\u2019ve used all of it this month.':''} Counts your share of split bills. Resets on the ${ord(S.set.startDay||1)} of each month.</p></div>`}
+function flexWire(){const on=$('#fx-on');if(!on) return;
+  on.addEventListener('change',e=>{flex().on=e.target.checked;persist();renderPlan()});
+  $('#fx-name').addEventListener('change',e=>{flex().name=e.target.value.trim()||'Flexible spending';persist()});
+  $('#fx-amt').addEventListener('change',e=>{const v=toP(e.target.value);if(v<0){toast('Use a positive amount.');return}flex().amt=Math.abs(v);persist();const y=$('#main').scrollTop;renderPlan();$('#main').scrollTop=y})}
+actions.fxCat=d=>{const f=flex(),i=f.cats.indexOf(d.id);i>=0?f.cats.splice(i,1):(f.cats.push(d.id),f.subs=f.subs.filter(x=>subOf(x)?.parent!==d.id));persist();const y=$('#main').scrollTop;renderPlan();$('#main').scrollTop=y};
+actions.fxSub=d=>{const f=flex(),i=f.subs.indexOf(d.id);i>=0?f.subs.splice(i,1):f.subs.push(d.id);persist();const y=$('#main').scrollTop;renderPlan();$('#main').scrollTop=y;const dt=document.querySelector('#flex-card details');if(dt) dt.open=true};
 function renderPlan(){
   const p=period(0),sp=spends(p),by={};sp.forEach(x=>by[x.cat]=(by[x.cat]||0)+x.share);
   const bud=S.cats.filter(c=>c.kind==='exp'&&c.budget&&!c.hidden),total=sum(bud,c=>c.budget),spentB=sum(bud,c=>by[c.id]||0);
   const outside=Object.entries(by).filter(([k])=>!bud.some(c=>c.id===k)).reduce((s,[,v])=>s+v,0);
   let h=`<div class="top"><h1>Plan</h1><div style="display:flex;align-items:center;gap:6px"><span class="muted small">${esc(p.label)}</span>${eyeBtn()}</div></div>`;
+  h+=flexCardHtml();
   h+=`<div class="card"><h3>Budgets</h3>`;
   if(!bud.length) h+=`<p class="muted">Set a monthly limit for the categories you want to watch. Khata then shows what's left and a daily amount on the Add screen.</p>`;
   else{const left=total-spentB,days=diffDays(today(),p.end)+1;
@@ -1310,7 +1367,7 @@ function renderPlan(){
   h+=`<div class="card"><h3>Shortcuts</h3><p class="muted small">One-tap entries for things you pay often, like tea or bus fare. The first four show on the Add screen.</p>`+
     S.quick.map(q=>`<button class="row" data-act="quickEdit" data-id="${q.id}"><div class="l"><i class="dot" style="background:${catColor(q.cat)}"></i><div><p class="t">${esc(q.label)}</p><p class="sub">${esc(cat(q.cat)?.name||'')}, ${esc(acc(q.acc)?.name||'')}</p></div></div><div class="r">${money(q.amt)}</div></button>`).join('')+
     `<div class="btns"><button class="btn grow" data-act="quickEdit">Add shortcut</button></div></div>`;
-  $('#v-plan').innerHTML=h;
+  $('#v-plan').innerHTML=h;flexWire();
 }
 actions.budgets=()=>{const cats=S.cats.filter(c=>c.kind==='exp'&&!c.hidden);
   sheet(`<h2>Monthly budgets</h2><p class="help">Leave blank for no budget.</p><div class="grid2">${cats.map(c=>`<label>${esc(c.name)}<input inputmode="decimal" data-bud="${c.id}" value="${c.budget?c.budget/100:''}" placeholder="–"></label>`).join('')}</div>
@@ -1394,7 +1451,7 @@ function renderSettings(){
     $('#f-aikey').addEventListener('change',e=>{aiSet().key=e.target.value.trim();save();toast(aiSet().key?'API key saved on this phone.':'API key removed.')});
     $('#f-aimodel').addEventListener('change',e=>{aiSet().model=e.target.value;save()})});
 }
-const APP_VERSION='v26';
+const APP_VERSION='v27';
 actions.settingsSave=()=>{if($('#f-aion')){const ai=aiSet();ai.on=$('#f-aion').checked;ai.key=($('#f-aikey').value||'').trim();ai.model=$('#f-aimodel').value}const sd=parseInt($('#f-start').value);S.set.startDay=sd>=1&&sd<=28?sd:1;S.set.hideOnOpen=$('#f-hideopen').checked;if($('#f-autolock')) S.set.autolock=Number($('#f-autolock').value);persist();actions.close();render()};
 actions.lockSet=async()=>{if(!window.crypto||!crypto.subtle){toast('Encryption needs the app opened over https.');return}
   if(meta.locked&&!(await requireAuth('Change PIN'))) return;
@@ -1484,7 +1541,8 @@ function excelModel(){
   const fuel=vs.flatMap(({v,st})=>st.logs.filter(l=>l.type==='fuel').map(l=>{const f=st.fills.find(x=>x.id===l.id);return{veh:v.name,date:l.date,odo:l.odo,litres:l.litres,rate:l.rate,total:l.total?R(l.total):null,kml:f&&f.kml?Math.round(f.kml*100)/100:null,note:l.note,label:lab(l.date)}}));
   const service=vs.flatMap(({v,st})=>st.logs.filter(l=>l.type!=='fuel').map(l=>({veh:v.name,date:l.date,odo:l.odo,type:l.type==='service'?'Service':'Other',cost:l.total?R(l.total):null,no:l.no,note:l.note})));
   const elapsed=Math.max(1,Math.min(diffDays(p.start,p.end),diffDays(p.start,today()))+1);
-  return{noIncome:noInc,perDay:Math.round(sum(sp,x=>x.share)/elapsed)/100,vehicles,fuel,service,exportedLabel:fmtD(today())+' '+parseD(today()).getFullYear(),periodStart:p.start,periodEnd:p.end,cats,
+  const fs=flexState(),flexRow=fs.f.on&&fs.f.amt?{name:fs.f.name,amt:fs.f.amt/100,spent:fs.spent/100,left:fs.left/100}:null;
+  return{flex:flexRow,noIncome:noInc,perDay:Math.round(sum(sp,x=>x.share)/elapsed)/100,vehicles,fuel,service,exportedLabel:fmtD(today())+' '+parseD(today()).getFullYear(),periodStart:p.start,periodEnd:p.end,cats,
     methods:Object.entries(byM).sort((a,b)=>b[1]-a[1]).map(([name,v])=>({name,spent:R(v)})),months,entries,accounts,groups,
     income:noInc?0:R(sum(items(p).filter(x=>x.t==='inc'))),owe:accounts.reduce((s,a)=>s+a.owed,0),friends:R(myGroupNet()),
     backup:JSON.stringify({app:'khata',v:2,data:excelSnapshot()})};
@@ -2263,6 +2321,7 @@ function gsTabs(){
   T.Entries=[['Date','Type','Category','Subcategory','Account','To / with','Amount (Rs)','My share (Rs)','Paid with','Group','Note']].concat(m.entries.map(e=>[e.date,e.type,e.cat||'',e.sub||'',e.acc||'',e.to||'',e.amt,e.share==null?'':e.share,e.method||'',e.group||'',e.note||'']));
   T.Monthly=[m.noIncome?['Month','Spent (Rs)']:['Month','Spent (Rs)','Income (Rs)','Saved (Rs)']].concat(m.months.map(x=>m.noIncome?[x.label,x.spent]:[x.label,x.spent,x.income,Math.round((x.income-x.spent)*100)/100]));
   T.Budgets=[['Category','Budget (Rs)','Spent this period (Rs)','Left (Rs)']].concat(m.cats.map(c=>[c.name,c.budget||'',c.spent,c.budget?Math.round((c.budget-c.spent)*100)/100:'']));
+  {const fs=flexState();if(fs.f.on&&fs.f.amt) T.Budgets.push([fs.f.name+' (safe to spend)',fs.f.amt/100,fs.spent/100,fs.left/100])}
   T.Groups=[['Group','Person','Paid for bills','Their share','Settled','Balance (+ is owed)']].concat(m.groups.flatMap(g=>g.rows.map(r=>[g.name,r.person,r.paid,r.share,r.settled,Math.round((r.paid-r.share+r.settled)*100)/100])));
   T.Fuel=[['Vehicle','Date','ODO (km)','Litres','Rate (Rs/L)','Total (Rs)','Km per litre','Note']].concat((m.fuel||[]).map(f=>[f.veh,f.date,f.odo??'',f.litres??'',f.rate??'',f.total??'',f.kml??'',f.note||'']));
   T.Service=[['Vehicle','Date','ODO (km)','Type','Cost (Rs)','Service no.','Note']].concat((m.service||[]).map(x=>[x.veh,x.date,x.odo??'',x.type,x.cost??'',x.no||'',x.note||'']));
