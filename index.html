@@ -1394,7 +1394,7 @@ function renderSettings(){
     $('#f-aikey').addEventListener('change',e=>{aiSet().key=e.target.value.trim();save();toast(aiSet().key?'API key saved on this phone.':'API key removed.')});
     $('#f-aimodel').addEventListener('change',e=>{aiSet().model=e.target.value;save()})});
 }
-const APP_VERSION='v25';
+const APP_VERSION='v26';
 actions.settingsSave=()=>{if($('#f-aion')){const ai=aiSet();ai.on=$('#f-aion').checked;ai.key=($('#f-aikey').value||'').trim();ai.model=$('#f-aimodel').value}const sd=parseInt($('#f-start').value);S.set.startDay=sd>=1&&sd<=28?sd:1;S.set.hideOnOpen=$('#f-hideopen').checked;if($('#f-autolock')) S.set.autolock=Number($('#f-autolock').value);persist();actions.close();render()};
 actions.lockSet=async()=>{if(!window.crypto||!crypto.subtle){toast('Encryption needs the app opened over https.');return}
   if(meta.locked&&!(await requireAuth('Change PIN'))) return;
@@ -2293,7 +2293,7 @@ async function gsPush(manual,force){
     const count=dataCount(S),sha=await sha256hex(backup);
     const j=await gsPost({action:'sync',tabs:gsTabs(),backup,sha,count,newest:dataNewest(S),version:APP_VERSION,force:!!force});
     if(!j.ok&&j.code==='shrink'){g.blocked={n:j.sent,last:j.last,at:Date.now(),server:true};g.error='';shrinkPrompt(j.sent,j.last,true);return}
-    if(!j.ok) throw new Error(j.error||'Sync failed.');
+    if(!j.ok) throw new Error(/auth\/drive|DriveApp/.test(j.error||'')?'Your script doesn\u2019t have Drive permission yet. In Apps Script, choose setUp next to Run, press Run, allow access, then deploy a New version.':(j.error||'Sync failed.'));
     Object.assign(g,{last:Date.now(),dirty:false,error:'',lastCount:count,lastPlainSha:plainSha,lastSha:sha,blocked:null,scriptV:j.v||0});if(j.sheet) g.sheet=j.sheet;
     if(manual) toast('Synced. Your backup is saved in Drive.');
     if(g.photos!==false) setTimeout(()=>gsPhotosPush(false),1500);
@@ -2326,9 +2326,9 @@ function gsCardHtml(){const g=gs();
   <details class="gs-help"><summary>Set up (once, about 3 minutes)</summary><ol class="help">
     <li>Create a new Google Sheet, then open Extensions → Apps Script.</li>
     <li>Delete what\u2019s there and paste the script: <button class="link" data-act="gsCopyScript">Copy the script</button></li>
-    <li>Save, then Deploy → New deployment → type: Web app. Execute as: Me. Who has access: Anyone. Deploy and allow access (Sheets and Drive).</li>
+    <li>Save. Pick <b>setUp</b> in the dropdown next to Run, press Run and allow access (Sheets and Drive).</li><li>Deploy → New deployment → type: Web app. Execute as: Me. Who has access: Anyone. Deploy.</li>
     <li>Copy the Web app link (ends in /exec) and paste it above, then tap Sync now.</li></ol>
-    <p class="help">Updating the script? Paste it, Save, then Deploy → Manage deployments → ✏️ → Version: New version → Deploy.</p>
+    <p class="help">Updating the script? Paste it, Save, run setUp once, then Deploy → Manage deployments → ✏️ → Version: New version → Deploy.</p>
     <p class="help">Your Drive gets a folder of backups encrypted with your PIN: the latest, one per day for 14 days and one per month for 12 months, plus a folder of encrypted bill photos. The sheet gets readable tabs (never bank balances; income only if you included it) and a Backup log with dates and entry counts only.</p>
     <p class="lbl">Recovery code</p><p class="help" style="margin-top:4px">Only this code can read your backups. Save it somewhere safe; a new phone needs it.</p>
     <div class="btns"><button class="btn grow" data-act="gsShowCode">Show recovery code</button><button class="btn grow" data-act="gsUseCode">Use a code from another phone</button></div></details>`;

@@ -18,7 +18,7 @@ A personal money ledger. Static PWA on GitHub Pages. No server, no database. The
 | `xlsx.js` | Builds the Excel export (formulas, charts, hidden backup sheet) and reads it back for restore. No libraries. |
 | `tesseract*.js`, `eng.traineddata.gz` | Offline bill reader (tesseract.js 7, Apache-2.0, see `LICENSE-tesseract.md`). Kept next to `index.html` (no folders) so they can be uploaded from a phone. |
 | `Code.gs` | Apps Script (version 3) for the optional Google Sheets sync and Drive backups. Not used by the app itself. |
-| `sw.js` | Caches the app for offline use. **Bump `CACHE` (`khata-v25` → `khata-v26`) on every update.** |
+| `sw.js` | Caches the app for offline use. **Bump `CACHE` (`khata-v26` → `khata-v27`) on every update.** |
 | `manifest.webmanifest` | Install info, home-screen shortcuts, and the Android share target for bank SMS. |
 | `icon-*.png` | App icons. |
 
@@ -100,7 +100,7 @@ A personal money ledger. Static PWA on GitHub Pages. No server, no database. The
 
 ## Google Sheets sync and Drive backups (optional)
 
-`Code.gs` (script version 3) runs as a web app in your Google account. Setup steps are at the top of the file. **After any change to Code.gs: paste it, Save, then Deploy → Manage deployments → ✏️ → Version: New version → Deploy.** Saving alone keeps the old version running.
+`Code.gs` (script version 3) runs as a web app in your Google account. Setup steps are at the top of the file. **After any change to Code.gs: paste it, Save, run `setUp` once from the editor (grants new permissions such as Drive), then Deploy → Manage deployments → ✏️ → Version: New version → Deploy.** Saving alone keeps the old version running.
 
 **What is stored**
 - Drive folder **Khata backups**: `latest.json`, `daily-YYYY-MM-DD.json` (last 14 days) and `monthly-YYYY-MM.json` (last 12 months). Each file is the full backup encrypted on the phone with the PIN (AES-GCM, PBKDF2 key), plus plain metadata: time, app version, entry count, SHA-256 of the encrypted backup. Daily and monthly files are the **first** good sync of that day or month and are never overwritten; `latest.json` follows every sync. Older files are moved to the Drive trash automatically. On the first v3 sync, the old single-tab backup is saved as `before-v3-DATE.json` before anything is written.
