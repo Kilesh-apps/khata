@@ -18,7 +18,7 @@ A personal money ledger. Static PWA on GitHub Pages. No server, no database. The
 | `xlsx.js` | Builds the Excel export (formulas, charts, hidden backup sheet) and reads it back for restore. No libraries. |
 | `tesseract*.js`, `eng.traineddata.gz` | Offline bill reader (tesseract.js 7, Apache-2.0, see `LICENSE-tesseract.md`). Kept next to `index.html` (no folders) so they can be uploaded from a phone. |
 | `Code.gs` | Apps Script (version 3) for the optional Google Sheets sync and Drive backups. Not used by the app itself. |
-| `sw.js` | Caches the app for offline use. **Bump `CACHE` (`khata-v27` → `khata-v28`) on every update.** |
+| `sw.js` | Caches the app for offline use. **Bump `CACHE` (`khata-v28` → `khata-v29`) on every update.** |
 | `manifest.webmanifest` | Install info, home-screen shortcuts, and the Android share target for bank SMS. |
 | `icon-*.png` | App icons. |
 
@@ -64,6 +64,20 @@ A personal money ledger. Static PWA on GitHub Pages. No server, no database. The
 - Setting the first PIN shows a recovery key (8 groups of 4). Settings → Privacy → Recovery key makes a new one.
 - How it works: an RSA key pair is made on the phone. The public half encrypts the current PIN, and every new PIN when it changes, so the key keeps working. The private half is stored encrypted with the recovery key.
 - Lock screen → Forgot your PIN? → Reset it: use the recovery key (or fingerprint, if fingerprint unlock is on), then set a new PIN. Wrong keys count towards the same wait as wrong PINs.
+
+## Monthly plan and payday routine
+
+- `S.plan`: `{salary (paisa), lines: [{id, name, kind: 'spend'|'fund', amt, cats, subs, veh: 'bike'|'car', flex}], steps: [{id, name, kind: 'mark'|'xfer', amt, from, to, line}], marks: [{step, p (period start), amt, at}]}`. Seeded with Travel fund 15,000, Snacks and friends 8,500 (the same setting as Safe to spend), Festivals and gifts 5,000, Bills and bike 4,500, Gadget fund 3,000, Hair, skin and clothes 2,500, Car fuel and buffer 1,561; salary 79,561. Invest = salary (received this month if logged, else planned) minus all lines.
+- Spending goes to the first line that matches. Fuel and vehicle service go to the line set to that vehicle's type (car, or bike for everything else and for fuel with no vehicle). Unmatched spending shows as "Outside the plan".
+- Fund steps (`mark`) only record that the money is set aside in the main account; no transfer. Transfer steps (`xfer`) create a transfer tagged `payStep`. A step is done when this period has its mark or tagged transfer.
+- Saving income in Salary opens the payday checklist. Plan → Monthly plan → Payday checklist opens it any time.
+- New account type `invest` (Investment: SIP, RD, FD): shown in its own section, not counted in "You have"; transfers into it count as Invest, never spending.
+- Excel has a Plan sheet; the Sheet gets a Plan tab. Without income, the Salary and Invest rows are left out (Invest would reveal the salary).
+
+## Sheet Summary tab (Code.gs v4)
+
+- The phone sends a `summary` object with each sync, built from the same data and redaction as the readable tabs: headline numbers, short analysis lines and six small tables (plan vs actual, categories, 12 months, days, payment methods, mileage). Code.gs writes the Summary tab, moves it to the front and rebuilds six charts. A chart error never fails the sync; the backup is stored first.
+- Tip: set the spreadsheet's locale to English (India) (File → Settings) for lakh grouping in the sheet.
 
 ## Safe to spend today
 

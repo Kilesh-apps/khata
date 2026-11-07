@@ -1,4 +1,4 @@
-// Khata → Google Sheets sync (script version 3).
+// Khata → Google Sheets sync (script version 4).
 //
 // SET UP (once)
 // 1. In your Google Sheet: Extensions → Apps Script (or create a project at script.google.com; the script
@@ -21,18 +21,20 @@
 //   PIN, and plain metadata: time, app version, entry count, SHA-256 of the encrypted backup. No amounts.
 //   The daily and monthly copies are the FIRST good sync of that day or month and are never overwritten.
 // - Drive folder "Khata photos": bill photos, each encrypted on the phone with your PIN.
-// - Sheet tabs Entries, Monthly, Budgets, Groups, Fuel, Service: readable, never bank balances; income only if
-//   you switched it on in Khata. "Backup log" tab: time, kind, version, entry count, hash. No amounts.
+// - Sheet tabs Entries, Monthly, Budgets, Plan, Groups, Fuel, Service: readable, never bank balances; income only
+//   if you switched it on in Khata (without income, Plan leaves out the Salary and Invest rows).
+// - "Summary" tab (first tab): headline numbers, short analysis and six charts, rebuilt on every sync from the same
+//   readable data. "Backup log" tab: time, kind, version, entry count, hash. No amounts.
 // - The first phone that connects locks everything with its recovery code.
 // - A backup with far fewer entries than the latest one (more than 10% fewer, or zero) is refused unless the
 //   phone sends force: true after you confirm on the phone.
 
-const TABS = ['Entries', 'Monthly', 'Budgets', 'Groups', 'Fuel', 'Service'];
+const TABS = ['Entries', 'Monthly', 'Budgets', 'Plan', 'Groups', 'Fuel', 'Service'];
 const LOG_TAB = 'Backup log';
 const LEGACY_TAB = 'Backup (encrypted, do not edit)';
 const BACKUP_FOLDER = 'Khata backups';
 const PHOTO_FOLDER = 'Khata photos';
-const KEEP_DAILY = 14, KEEP_MONTHLY = 12, SHRINK = 0.9, TZ = 'Asia/Kathmandu', VERSION = 3;
+const KEEP_DAILY = 14, KEEP_MONTHLY = 12, SHRINK = 0.9, TZ = 'Asia/Kathmandu', VERSION = 4;
 
 // Run this once from the editor (Run ▶ with "setUp" selected) to grant Sheets + Drive access and create the folders.
 function setUp() {
@@ -168,6 +170,7 @@ function doPost(e) {
     // Readable tabs only after the backup is safely stored.
     TABS.forEach(name => writeTab(ss, name, (body.tabs && body.tabs[name]) || []));
     writeLog(ss);
+    if (body.summary) { try { writeSummary(ss, body.summary); } catch (err) { /* the backup is already safe; a chart problem must not fail the sync */ } }
     const blank = ss.getSheetByName('Sheet1');
     if (blank && blank.getLastRow() === 0 && ss.getSheets().length > 1) ss.deleteSheet(blank);
     return out({ ok: true, v: VERSION, at: meta.time, count: count, sha: sha, sheet: ss.getUrl() });
@@ -229,6 +232,59 @@ function photoPrune(body) {
   const it = folder(PHOTO_FOLDER).getFiles(); let n = 0;
   while (it.hasNext()) { const f = it.next(), id = f.getName().replace(/\.bin$/, ''); if (!f.isTrashed() && !keep.has(id)) { f.setTrashed(true); n++; } }
   return { ok: true, removed: n, v: VERSION };
+}
+
+// ---- Summary tab: numbers, analysis lines and charts ----
+function writeSummary(ss, sm) {
+  const sh = ss.getSheetByName('Summary') || ss.insertSheet('Summary');
+  sh.getCharts().forEach(c => sh.removeChart(c));
+  sh.clear();
+  const safe = v => (typeof v === 'string' && /^[=+\-@]/.test(v)) ? "'" + v : v;
+  sh.getRange(1, 1).setValue('Khata summary, ' + safe(String(sm.period || ''))).setFontSize(16).setFontWeight('bold');
+  sh.getRange(2, 1).setValue('Updated ' + Utilities.formatDate(new Date(), TZ, 'd MMM yyyy, HH:mm') + '. Built from the readable tabs: no bank balances.').setFontColor('#6B7570');
+  const k = (sm.kpis || []).map(r => [safe(String(r[0])), safe(r[1])]);
+  if (k.length) {
+    sh.getRange(4, 1, k.length, 2).setValues(k);
+    sh.getRange(4, 1, k.length, 1).setFontColor('#6B7570');
+    sh.getRange(4, 2, k.length, 1).setFontWeight('bold').setNumberFormat('#,##0').setHorizontalAlignment('left');
+  }
+  let row = 4 + k.length + 1;
+  const notes = (sm.notes || []).map(n => [safe(String(n))]);
+  if (notes.length) { sh.getRange(row, 1).setValue('What stands out').setFontWeight('bold'); sh.getRange(row + 1, 1, notes.length, 1).setValues(notes); row += notes.length + 2; }
+  sh.setColumnWidth(1, 300); sh.setColumnWidth(2, 220);
+  // chart data lives in columns N onward, one table under another
+  const T = sm.tables || {}, col = 14, at = {};
+  let dr = 1;
+  ['plan', 'cats', 'months', 'days', 'methods', 'mileage'].forEach(name => {
+    const t = (T[name] || []).filter(r => r && r.length);
+    if (t.length < 2) return;
+    const w = Math.max.apply(null, t.map(r => r.length));
+    const data = t.map(r => { const x = r.map(safe); while (x.length < w) x.push(''); return x; });
+    sh.getRange(dr, col, data.length, w).setValues(data);
+    sh.getRange(dr, col, 1, w).setFontWeight('bold');
+    at[name] = sh.getRange(dr, col, data.length, w);
+    dr += data.length + 2;
+  });
+  sh.getRange(1, col).setNote('Chart data. Rebuilt on every sync.');
+  const top = Math.max(row, 14), W = 470, H = 290, place = [[top, 1], [top, 4], [top + 16, 1], [top + 16, 4], [top + 32, 1], [top + 32, 4]];
+  const specs = [
+    ['plan', Charts.ChartType.BAR, 'Plan vs actual this month', { colors: ['#B9C7BE', '#2F6B4F'] }],
+    ['cats', Charts.ChartType.PIE, 'Where it went this month', { pieHole: 0.45 }],
+    ['months', Charts.ChartType.COLUMN, 'Spending by month', { colors: ['#2F6B4F'], legend: { position: 'none' } }],
+    ['days', Charts.ChartType.COLUMN, 'Day by day this month', { colors: ['#C2912E'], legend: { position: 'none' } }],
+    ['methods', Charts.ChartType.PIE, 'How you paid', { pieHole: 0.45 }],
+    ['mileage', Charts.ChartType.LINE, 'Mileage, fill by fill (km per litre)', { colors: ['#3B6EA5'], legend: { position: 'none' }, pointSize: 4 }]];
+  let n = 0;
+  specs.forEach(([name, type, title, opts]) => {
+    if (!at[name]) return;
+    const p = place[n++];
+    let b = sh.newChart().setChartType(type).addRange(at[name]).setPosition(p[0], p[1], 0, 0)
+      .setOption('title', title).setOption('width', W).setOption('height', H);
+    Object.keys(opts).forEach(o => { b = b.setOption(o, opts[o]); });
+    sh.insertChart(b.build());
+  });
+  ss.setActiveSheet(sh);
+  ss.moveActiveSheet(1);
 }
 
 // ---- sheet helpers ----

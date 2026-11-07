@@ -221,6 +221,9 @@ label.sel{cursor:text}
 .schipalert.danger{background:var(--danger-soft);color:var(--danger)}
 @media (max-height:780px){.safe{padding:7px 12px 9px}.safe-num{font-size:28px;line-height:1.1}.safe-sub{font-size:12.5px;margin-top:0}}
 .safe.compact{display:block;width:100%;text-align:left;margin-top:6px;border-radius:10px;background:var(--surface);padding:9px 12px;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pcheck{flex:none;width:26px;height:26px;border-radius:50%;border:2px solid var(--line);display:inline-grid;place-items:center;font-weight:700;color:#fff;font-size:14px}
+.pcheck.on{background:var(--accent);border-color:var(--accent)}
+.planrow{display:grid;grid-template-columns:1fr 96px 40px;gap:8px;align-items:center;margin-top:8px}.planrow input{min-width:0}
 .pills{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:4px}
 .tbtn{height:44px;flex:none;padding:0 14px}.tbtn.on{border-color:var(--accent);color:var(--accent)}
 .filter{display:inline-flex;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;align-items:center;gap:8px;margin-top:6px;height:34px;padding:0 12px;border-radius:17px;background:var(--accent-soft);color:var(--accent);font-size:14px;font-weight:550}
@@ -362,9 +365,9 @@ main{padding-bottom:22px}
 'use strict';
 /* ================= constants ================= */
 const K_PLAIN='khata.data',K_ENC='khata.enc',K_META='khata.meta';
-const KINDS={bank:'Bank account',wallet:'Wallet (eSewa, Khalti…)',cash:'Cash',credit:'Credit card',vcc:'Fonepay credit card',prepaid:'Prepaid or dollar card'};
+const KINDS={bank:'Bank account',wallet:'Wallet (eSewa, Khalti…)',cash:'Cash',credit:'Credit card',vcc:'Fonepay credit card',prepaid:'Prepaid or dollar card',invest:'Investment (SIP, RD, FD)'};
 const METHODS={qr:'QR',card:'Card',online:'Online',cash:'Cash',bank:'Bank transfer',atm:'ATM',friend:'Paid by friend'};
-const DEF_METHOD={cash:'cash',credit:'card',vcc:'qr',bank:'qr',wallet:'qr',prepaid:'online'};
+const DEF_METHOD={invest:'bank',cash:'cash',credit:'card',vcc:'qr',bank:'qr',wallet:'qr',prepaid:'online'};
 const PAL=['#2F6B4F','#3B6EA5','#C2912E','#8E5A9B','#4E9A9A','#B4553F','#6B8E23','#A0526D','#5C6B7A','#D08A2E','#7A8B3C','#3F7F6E','#9B6B3A','#55779B','#8A6F9E','#6E8B74'];
 const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const MONTH=['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -391,6 +394,7 @@ function migrate(){
   for(const k of ['accounts','cats','tx','bills','quick','groups','gbills','gpays','vehicles','vlogs']) if(!Array.isArray(S[k])) S[k]=f[k];
   S.set=Object.assign(f.set,S.set||{});if(!S.set.lastAcc) S.set.lastAcc={};
   S.cats.forEach((c,i)=>{if(!c.color) c.color=PAL[i%PAL.length]});
+  if(!S.plan) S.plan=planSeed();
   if(!Array.isArray(S.subs)){S.subs=SEED_SUBS.filter(x=>S.cats.some(c=>c.id===x.parent)).map(x=>({...x}))}
   if(!S.set.subsV||S.set.subsV<3){SEED_SUBS.forEach(x=>{if(!S.subs.some(y=>y.id===x.id)&&S.cats.some(c=>c.id===x.parent)) S.subs.push({...x})});S.set.subsV=3}
   if(S.set.hideOnOpen||(S.set.guard&&S.set.guard.mode!=='off')) S.set.hide=true;S.v=2;
@@ -482,7 +486,7 @@ const byUse=(list,counts)=>[...list].sort((a,b)=>(counts[b.id]||0)-(counts[a.id]
 const defaultMethod=(a,t)=>t==='xfer'?'bank':a?DEF_METHOD[a.kind]||'qr':'qr';
 function methodsFor(a,t){
   if(t==='xfer') return['bank','atm','qr','cash'];if(!a) return['qr'];
-  return{cash:['cash'],vcc:['qr'],credit:['card','online','qr'],prepaid:['online','card'],wallet:['qr','online']}[a.kind]||['qr','card','online','bank'];
+  return{invest:['bank'],cash:['cash'],vcc:['qr'],credit:['card','online','qr'],prepaid:['online','card'],wallet:['qr','online']}[a.kind]||['qr','card','online','bank'];
 }
 
 /* ================= groups maths ================= */
@@ -826,8 +830,10 @@ actions.save=()=>{
   }
   if(A.acc) S.set.lastAcc[A.t]=A.acc;if(A.t==='xfer') S.set.lastAcc.xferTo=A.to;
   let warn='';const ac=acc(A.acc);if(A.t!=='inc'&&isCredit(ac)&&ac.limit&&cardStatus(ac).avail<0) warn=' Over the card limit.';
+  const payday=A.t==='inc'&&A.cat==='salary';
   persist();const t=A.t,keep=A.acc;A=blankAdd(t);A.acc=keep;updateAdd();
   toast(label+'.'+warn,()=>{undo();persist();render()});
+  if(payday) setTimeout(()=>{if(view==='add'&&$('#sheet').hidden) actions.payday()},700);
 };
 
 /* ----- split sheet ----- */
@@ -1226,7 +1232,7 @@ actions.groupShare=async d=>{
 /* ================= ACCOUNTS ================= */
 function renderAccounts(){
   if(AC.open){const a=acc(AC.open);if(a) return renderAccountPage(a);AC.open=null}
-  const b=balances(),accs=activeAccs(),mon=accs.filter(a=>!isCredit(a)),cr=accs.filter(isCredit);
+  const b=balances(),accs=activeAccs(),mon=accs.filter(a=>!isCredit(a)&&a.kind!=='invest'),inv=accs.filter(a=>a.kind==='invest'),cr=accs.filter(isCredit);
   const have=mon.reduce((s,a)=>s+b[a.id],0),owe=cr.reduce((s,a)=>s+Math.max(0,-b[a.id]),0),friends=myGroupNet();
   let h=`<div class="top"><h1>Accounts</h1><div style="display:flex;align-items:center;gap:4px"><button class="icon" data-act="hide" aria-label="${S.set.hide?'Show':'Hide'} amounts">${S.set.hide?I.eyeOff:I.eye}</button><button class="link" data-act="accEdit">Add account</button></div></div>
   <div class="stats"><div class="stat"><small>You have</small><b class="${sz(money(have))}">${money(have)}</b></div><div class="stat"><small>Owed on cards</small><b class="${owe?'danger ':''}${sz(money(owe))}">${money(owe)}</b></div></div>
@@ -1236,6 +1242,7 @@ function renderAccounts(){
   if(accs.length<2) h+=`<div class="card"><h3>Add what you use</h3><p class="help" style="margin-top:0">Add each bank account, wallet and card once. Balances then update as you log spending.</p>
     <div class="btns">${['bank','vcc','credit','wallet','prepaid'].map(k=>`<button class="btn" data-act="accEdit" data-kind="${k}">${esc(KINDS[k].replace(' (eSewa, Khalti…)',''))}</button>`).join('')}</div></div>`;
   if(mon.length) h+=`<div class="card" style="padding:12px 16px 2px"><h3>Money</h3>${mon.map(a=>`<button class="row" data-act="accOpen" data-id="${a.id}"><div class="l"><div><p class="t">${esc(a.name)}</p><p class="sub">${esc(KINDS[a.kind])}</p></div></div><div class="r ${b[a.id]<0?'danger':''}">${money(b[a.id])}</div></button>`).join('')}</div>`;
+  if(inv.length) h+=`<div class="card" style="padding:12px 16px 2px"><h3>Investments</h3><p class="muted small" style="margin:-4px 0 4px">Not counted in “You have”. Money moved here is never spending.</p>${inv.map(a=>`<button class="row" data-act="accOpen" data-id="${a.id}"><div class="l"><div><p class="t">${esc(a.name)}</p><p class="sub">${esc(KINDS[a.kind])}</p></div></div><div class="r ${b[a.id]<0?'danger':''}">${money(b[a.id])}</div></button>`).join('')}</div>`;
   if(cr.length) h+=`<div class="card" style="padding:12px 16px 4px"><h3>Credit cards</h3>${cr.map(a=>{const c=cardStatus(a);
     const line=c.remaining>0?`<span class="pill ${c.overdue?'danger':c.daysToDue<=5?'warn':''}">Pay ${money(c.remaining)} by ${fmtD(c.due)}</span>`:a.stmtDay?`<span class="sub">Nothing due. Next statement ${fmtD(c.next)}</span>`:'<span class="sub">Add statement day to track dues</span>';
     return`<button class="row" data-act="accOpen" data-id="${a.id}" style="display:block"><div style="display:flex;justify-content:space-between;gap:12px"><div style="min-width:0"><p class="t">${esc(a.name)}</p><div style="margin-top:4px">${line}</div></div>
@@ -1328,6 +1335,118 @@ actions.accSave=d=>{
 actions.accArchive=d=>{const a=acc(d.id);a.archived=!a.archived;persist();actions.close();render();toast(a.archived?'Archived. Its entries stay in History.':'Restored.')};
 actions.accDelete=d=>{if(!confirm('Delete this account?')) return;S.accounts=S.accounts.filter(a=>a.id!==d.id);persist();actions.close();render()};
 
+/* ================= Monthly plan and payday routine ================= */
+function planSeed(){return{salary:7956100,lines:[
+  {id:'travel',name:'Travel fund',kind:'fund',amt:1500000},
+  {id:'snacks',name:'Snacks and friends',kind:'spend',flex:true},
+  {id:'fest',name:'Festivals and gifts',kind:'fund',amt:500000},
+  {id:'bills',name:'Bills and bike',kind:'spend',amt:450000,cats:['util','net'],subs:[],veh:'bike'},
+  {id:'gadget',name:'Gadget fund',kind:'fund',amt:300000},
+  {id:'care',name:'Hair, skin and clothes',kind:'spend',amt:250000,cats:[],subs:['s-clothes','s-care','s-haircut']},
+  {id:'car',name:'Car fuel and buffer',kind:'spend',amt:156100,cats:[],subs:[],veh:'car'}],
+ steps:[{id:'st-travel',name:'Travel fund',kind:'mark',line:'travel'},{id:'st-fest',name:'Festivals and gifts',kind:'mark',line:'fest'},{id:'st-gadget',name:'Gadget fund',kind:'mark',line:'gadget'},
+  {id:'st-wallet',name:'Load eSewa',kind:'xfer',amt:0,from:null,to:null},{id:'st-sip',name:'SIP',kind:'xfer',amt:0,from:null,to:null,line:'invest'},{id:'st-rd',name:'Recurring deposit',kind:'xfer',amt:0,from:null,to:null,line:'invest'}],
+ marks:[]}}
+function plan(){return S.plan||(S.plan=planSeed())}
+const lineAmt=l=>l.flex?flex().amt:(l.amt||0);
+const lineName=l=>l.flex?flex().name:l.name;
+const VEH_CATS=['fuel','vehicle'];
+/* which plan line a piece of spending belongs to (first match wins) */
+function vehKindOf(x){if(x.k!=='tx') return null;const t=S.tx.find(y=>y.id===x.id),vl=t&&t.vlog&&S.vlogs.find(v=>v.id===t.vlog),v=vl&&vehicle(vl.veh);return v?(v.kind==='car'?'car':'bike'):null}
+function lineFor(x,lines){
+  for(const l of lines){if(l.kind!=='spend') continue;
+    if(VEH_CATS.includes(x.cat)&&l.veh){const vk=vehKindOf(x)||'bike';if(vk===l.veh) return l;continue}
+    if(l.flex){if(inFlex(x.cat,x.sub)) return l;continue}
+    if((l.cats||[]).includes(x.cat)||(x.sub&&(l.subs||[]).includes(x.sub))) return l}
+  return null}
+const stepDone=(st,p)=>st.kind==='mark'?plan().marks.find(m=>m.step===st.id&&m.p===p.start):S.tx.find(t=>t.payStep===st.id&&inP(t,p));
+function planState(p=period(0)){
+  const pl=plan(),lines=pl.lines,sp=spends(p),by={},out={};let outside=0;
+  sp.forEach(x=>{const l=lineFor(x,lines);if(l) by[l.id]=(by[l.id]||0)+x.share;else{outside+=x.share;out[x.cat]=(out[x.cat]||0)+x.share}});
+  const recv=sum(items(p).filter(x=>x.t==='inc'&&x.cat==='salary')),salary=recv||pl.salary,total=sum(lines,lineAmt),invest=salary-total;
+  const marked=id=>sum(pl.marks.filter(m=>m.p===p.start&&pl.steps.find(s=>s.id===m.step)?.line===id),m=>m.amt);
+  const investMoved=sum(S.tx.filter(t=>t.t==='xfer'&&inP(t,p)&&acc(t.to)?.kind==='invest'));
+  const rows=lines.map(l=>({l,name:lineName(l),kind:l.kind,amt:lineAmt(l),actual:l.kind==='fund'?marked(l.id):(by[l.id]||0)}));
+  return{pl,p,rows,salary,recv,invest,investMoved,outside,out,steps:pl.steps.map(s=>({s,done:stepDone(s,p)}))};
+}
+function planCardHtml(){
+  const st=planState(),done=st.steps.filter(x=>x.done).length;
+  const row=(name,amt,actual,kind,extra='')=>{const over=kind==='spend'&&actual>amt;
+    return`<div class="row" style="display:block"><div style="display:flex;justify-content:space-between;gap:8px"><span>${esc(name)}${kind==='fund'?' <span class="muted small">fund</span>':kind==='invest'?' <span class="muted small">invest</span>':''}</span>
+    <span class="${over?'danger':''}">${money(actual)} <span class="muted">/ ${money(amt)}</span></span></div>${bar(actual,amt||1,kind==='spend'?2:1)}
+    <p class="sub">${kind==='spend'?(over?`Over by ${money(actual-amt)}`:`${money(amt-actual)} left`):actual>=amt&&amt?'Done for this month':`${money(Math.max(0,amt-actual))} to go`}${extra}</p></div>`};
+  let h=`<div class="card" id="plan-card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h3 style="margin:0">Monthly plan</h3><button class="link" data-act="planEdit">Edit</button></div>
+  <p class="help" style="margin-top:4px">Salary ${money(st.salary)}${st.recv?' received':' planned'}. Invest is what\u2019s left after the other lines.</p>`;
+  h+=st.rows.map(r=>row(r.name,r.amt,r.actual,r.kind)).join('');
+  h+=row('Invest',Math.max(0,st.invest),st.investMoved,'invest',st.invest<0?` <span class="danger">The plan is ${money(-st.invest)} more than the salary.</span>`:'');
+  if(st.outside) h+=`<div class="row" style="display:block"><div style="display:flex;justify-content:space-between"><span>Outside the plan</span><span>${money(st.outside)}</span></div><p class="sub">${Object.entries(st.out).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([k,v])=>esc(cat(k)?.name||'Other')+' '+money(v)).join(', ')}</p></div>`;
+  h+=`<div class="btns"><button class="btn primary grow" data-act="payday">Payday checklist (${done} of ${st.steps.length})</button></div></div>`;
+  return h;
+}
+/* readable plan for Excel and the Sheet. Without income: no salary or Invest rows (they would reveal the salary). */
+function planExport(){const st=planState(),noInc=!S.set.excelIncome,R=v=>Math.round(v)/100;
+  const lines=st.rows.map(r=>({name:r.name,kind:r.kind==='fund'?'Fund':'Spending',amt:R(r.amt),actual:R(r.actual),left:R(r.amt-r.actual)}));
+  if(!noInc){lines.unshift({name:'Salary'+(st.recv?' (received)':' (planned)'),kind:'Income',amt:R(st.salary),actual:R(st.recv),left:''});lines.push({name:'Invest',kind:'Invest',amt:R(Math.max(0,st.invest)),actual:R(st.investMoved),left:R(Math.max(0,st.invest)-st.investMoved)})}
+  if(st.outside) lines.push({name:'Outside the plan',kind:'Spending',amt:'',actual:R(st.outside),left:''});
+  return{period:st.p.label,noIncome:noInc,lines,steps:st.steps.map(({s,done})=>({name:s.name,done:!!done}))}}
+/* ---- payday checklist ---- */
+actions.payday=()=>{const st=planState(),pl=st.pl;
+  const stepAmt=s=>s.kind==='mark'?lineAmt(pl.lines.find(l=>l.id===s.line)||{}):s.amt;
+  sheet(`<h2>Payday checklist</h2><p class="help">${esc(st.p.label)}. One tap each. Fund steps just mark the money as set aside in your main account.</p>
+  ${st.steps.map(({s,done})=>{const ready=s.kind==='mark'||(s.amt&&acc(s.from)&&acc(s.to));
+    return`<div class="row"><button class="l" data-act="${done?'payUndoAsk':ready?'payDo':'payStepEdit'}" data-id="${s.id}" style="flex:1;text-align:left"><span class="pcheck ${done?'on':''}">${done?'✓':''}</span><div><p class="t">${esc(s.name)}</p>
+    <p class="sub">${s.kind==='mark'?`Set aside ${money(stepAmt(s))}`:ready?`Move ${money(s.amt)}, ${esc(acc(s.from).name)} → ${esc(acc(s.to).name)}`:'<span class="warn">Tap to set amount and accounts</span>'}${done?' <span class="good">done</span>':''}</p></div></button>
+    <button class="icon" data-act="payStepEdit" data-id="${s.id}" aria-label="Edit ${esc(s.name)}">${icoSvg('M4 20h4L19 9l-4-4L4 16zM14 6l4 4')}</button></div>`}).join('')}
+  <div class="btns"><button class="btn grow" data-act="payStepEdit" data-id="">Add a step</button><button class="btn primary grow" data-act="close">Done</button></div>`)};
+actions.payDo=d=>{const pl=plan(),s=pl.steps.find(x=>x.id===d.id),p=period(0);if(!s) return;
+  if(s.kind==='mark'){const l=pl.lines.find(x=>x.id===s.line);const m={step:s.id,p:p.start,amt:lineAmt(l||{}),at:Date.now()};pl.marks.push(m);persist();actions.payday();
+    toast(`${s.name}: ${money(m.amt,{hide:false})} set aside.`,()=>{pl.marks=pl.marks.filter(x=>x!==m);persist();if(!$('#sheet').hidden) actions.payday();render()});return}
+  const t={id:uid(),t:'xfer',amt:s.amt,acc:s.from,to:s.to,date:today(),ts:Date.now(),method:'bank',note:s.name,payStep:s.id};S.tx.push(t);persist();actions.payday();
+  toast(`Moved ${money(s.amt,{hide:false})} to ${acc(s.to).name}.`,()=>{S.tx=S.tx.filter(x=>x!==t);persist();if(!$('#sheet').hidden) actions.payday();render()})};
+actions.payUndoAsk=d=>{const pl=plan(),s=pl.steps.find(x=>x.id===d.id),p=period(0),dn=stepDone(s,p);if(!dn) return;
+  if(s.kind==='mark'){if(confirm(`Untick ${s.name} for this month?`)){pl.marks=pl.marks.filter(m=>m!==dn);persist();actions.payday()}return}
+  if(confirm(`${s.name} is already done this month. Move ${money(s.amt,{hide:false})} again?`)) actions.payDo(d)};
+actions.payStepEdit=d=>{const pl=plan(),s=d.id?pl.steps.find(x=>x.id===d.id):{id:'',name:'',kind:'xfer',amt:0,from:null,to:null},accs=activeAccs();
+  const ao=v=>accs.map(a=>opt(a.id,a.name,v)).join('');
+  sheet(`<h2>${d.id?'Edit step':'New payday step'}</h2><label>Name<input id="ps-name" value="${esc(s.name)}" placeholder="e.g. SIP, Load eSewa"></label>
+  ${s.kind==='mark'?`<p class="help">Marks ${esc(lineName(pl.lines.find(l=>l.id===s.line)||{name:''}))} as set aside. The amount comes from the plan.</p>`:
+  `<label>Amount (Rs)<input id="ps-amt" inputmode="decimal" value="${s.amt?s.amt/100:''}"></label><div class="grid2"><label>From<select id="ps-from"><option value="">Choose</option>${ao(s.from)}</select></label><label>To<select id="ps-to"><option value="">Choose</option>${ao(s.to)}</select></label></div>
+  <label>Counts as<select id="ps-line">${opt('','Nothing (just a transfer)',s.line||'')}${opt('invest','Invest',s.line||'')}</select></label><p class="help">For SIP, RD or FD, add the account under Accounts as type Investment, so it isn\u2019t counted as money you can spend.</p>`}
+  <div class="btns">${d.id&&s.kind!=='mark'?'<button class="btn danger" data-act="psDel">Delete</button>':''}<button class="btn primary grow" data-act="psSave">Save</button></div>`,pp=>{if(!d.id) pp.querySelector('input').focus()});
+  actions.psSave=()=>{const name=$('#ps-name').value.trim();if(!name){toast('Give the step a name.');return}
+    if(s.kind!=='mark'){const amt=toP($('#ps-amt').value),from=$('#ps-from').value,to=$('#ps-to').value;
+      if(amt<=0){toast('Enter an amount.');return}if(!from||!to||from===to){toast('Pick two different accounts.');return}Object.assign(s,{amt,from,to,line:$('#ps-line').value||undefined})}
+    s.name=name;if(!d.id){s.id='st-'+uid();pl.steps.push(s)}persist();actions.payday()};
+  actions.psDel=()=>{if(!confirm('Delete this step?')) return;pl.steps=pl.steps.filter(x=>x!==s);persist();actions.payday()};
+};
+/* ---- edit the plan ---- */
+actions.planEdit=()=>{const pl=plan();
+  sheet(`<h2>Monthly plan</h2><label>In-hand salary (Rs)<input id="pe-sal" inputmode="decimal" value="${pl.salary/100}"></label>
+  ${pl.lines.map(l=>`<div class="planrow"><input data-pn="${l.id}" value="${esc(lineName(l))}" aria-label="Name"><input data-pa="${l.id}" inputmode="decimal" value="${lineAmt(l)/100}" aria-label="Amount"><button class="icon" data-act="planLine" data-id="${l.id}" aria-label="What counts">${icoSvg('M4 6h16M7 12h10M10 18h4')}</button></div>`).join('')}
+  <p class="help">The ≡ button sets what counts toward a line. Snacks and friends is the same as Safe to spend. Invest is the salary minus all lines.</p>
+  <div class="btns"><button class="btn grow" data-act="planAdd" data-k="spend">Add spending line</button><button class="btn grow" data-act="planAdd" data-k="fund">Add fund</button></div>
+  <div class="btns" style="margin-top:8px"><button class="btn primary grow" data-act="planSave">Save plan</button></div>`)};
+function planCollect(){const pl=plan();pl.salary=Math.max(0,toP($('#pe-sal').value));
+  document.querySelectorAll('[data-pn]').forEach(i=>{const l=pl.lines.find(x=>x.id===i.dataset.pn);if(!l) return;const n=i.value.trim()||lineName(l);if(l.flex) flex().name=n;else l.name=n});
+  document.querySelectorAll('[data-pa]').forEach(i=>{const l=pl.lines.find(x=>x.id===i.dataset.pa);if(!l) return;const v=Math.abs(toP(i.value));if(l.flex) flex().amt=v;else l.amt=v})}
+actions.planSave=()=>{planCollect();persist();actions.close();render();toast('Plan saved.')};
+actions.planAdd=d=>{planCollect();const pl=plan(),l={id:'pl-'+uid(),name:d.k==='fund'?'New fund':'New spending line',kind:d.k,amt:0,cats:[],subs:[]};pl.lines.push(l);
+  if(d.k==='fund') pl.steps.splice(pl.steps.findIndex(s=>s.kind!=='mark')<0?pl.steps.length:pl.steps.findIndex(s=>s.kind!=='mark'),0,{id:'st-'+l.id,name:l.name,kind:'mark',line:l.id});
+  persist();actions.planEdit()};
+actions.planLine=d=>{planCollect();const pl=plan(),l=pl.lines.find(x=>x.id===d.id);if(!l) return;
+  if(l.flex){persist();actions.close();actions.flexOpen();return}
+  if(l.kind==='fund'){sheet(`<h2>${esc(l.name)}</h2><p class="help">A fund is money you set aside each month in your main account. The payday checklist has a step to mark it done.</p>
+    <div class="btns"><button class="btn danger" data-act="planDel" data-id="${l.id}">Delete fund</button><button class="btn primary grow" data-act="planEdit">Back</button></div>`);return}
+  const cats=S.cats.filter(c=>c.kind==='exp'&&!c.hidden&&!VEH_CATS.includes(c.id)),subs=S.subs.filter(x=>!x.hidden&&cat(x.parent)&&!VEH_CATS.includes(x.parent));
+  sheet(`<h2>${esc(l.name)}</h2><p class="lbl">Whole categories</p><div class="opts">${cats.map(c=>`<button class="opt${(l.cats||[]).includes(c.id)?' on':''}" data-act="plTog" data-k="cats" data-id="${c.id}">${esc(c.name)}</button>`).join('')}</div>
+  <p class="lbl">Single types</p><div class="opts">${subs.map(x=>`<button class="opt${(l.subs||[]).includes(x.id)?' on':''}" data-act="plTog" data-k="subs" data-id="${x.id}">${esc(cat(x.parent).name)}: ${esc(x.name)}</button>`).join('')}</div>
+  <label>Fuel and vehicle service for<select id="pl-veh">${opt('','None',l.veh||'')}${opt('bike','Bike or scooter',l.veh||'')}${opt('car','Car',l.veh||'')}</select></label>
+  <p class="help">Fuel and service logged for a vehicle count toward the line set to that vehicle. Fuel with no vehicle counts as bike.</p>
+  <div class="btns"><button class="btn danger" data-act="planDel" data-id="${l.id}">Delete line</button><button class="btn primary grow" data-act="plDone">Done</button></div>`);
+  actions.plTog=e=>{const a=l[e.k]||(l[e.k]=[]),i=a.indexOf(e.id);i>=0?a.splice(i,1):a.push(e.id);document.querySelector(`[data-act=plTog][data-k="${e.k}"][data-id="${e.id}"]`).classList.toggle('on',i<0)};
+  actions.plDone=()=>{l.veh=$('#pl-veh').value||undefined;persist();actions.planEdit()}};
+actions.planDel=d=>{const pl=plan();if(!confirm('Delete this line from the plan?')) return;pl.lines=pl.lines.filter(x=>x.id!==d.id);pl.steps=pl.steps.filter(s=>!(s.kind==='mark'&&s.line===d.id));persist();actions.planEdit()};
+
 /* ================= PLAN ================= */
 function flexCardHtml(){const f=flex(),st=flexState(),cats=S.cats.filter(c=>c.kind==='exp'&&!c.hidden);
   const others=S.subs.filter(x=>!x.hidden&&!f.cats.includes(x.parent)&&cat(x.parent)&&!cat(x.parent).hidden);
@@ -1350,8 +1469,8 @@ function renderPlan(){
   const bud=S.cats.filter(c=>c.kind==='exp'&&c.budget&&!c.hidden),total=sum(bud,c=>c.budget),spentB=sum(bud,c=>by[c.id]||0);
   const outside=Object.entries(by).filter(([k])=>!bud.some(c=>c.id===k)).reduce((s,[,v])=>s+v,0);
   let h=`<div class="top"><h1>Plan</h1><div style="display:flex;align-items:center;gap:6px"><span class="muted small">${esc(p.label)}</span>${eyeBtn()}</div></div>`;
-  h+=flexCardHtml();
-  h+=`<div class="card"><h3>Budgets</h3>`;
+  h+=planCardHtml();h+=flexCardHtml();
+  h+=`<div class="card"><h3>Category budgets</h3>`;
   if(!bud.length) h+=`<p class="muted">Set a monthly limit for the categories you want to watch. Khata then shows what's left and a daily amount on the Add screen.</p>`;
   else{const left=total-spentB,days=diffDays(today(),p.end)+1;
     h+=`<p class="lede" style="font-size:15px">${left>=0?`<b>${money(left)}</b> left, ${days} days to go.`:`<b class="danger">${money(-left)} over budget.</b>`}${outside?` <span class="muted">${money(outside)} spent outside budgets.</span>`:''}</p>`+
@@ -1451,7 +1570,7 @@ function renderSettings(){
     $('#f-aikey').addEventListener('change',e=>{aiSet().key=e.target.value.trim();save();toast(aiSet().key?'API key saved on this phone.':'API key removed.')});
     $('#f-aimodel').addEventListener('change',e=>{aiSet().model=e.target.value;save()})});
 }
-const APP_VERSION='v27';
+const APP_VERSION='v28';
 actions.settingsSave=()=>{if($('#f-aion')){const ai=aiSet();ai.on=$('#f-aion').checked;ai.key=($('#f-aikey').value||'').trim();ai.model=$('#f-aimodel').value}const sd=parseInt($('#f-start').value);S.set.startDay=sd>=1&&sd<=28?sd:1;S.set.hideOnOpen=$('#f-hideopen').checked;if($('#f-autolock')) S.set.autolock=Number($('#f-autolock').value);persist();actions.close();render()};
 actions.lockSet=async()=>{if(!window.crypto||!crypto.subtle){toast('Encryption needs the app opened over https.');return}
   if(meta.locked&&!(await requireAuth('Change PIN'))) return;
@@ -1542,7 +1661,7 @@ function excelModel(){
   const service=vs.flatMap(({v,st})=>st.logs.filter(l=>l.type!=='fuel').map(l=>({veh:v.name,date:l.date,odo:l.odo,type:l.type==='service'?'Service':'Other',cost:l.total?R(l.total):null,no:l.no,note:l.note})));
   const elapsed=Math.max(1,Math.min(diffDays(p.start,p.end),diffDays(p.start,today()))+1);
   const fs=flexState(),flexRow=fs.f.on&&fs.f.amt?{name:fs.f.name,amt:fs.f.amt/100,spent:fs.spent/100,left:fs.left/100}:null;
-  return{flex:flexRow,noIncome:noInc,perDay:Math.round(sum(sp,x=>x.share)/elapsed)/100,vehicles,fuel,service,exportedLabel:fmtD(today())+' '+parseD(today()).getFullYear(),periodStart:p.start,periodEnd:p.end,cats,
+  return{plan:planExport(),flex:flexRow,noIncome:noInc,perDay:Math.round(sum(sp,x=>x.share)/elapsed)/100,vehicles,fuel,service,exportedLabel:fmtD(today())+' '+parseD(today()).getFullYear(),periodStart:p.start,periodEnd:p.end,cats,
     methods:Object.entries(byM).sort((a,b)=>b[1]-a[1]).map(([name,v])=>({name,spent:R(v)})),months,entries,accounts,groups,
     income:noInc?0:R(sum(items(p).filter(x=>x.t==='inc'))),owe:accounts.reduce((s,a)=>s+a.owed,0),friends:R(myGroupNet()),
     backup:JSON.stringify({app:'khata',v:2,data:excelSnapshot()})};
@@ -2324,8 +2443,46 @@ function gsTabs(){
   {const fs=flexState();if(fs.f.on&&fs.f.amt) T.Budgets.push([fs.f.name+' (safe to spend)',fs.f.amt/100,fs.spent/100,fs.left/100])}
   T.Groups=[['Group','Person','Paid for bills','Their share','Settled','Balance (+ is owed)']].concat(m.groups.flatMap(g=>g.rows.map(r=>[g.name,r.person,r.paid,r.share,r.settled,Math.round((r.paid-r.share+r.settled)*100)/100])));
   T.Fuel=[['Vehicle','Date','ODO (km)','Litres','Rate (Rs/L)','Total (Rs)','Km per litre','Note']].concat((m.fuel||[]).map(f=>[f.veh,f.date,f.odo??'',f.litres??'',f.rate??'',f.total??'',f.kml??'',f.note||'']));
+  {const pe=m.plan;T.Plan=[['Plan line','Kind','Planned (Rs)','Actual (Rs)','Left (Rs)']].concat(pe.lines.map(l=>[l.name,l.kind,l.amt,l.actual,l.left]),[[''],['Payday step ('+pe.period+')','Done']],pe.steps.map(x=>[x.name,x.done?'Yes':'No']),pe.noIncome?[[''],['Salary and Invest rows are left out because income is not included.']]:[])}
   T.Service=[['Vehicle','Date','ODO (km)','Type','Cost (Rs)','Service no.','Note']].concat((m.service||[]).map(x=>[x.veh,x.date,x.odo??'',x.type,x.cost??'',x.no||'',x.note||'']));
   return T;
+}
+/* ---- Sheet "Summary" tab: numbers, short analysis and chart data (same redaction as the readable tabs) ---- */
+function gsSummary(){
+  const m=excelModel(),p=period(0),pp=period(-1),sp=spends(p),R=v=>Math.round(v)/100,pct=v=>(v>0?'+':'')+Math.round(v*100)+'%';
+  const spent=sum(sp,x=>x.share),elapsed=Math.max(1,Math.min(diffDays(p.start,p.end),diffDays(p.start,today()))+1);
+  const lastSame=sum(spends(pp).filter(x=>diffDays(pp.start,x.date)<elapsed),x=>x.share);
+  const byCat={};sp.forEach(x=>byCat[x.cat]=(byCat[x.cat]||0)+x.share);const cats=Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
+  const big=sp.reduce((a,b)=>!a||b.share>a.share?b:a,null),fs=flexState();
+  const days=[];for(let i=0;i<elapsed;i++){const d=addDays(p.start,i);days.push([fmtD(d),R(sum(sp.filter(x=>x.date===d),x=>x.share))])}
+  const noSpend=days.filter(d=>!d[1]).length;
+  const months=[];for(let i=11;i>=0;i--){const q=period(-i);months.push([MON[parseD(q.start).getMonth()]+' '+q.start.slice(2,4),R(sum(spends(q),x=>x.share))])}
+  const byM={};sp.forEach(x=>{const k=x.k==='gb'?'Split bills':METHODS[x.method]||'Other';byM[k]=(byM[k]||0)+x.share});
+  const bike=S.vehicles.find(v=>!v.archived&&v.kind!=='car')||S.vehicles.find(v=>!v.archived);
+  const fills=bike?vehStats(bike).fills.slice(-20):[];
+  const kpis=[['Spent this month',R(spent)],['Average a day',Math.round(spent/elapsed/100)],
+    ['Safe to spend today',fs.f.on?(fs.left<0?'Over by '+nf.format(R(-fs.left)):R(fs.safe)):'Off'],
+    ['Compared with last month at this point',lastSame?pct(spent/lastSame-1):'No data'],
+    ['Top category',cats[0]?(cat(cats[0][0])?.name||'Other')+', Rs '+nf.format(R(cats[0][1])):'None yet'],
+    ['Biggest expense',big?`Rs ${nf.format(R(big.share))}, ${cat(big.cat)?.name||'Other'}, ${fmtD(big.date)}`:'None yet'],
+    ['No-spend days',noSpend+' of '+elapsed]];
+  const notes=[];
+  cats.slice(0,3).forEach(([k,v])=>{const lv=sum(spends(pp).filter(x=>x.cat===k&&diffDays(pp.start,x.date)<elapsed),x=>x.share);
+    if(lv>0&&Math.abs(v/lv-1)>=0.15) notes.push(`${cat(k)?.name||'Other'} is ${pct(v/lv-1)} compared with last month at this point.`)});
+  if(noSpend) notes.push(`${noSpend} no-spend day${noSpend===1?'':'s'} so far this month.`);
+  const st=planState(p),overL=st.rows.filter(r=>r.kind==='spend'&&r.actual>r.amt);
+  if(overL.length) notes.push(`Over plan: ${overL.map(r=>r.name+' by Rs '+nf.format(R(r.actual-r.amt))).join(', ')}.`);
+  else if(st.rows.some(r=>r.kind==='spend'&&r.actual)) notes.push('Every spending line is inside the plan so far.');
+  const fundSteps=plan().steps.filter(x=>x.kind==='mark');let streak=0;
+  if(fundSteps.length) for(let i=fundSteps.every(x=>stepDone(x,p))?0:1;i<24;i++){if(fundSteps.every(x=>stepDone(x,period(-i)))) streak++;else break}
+  if(streak>1) notes.push(`All funds set aside ${streak} months in a row.`);else if(fundSteps.length&&!fundSteps.every(x=>stepDone(x,p))) notes.push('Some funds aren\u2019t set aside yet this month (Plan → Payday checklist).');
+  if(fs.f.on) notes.push(fs.left<0?`${fs.f.name} is over by Rs ${nf.format(R(-fs.left))} this month.`:`${fs.f.name}: Rs ${nf.format(R(fs.left))} left, about Rs ${nf.format(R(fs.safe))} a day.`);
+  const top=cats.slice(0,8).map(([k,v])=>[cat(k)?.name||'Other',R(v)]),rest=cats.slice(8).reduce((a,[,v])=>a+v,0);if(rest) top.push(['Everything else',R(rest)]);
+  return{period:p.label,kpis,notes,tables:{
+    plan:[['Plan line','Planned','Actual']].concat(m.plan.lines.filter(l=>l.kind!=='Income'&&l.amt!=='').map(l=>[l.name,l.amt,l.actual])),
+    cats:[['Category','Spent']].concat(top),months:[['Month','Spent']].concat(months),days:[['Day','Spent']].concat(days),
+    methods:[['Paid with','Spent']].concat(Object.entries(byM).sort((a,b)=>b[1]-a[1]).map(([k,v])=>[k,R(v)])),
+    mileage:[['Fill',(bike?bike.name+' ':'')+'km per litre']].concat(fills.map(f=>[fmtD(f.date),Math.round(f.kml*10)/10]))}};
 }
 async function gsFetch(url,opts={},ms=45000){const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),ms);
   try{const res=await fetch(url,{...opts,signal:ctl.signal});const j=await res.json().catch(()=>null);
@@ -2350,7 +2507,7 @@ async function gsPush(manual,force){
   try{
     const backup=JSON.stringify({app:'khata',v:3,enc:true,salt:meta.salt,...await encrypt(cryptoKey,snap)});
     const count=dataCount(S),sha=await sha256hex(backup);
-    const j=await gsPost({action:'sync',tabs:gsTabs(),backup,sha,count,newest:dataNewest(S),version:APP_VERSION,force:!!force});
+    const j=await gsPost({action:'sync',tabs:gsTabs(),summary:gsSummary(),backup,sha,count,newest:dataNewest(S),version:APP_VERSION,force:!!force});
     if(!j.ok&&j.code==='shrink'){g.blocked={n:j.sent,last:j.last,at:Date.now(),server:true};g.error='';shrinkPrompt(j.sent,j.last,true);return}
     if(!j.ok) throw new Error(/auth\/drive|DriveApp/.test(j.error||'')?'Your script doesn\u2019t have Drive permission yet. In Apps Script, choose setUp next to Run, press Run, allow access, then deploy a New version.':(j.error||'Sync failed.'));
     Object.assign(g,{last:Date.now(),dirty:false,error:'',lastCount:count,lastPlainSha:plainSha,lastSha:sha,blocked:null,scriptV:j.v||0});if(j.sheet) g.sheet=j.sheet;

@@ -292,6 +292,15 @@ function build(m){
   const at=m.accounts.length+2;
   Ac.set(at,0,'Owed on cards',ST.totL).set(at,4,m.owe,ST.totM,`SUMIFS(E2:E${at-1},C2:C${at-1},"Credit")`);
   Ac.set(at+2,0,'Bank, wallet and cash balances are left out of this file on purpose. They stay in the app and in the encrypted backup file.',ST.note);
+  /* Plan */
+  const Pl=new Sheet('Plan',{freeze:1,tab:'6B8E23'});
+  Pl.cols=[28,12,15,15,15];
+  ['Plan line','Kind','Planned (Rs)','Actual (Rs)','Left (Rs)'].forEach((h,c)=>Pl.set(1,c,h,c>=2?ST.headR:ST.head));Pl.heights[1]=24;
+  m.plan.lines.forEach((l,i)=>{const rr=i+2,b=i%2===1,T=b?ST.textB:ST.text,Mo=b?ST.moneyB:ST.money;
+    Pl.set(rr,0,l.name,T).set(rr,1,l.kind,T).set(rr,2,l.amt,Mo).set(rr,3,l.actual,Mo).set(rr,4,l.left,l.left!==''&&l.left<0?ST.moneyR:Mo,l.amt!==''&&l.kind!=='Income'?`C${rr}-D${rr}`:undefined)});
+  let pr=m.plan.lines.length+3;Pl.set(pr,0,'Payday step ('+m.plan.period+')',ST.head).set(pr,1,'Done',ST.head);
+  m.plan.steps.forEach((x,i)=>Pl.set(pr+1+i,0,x.name,ST.text).set(pr+1+i,1,x.done?'Yes':'No',ST.text));
+  if(m.plan.noIncome) Pl.set(pr+m.plan.steps.length+2,0,'Salary and Invest rows are left out because income is not included in this file.',ST.note);
   /* Groups */
   const G=new Sheet('Groups',{freeze:1,tab:'B4553F'});
   G.cols=[20,18,15,15,15,15];
@@ -349,7 +358,7 @@ function build(m){
   B.set(1,0,'Khata uses this sheet to restore your data. Leave it unchanged.');
   const json=m.backup;for(let i=0,rr=2;i<json.length;i+=30000,rr++) B.set(rr,0,json.slice(i,i+30000));
 
-  sheets.unshift(S,E,M,Ac,G);sheets.push(B);
+  sheets.unshift(S,E,M,Pl,Ac,G);sheets.push(B);
 
   /* package */
   const files=[],ct=[],wbRels=[];
